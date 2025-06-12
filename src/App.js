@@ -79,7 +79,6 @@ function App() {
 
   const saveUsername = (name) => {
     setUsername(name);
-    localStorage.setItem('betterhabits-username', name);
     setShowUsernameModal(false);
   };
 
@@ -121,6 +120,16 @@ function App() {
           color: '#06B6D4',
           completions: {},
           streak: 1
+        },
+        {
+          id: 3,
+          name: 'Daily Exercise',
+          description: 'Move your body for at least 30 minutes',
+          category: 'Fitness',
+          targetCount: 1,
+          color: '#10B981',
+          completions: {},
+          streak: 5
         }
       ]);
     }
