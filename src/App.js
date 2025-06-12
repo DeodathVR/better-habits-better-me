@@ -89,6 +89,17 @@ function App() {
     return 'Good evening';
   };
 
+  // Save habits to localStorage whenever habits change
+  useEffect(() => {
+    if (habits.length > 0) {
+      try {
+        localStorage.setItem('betterhabits-data', JSON.stringify(habits));
+      } catch (error) {
+        console.error('Error saving habits:', error);
+      }
+    }
+  }, [habits]);
+
   // Initialize with sample habits and check for username
   useEffect(() => {
     // Check for stored username
@@ -99,6 +110,21 @@ function App() {
       setShowUsernameModal(true);
     }
 
+    // Try to load saved habits first
+    try {
+      const savedHabits = localStorage.getItem('betterhabits-data');
+      if (savedHabits) {
+        const parsedHabits = JSON.parse(savedHabits);
+        if (parsedHabits.length > 0) {
+          setHabits(parsedHabits);
+          return; // Don't load default habits if we have saved ones
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved habits:', error);
+    }
+
+    // Only load default habits if no saved habits exist
     if (habits.length === 0) {
       setHabits([
         {
@@ -133,7 +159,7 @@ function App() {
         }
       ]);
     }
-  }, [habits.length]);
+  }, []);
 
   const addHabit = () => {
     if (newHabit.name.trim()) {
@@ -193,6 +219,66 @@ function App() {
       const completed = habit.completions[today] || 0;
       return completed >= habit.targetCount;
     }).length;
+  };
+
+  // Export habits data
+  const exportHabits = () => {
+    try {
+      const dataToExport = {
+        habits: habits,
+        username: username,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const dataStr = JSON.stringify(dataToExport, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = `better-habits-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      setToast({ message: '📁 Habits exported successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) {
+      setToast({ message: '❌ Export failed. Please try again.', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  // Import habits data
+  const importHabits = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        
+        if (importedData.habits && Array.isArray(importedData.habits)) {
+          setHabits(importedData.habits);
+          
+          if (importedData.username) {
+            setUsername(importedData.username);
+            localStorage.setItem('betterhabits-username', importedData.username);
+          }
+          
+          setToast({ message: '📂 Habits imported successfully!', type: 'success' });
+          setTimeout(() => setToast(null), 3000);
+        } else {
+          throw new Error('Invalid file format');
+        }
+      } catch (error) {
+        setToast({ message: '❌ Import failed. Please check your file.', type: 'error' });
+        setTimeout(() => setToast(null), 3000);
+      }
+    };
+    
+    reader.readAsText(file);
+    // Reset file input
+    event.target.value = '';
   };
 
   // Missed Days Modal Component
@@ -910,6 +996,91 @@ function App() {
             </p>
           </div>
         )}
+
+        {/* Export/Import Section */}
+        <div style={{ 
+          marginTop: '48px', 
+          paddingTop: '32px', 
+          borderTop: '2px solid #f3f4f6',
+          textAlign: 'center'
+        }}>
+          <h3 style={{ 
+            fontSize: '18px', 
+            fontWeight: 'bold', 
+            color: '#1f2937', 
+            marginBottom: '12px' 
+          }}>
+            Backup & Restore
+          </h3>
+          <p style={{ 
+            color: '#6b7280', 
+            fontSize: '14px', 
+            marginBottom: '20px',
+            maxWidth: '500px',
+            margin: '0 auto 20px auto'
+          }}>
+            Keep your habits safe! Export your data to backup your progress, or import a previous backup to restore your habits.
+          </p>
+          
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            {/* Export Button */}
+            <button
+              onClick={exportHabits}
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '14px'
+              }}
+            >
+              📁 Export Habits
+            </button>
+            
+            {/* Import Button */}
+            <label style={{
+              background: '#10b981',
+              color: 'white',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}>
+              📂 Import Habits
+              <input
+                type="file"
+                accept=".json"
+                onChange={importHabits}
+                style={{ display: 'none' }}
+              />
+            </label>
+          </div>
+          
+          {/* Privacy Note */}
+          <p style={{ 
+            color: '#9ca3af', 
+            fontSize: '12px', 
+            marginTop: '16px',
+            fontStyle: 'italic'
+          }}>
+            All data stays on your device. Export files are stored locally on your computer.
+          </p>
+        </div>
       </div>
     </div>
   );
