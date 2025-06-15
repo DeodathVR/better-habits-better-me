@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X } from 'lucide-react';
 
 function App() {
   const [currentUser, setCurrentUser] = useState({
@@ -40,25 +40,47 @@ function App() {
     {
       id: 1,
       name: "Morning Meditation",
+      description: "Start the day with mindfulness",
       streak: 5,
+      missedDays: 3,
       completedToday: false,
-      category: "mindfulness"
+      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Mindfulness",
+      progress: 0,
+      target: 10
     },
     {
       id: 2,
       name: "Read 20 Minutes",
+      description: "Expand knowledge through daily reading",
       streak: 3,
+      missedDays: 1,
       completedToday: true,
-      category: "learning"
+      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
+      category: "Learning",
+      progress: 5,
+      target: 10
     },
     {
       id: 3,
       name: "Exercise",
+      description: "Move your body for at least 30 minutes",
       streak: 8,
+      missedDays: 0,
       completedToday: false,
-      category: "fitness"
+      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Fitness",
+      progress: 2,
+      target: 10
     }
   ]);
+
+  const [showAddHabit, setShowAddHabit] = useState(false);
+  const [newHabit, setNewHabit] = useState({
+    name: '',
+    description: '',
+    category: 'Mindfulness'
+  });
 
   const [currentView, setCurrentView] = useState('dashboard');
   const [showNotification, setShowNotification] = useState(false);
@@ -206,6 +228,28 @@ Research indicates that users who restart within 24 hours of this call maintain 
     showMessage(message);
   };
 
+  const addNewHabit = () => {
+    if (newHabit.name.trim() === '') return;
+    
+    const habit = {
+      id: Date.now(),
+      name: newHabit.name,
+      description: newHabit.description || `Build a consistent ${newHabit.name.toLowerCase()} routine`,
+      streak: 0,
+      missedDays: 0,
+      completedToday: false,
+      completedDates: [],
+      category: newHabit.category,
+      progress: 0,
+      target: 10
+    };
+    
+    setHabits(prev => [...prev, habit]);
+    setNewHabit({ name: '', description: '', category: 'Mindfulness' });
+    setShowAddHabit(false);
+    showMessage(`🎉 New habit "${habit.name}" added! Let's build that streak!`);
+  };
+
   const showMessage = (message) => {
     setNotificationMessage(message);
     setShowNotification(true);
@@ -220,6 +264,8 @@ Research indicates that users who restart within 24 hours of this call maintain 
         
         if (newCompleted) {
           newStreak = habit.streak + 1;
+          const newProgress = Math.min(habit.progress + 1, habit.target);
+          
           const message = getMotivationalMessage('habitCompleted', {
             habitName: habit.name,
             streak: newStreak
@@ -232,6 +278,13 @@ Research indicates that users who restart within 24 hours of this call maintain 
               showMessage(streakMessage);
             }, 2000);
           }
+          
+          return {
+            ...habit,
+            completedToday: newCompleted,
+            streak: newStreak,
+            progress: newProgress
+          };
         }
         
         return {
@@ -346,36 +399,150 @@ Research indicates that users who restart within 24 hours of this call maintain 
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-500" />
-                Today's Habits
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-500" />
+                  Today's Habits
+                </h2>
+                <button
+                  onClick={() => setShowAddHabit(true)}
+                  className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Habit
+                </button>
+              </div>
+
+              {/* Add New Habit Modal */}
+              {showAddHabit && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold">Add New Habit</h3>
+                      <button onClick={() => setShowAddHabit(false)}>
+                        <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Habit Name</label>
+                        <input
+                          type="text"
+                          value={newHabit.name}
+                          onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="e.g., Morning Yoga"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input
+                          type="text"
+                          value={newHabit.description}
+                          onChange={(e) => setNewHabit(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="e.g., Start the day with mindful movement"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select
+                          value={newHabit.category}
+                          onChange={(e) => setNewHabit(prev => ({ ...prev, category: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Mindfulness">Mindfulness</option>
+                          <option value="Fitness">Fitness</option>
+                          <option value="Learning">Learning</option>
+                          <option value="Health">Health</option>
+                          <option value="Productivity">Productivity</option>
+                          <option value="Social">Social</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-3 pt-4">
+                        <button
+                          onClick={addNewHabit}
+                          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Add Habit
+                        </button>
+                        <button
+                          onClick={() => setShowAddHabit(false)}
+                          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 {habits.map(habit => (
                   <div
                     key={habit.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
                   >
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => toggleHabit(habit.id)}
-                        className="flex-shrink-0"
-                      >
-                        {habit.completedToday ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-500" />
-                        ) : (
-                          <Circle className="w-6 h-6 text-gray-400 hover:text-green-500" />
-                        )}
-                      </button>
-                      <div>
-                        <h3 className="font-semibold text-gray-800">{habit.name}</h3>
-                        <p className="text-sm text-gray-600 capitalize">{habit.category}</p>
+                    {/* Habit Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-gray-800 mb-1">{habit.name}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{habit.description}</p>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            {habit.category}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Flame className="w-4 h-4 text-orange-500" />
+                            <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
+                          </div>
+                          {habit.missedDays > 0 && (
+                            <span className="text-orange-600 text-sm">
+                              {habit.missedDays} missed days
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Flame className="w-4 h-4 text-orange-500" />
-                      <span className="font-bold text-orange-500">{habit.streak}</span>
+
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {Math.round((habit.progress / habit.target) * 100)}% complete
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                          style={{width: `${(habit.progress / habit.target) * 100}%`}}
+                        ></div>
+                      </div>
                     </div>
+
+                    {/* Action Button */}
+                    <button
+                      onClick={() => toggleHabit(habit.id)}
+                      className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                        habit.completedToday
+                          ? 'bg-green-500 hover:bg-green-600 text-white'
+                          : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
+                      }`}
+                    >
+                      {habit.completedToday ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <CheckCircle2 className="w-5 h-5" />
+                          Completed Today!
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <Circle className="w-5 h-5" />
+                          Mark Complete
+                        </span>
+                      )}
+                    </button>
                   </div>
                 ))}
               </div>
