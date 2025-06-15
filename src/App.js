@@ -7,7 +7,7 @@ function App() {
     email: "alex@example.com",
     phone: "+1 (555) 123-4567",
     isPremium: true,
-    lastActiveDate: new Date('2025-06-11'), // 4 days ago for phone demo
+    lastActiveDate: new Date('2025-06-11'),
     preferences: {
       emailCoaching: true,
       phoneCoaching: true,
@@ -114,17 +114,22 @@ function App() {
     return `Great job completing ${data.habitName}! Keep it up! 🎉`;
   };
 
-  // AI Phone Call System
   const generateAICall = (daysMissed, userProfile) => {
     const { personalityType } = userProfile.aiProfile;
     const { lastCompletedHabit, longestStreak, strugglingDays, biggerGoals } = userProfile.behaviorData;
     
-    // Voice characteristics based on personality
     const voiceStyle = {
       achiever: "energetic and confident",
       explorer: "warm and curious", 
       perfectionist: "calm and precise",
       socializer: "friendly and supportive"
+    };
+
+    const getTimeOfDay = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) return "morning";
+      if (hour < 17) return "afternoon";
+      return "evening";
     };
 
     const callScripts = {
@@ -155,13 +160,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
     };
   };
 
-  const getTimeOfDay = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "morning";
-    if (hour < 17) return "afternoon";
-    return "evening";
-  };
-
   const scheduleAICall = (daysMissed) => {
     if (!currentUser.preferences.phoneCoaching || !currentUser.isPremium) return;
 
@@ -175,7 +173,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
       scheduledTime: callData.scheduledTime,
       scheduled: new Date(),
       daysMissed: daysMissed,
-      status: "scheduled" // scheduled, completed, missed
+      status: "scheduled"
     };
 
     setCurrentUser(prev => ({
@@ -185,6 +183,8 @@ Research indicates that users who restart within 24 hours of this call maintain 
 
     showMessage(`📞 AI Coach call scheduled for ${callData.scheduledTime}!`);
   };
+
+  const sendAIEmail = () => {
     const newEmail = {
       id: Date.now(),
       subject: `Your ${currentUser.behaviorData.lastCompletedHabit.toLowerCase()} streak is waiting for you, ${currentUser.name}`,
@@ -199,6 +199,11 @@ Research indicates that users who restart within 24 hours of this call maintain 
     }));
 
     showMessage("📧 AI Coach email sent!");
+  };
+
+  const sendLifeCoachMessage = () => {
+    const message = getMotivationalMessage('lifeCoach', { habitName: currentUser.behaviorData.lastCompletedHabit });
+    showMessage(message);
   };
 
   const showMessage = (message) => {
@@ -451,7 +456,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
               </div>
             )}
 
-            {/* AI Phone Coach - NEW FEATURE */}
             {currentUser.isPremium && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -507,7 +511,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
               </div>
             )}
 
-            {/* Life Coach Messages - NEW FEATURE */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
@@ -551,7 +554,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
           <div className="space-y-6">
             <div className="text-center py-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
-              <p className="text-gray-600">AI-powered personalization & settings</p>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -578,6 +580,62 @@ Research indicates that users who restart within 24 hours of this call maintain 
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={currentUser.phone}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-green-500" />
+                AI Coaching Preferences
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Optimal Call Time</label>
+                  <input
+                    type="time"
+                    value="10:00"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.emailCoaching}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, emailCoaching: e.target.checked }
+                      }))}
+                      className="rounded"
+                    />
+                    <label className="text-sm text-gray-700">
+                      📧 Enable AI email coaching (after 2 days inactive)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.phoneCoaching}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
+                      }))}
+                      className="rounded"
+                    />
+                    <label className="text-sm text-gray-700">
+                      📞 Enable AI phone coaching (after 4 days inactive) - WORLD FIRST!
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -590,6 +648,8 @@ Research indicates that users who restart within 24 hours of this call maintain 
                   <ul className="space-y-1 text-sm">
                     <li>✅ Personality-based messaging</li>
                     <li>✅ AI email coaching (2-day trigger)</li>
+                    <li>✅ AI phone coaching (4-day trigger)</li>
+                    <li>✅ Life coach-style messaging</li>
                     <li>✅ Predictive insights & recommendations</li>
                     <li>✅ Smart habit suggestions</li>
                   </ul>
@@ -599,6 +659,8 @@ Research indicates that users who restart within 24 hours of this call maintain 
                   <div className="space-y-1 text-sm">
                     <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% success rate</p>
                     <p>• Email coaching system active</p>
+                    <p>• Phone coaching system active</p>
+                    <p>• Life coaching system active</p>
                     <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
                   </div>
                 </div>
