@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart } from 'lucide-react';
 
 function App() {
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
     email: "alex@example.com",
+    phone: "+1 (555) 123-4567",
     isPremium: true,
+    lastActiveDate: new Date('2025-06-11'), // 4 days ago for phone demo
     preferences: {
       emailCoaching: true,
-      phoneCoaching: false
+      phoneCoaching: true,
+      optimalCallTime: "10:00 AM"
     },
     aiProfile: {
       personalityType: "achiever",
@@ -19,7 +22,9 @@ function App() {
       bestTimeForHabits: "morning",
       strugglingDays: ["monday", "friday"],
       lastCompletedHabit: "Morning Meditation",
-      longestStreak: 21
+      longestStreak: 21,
+      biggerGoals: ["become a focused leader", "build mental strength for career"],
+      proudestMoment: "completing 21-day meditation streak"
     },
     emailHistory: [{
       id: 1,
@@ -27,7 +32,8 @@ function App() {
       sent: new Date(),
       daysMissed: 2,
       content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach 🤖💪"
-    }]
+    }],
+    callHistory: []
   });
 
   const [habits, setHabits] = useState([
@@ -69,8 +75,34 @@ function App() {
           7: "ONE WEEK! 🔥 You officially have a habit in progress!",
           14: "TWO WEEKS! 🌟 This is where real change happens!",
           21: "21 DAYS! 🎊 Scientists say this is when habits start to stick!"
+        },
+        lifeCoachMessages: {
+          achiever: [
+            `Your ${data.habitName || 'meditation'} habit isn't just about calm—it's about becoming the focused leader you're meant to be. Every session builds the mental strength that will help you crush your career goals.`,
+            `${currentUser.name}, I know ${new Date().toLocaleDateString('en', {weekday: 'long'})}s can be tough for you, but remember: you've conquered that ${currentUser.behaviorData.longestStreak}-day streak before. That took real mental toughness.`,
+            `Imagine yourself 90 days from now, ${currentUser.name}. You've built unshakeable habits, your focus is laser-sharp, and you're the person everyone turns to for consistency. Today's choice builds that future.`,
+            `Remember how proud you felt when you ${currentUser.behaviorData.proudestMoment}? That feeling is waiting for you again. This isn't about perfection—it's about becoming who you're meant to be.`
+          ],
+          explorer: [
+            `Your reading habit is like collecting treasures for your soul, ${currentUser.name}. Each page you turn opens new worlds and ideas that will inspire your next creative breakthrough.`,
+            `${currentUser.name}, your journey isn't linear, and that's beautiful. Some days flow differently than others. What calls to your curious heart today?`,
+            `Picture yourself 90 days from now—a person rich with new perspectives, someone who's explored countless new ideas. Every habit you build adds another dimension to who you're becoming.`,
+            `Remember that spark you felt when you discovered something amazing in your reading? That magic is still there, waiting to be rekindled with just one small step today.`
+          ],
+          perfectionist: [
+            `Your systematic approach to ${data.habitName || 'habits'} isn't just about completion—it's about crafting excellence in every area of your life. Quality over quantity, always.`,
+            `${currentUser.name}, I see you typically struggle on ${currentUser.behaviorData.strugglingDays.join(' and ')}s. Your precision shows in recognizing patterns. Let's optimize: what's your highest-impact habit today?`,
+            `Envision yourself 90 days from now: your systems are flawless, your execution is precise, and you've become the person who others look to for structure and excellence.`,
+            `Your attention to detail is a superpower, ${currentUser.name}. Remember how satisfying it felt to maintain that perfect ${currentUser.behaviorData.longestStreak}-day streak? That precision is still in you.`
+          ]
         }
       };
+      
+      if (type === 'lifeCoach') {
+        const userType = currentUser.aiProfile.personalityType;
+        const messages = personalizedMessages.lifeCoachMessages[userType] || personalizedMessages.lifeCoachMessages.achiever;
+        return messages[Math.floor(Math.random() * messages.length)];
+      }
       
       if (type === 'streakCelebration' && personalizedMessages[type][data.streak]) {
         return personalizedMessages[type][data.streak];
@@ -82,7 +114,77 @@ function App() {
     return `Great job completing ${data.habitName}! Keep it up! 🎉`;
   };
 
-  const sendAIEmail = () => {
+  // AI Phone Call System
+  const generateAICall = (daysMissed, userProfile) => {
+    const { personalityType } = userProfile.aiProfile;
+    const { lastCompletedHabit, longestStreak, strugglingDays, biggerGoals } = userProfile.behaviorData;
+    
+    // Voice characteristics based on personality
+    const voiceStyle = {
+      achiever: "energetic and confident",
+      explorer: "warm and curious", 
+      perfectionist: "calm and precise",
+      socializer: "friendly and supportive"
+    };
+
+    const callScripts = {
+      achiever: `Hi ${userProfile.name}, this is your Better Habits AI coach calling. I noticed you haven't checked in for ${daysMissed} days, and I wanted to personally reach out because your ${lastCompletedHabit} journey matters to your goal of ${biggerGoals[0]}. 
+
+I know ${strugglingDays.join(' and ')} can be challenging for you, but you've conquered ${longestStreak}-day streaks before - that shows real champion mindset! 
+
+What if we started with just 2 minutes of ${lastCompletedHabit.toLowerCase()} today? I believe in your comeback story. You've got this, champion!`,
+
+      explorer: `Hello ${userProfile.name}, this is your Better Habits AI coach reaching out with care. I've been thinking about your unique ${lastCompletedHabit} journey, and I miss seeing your daily discoveries.
+
+Life has seasons, and maybe these ${daysMissed} days were your winter. But spring is here whenever you're ready to bloom again. Remember that beautiful ${longestStreak}-day streak you built? Each day was like adding a new color to your personal masterpiece.
+
+What calls to your heart today? Maybe just a gentle 2-minute return to ${lastCompletedHabit.toLowerCase()}? The adventure continues when you're ready.`,
+
+      perfectionist: `Good ${getTimeOfDay()}, ${userProfile.name}. This is your Better Habits AI coach with a precision update. Data analysis shows you've been inactive for ${daysMissed} days.
+
+Based on your ${personalityType} profile and ${Math.round(userProfile.behaviorData.completionRate * 100)}% historical success rate, the optimal restart strategy is to begin with your highest-probability habit: ${lastCompletedHabit}.
+
+Research indicates that users who restart within 24 hours of this call maintain 89% of their previous performance metrics. Your system is optimized for success - let's execute the restart protocol today.`
+    };
+
+    return {
+      script: callScripts[personalityType] || callScripts.achiever,
+      voiceStyle: voiceStyle[personalityType] || voiceStyle.achiever,
+      duration: "45-60 seconds",
+      scheduledTime: userProfile.preferences.optimalCallTime || "10:00 AM"
+    };
+  };
+
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "morning";
+    if (hour < 17) return "afternoon";
+    return "evening";
+  };
+
+  const scheduleAICall = (daysMissed) => {
+    if (!currentUser.preferences.phoneCoaching || !currentUser.isPremium) return;
+
+    const callData = generateAICall(daysMissed, currentUser);
+    const newCall = {
+      id: Date.now(),
+      type: "ai-coaching-call",
+      script: callData.script,
+      voiceStyle: callData.voiceStyle,
+      duration: callData.duration,
+      scheduledTime: callData.scheduledTime,
+      scheduled: new Date(),
+      daysMissed: daysMissed,
+      status: "scheduled" // scheduled, completed, missed
+    };
+
+    setCurrentUser(prev => ({
+      ...prev,
+      callHistory: [newCall, ...prev.callHistory]
+    }));
+
+    showMessage(`📞 AI Coach call scheduled for ${callData.scheduledTime}!`);
+  };
     const newEmail = {
       id: Date.now(),
       subject: `Your ${currentUser.behaviorData.lastCompletedHabit.toLowerCase()} streak is waiting for you, ${currentUser.name}`,
@@ -314,7 +416,7 @@ function App() {
                     <p className="text-sm text-blue-700 mb-3">AI will send personalized re-engagement emails based on your personality type.</p>
                     <button 
                       onClick={sendAIEmail}
-                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700"
+                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700 mr-2"
                     >
                       📧 Preview AI Email (Demo)
                     </button>
@@ -348,6 +450,83 @@ function App() {
                 )}
               </div>
             )}
+
+            {/* AI Phone Coach - NEW FEATURE */}
+            {currentUser.isPremium && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-green-500" />
+                  AI Phone Coach
+                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">WORLD FIRST</span>
+                </h3>
+                <div className="mb-4">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-green-800 mb-2">📞 AI Voice Calling System</h4>
+                    <p className="text-sm text-green-700 mb-3">After 4 days inactive, AI will call you with personalized voice coaching matching your personality.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3">
+                      <div><span className="font-medium">Voice Style:</span> Energetic & confident (Achiever)</div>
+                      <div><span className="font-medium">Call Time:</span> {currentUser.preferences.optimalCallTime}</div>
+                      <div><span className="font-medium">Duration:</span> 45-60 seconds</div>
+                      <div><span className="font-medium">Last Active:</span> {Math.floor((new Date() - new Date(currentUser.lastActiveDate)) / (1000 * 60 * 60 * 24))} days ago</div>
+                    </div>
+                    <button 
+                      onClick={() => scheduleAICall(4)}
+                      className="bg-green-600 text-white text-xs px-3 py-1 rounded-full hover:bg-green-700"
+                    >
+                      📞 Preview AI Call (Demo)
+                    </button>
+                  </div>
+                </div>
+                
+                {currentUser.callHistory && currentUser.callHistory.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Scheduled AI Calls</h4>
+                    <div className="space-y-3">
+                      {currentUser.callHistory.map(call => (
+                        <div key={call.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">📞</div>
+                              <div>
+                                <p className="font-medium text-gray-800">AI Voice Coach</p>
+                                <p className="text-xs text-gray-500">Scheduled for {call.scheduledTime}</p>
+                              </div>
+                            </div>
+                            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">{call.status}</span>
+                          </div>
+                          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-green-500">
+                            <p className="font-medium mb-2">📜 Call Script Preview ({call.voiceStyle}):</p>
+                            <p className="whitespace-pre-line">{call.script}</p>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">Duration: {call.duration} • After {call.daysMissed} days inactive</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Life Coach Messages - NEW FEATURE */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                Life Coach Messages
+                {currentUser.isPremium && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">AI POWERED</span>}
+              </h3>
+              <div className="mb-4">
+                <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-800 mb-2">💝 Deep Personal Connection</h4>
+                  <p className="text-sm text-red-700 mb-3">AI creates meaningful messages connecting your habits to your bigger life goals and personal journey.</p>
+                  <button 
+                    onClick={sendLifeCoachMessage}
+                    className="bg-red-600 text-white text-xs px-3 py-1 rounded-full hover:bg-red-700"
+                  >
+                    💬 Get Life Coach Message
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
