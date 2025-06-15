@@ -1,6 +1,5 @@
-// App.js - Complete Better Habits App with AI Follow-Up System
-import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail } from 'lucide-react';
 
 const BetterHabitsApp = () => {
   const [currentUser, setCurrentUser] = useState({
@@ -8,7 +7,7 @@ const BetterHabitsApp = () => {
     email: "alex@example.com",
     joinDate: new Date('2024-01-15'),
     isPremium: true,
-    lastActiveDate: new Date('2025-06-13'), // 2 days ago for demo
+    lastActiveDate: new Date('2025-06-13'),
     preferences: {
       morningReminder: '8:00 AM',
       eveningReminder: '8:00 PM',
@@ -17,11 +16,11 @@ const BetterHabitsApp = () => {
       phoneCoaching: false
     },
     aiProfile: {
-      personalityType: "achiever", // achiever, explorer, socializer, perfectionist
-      motivationStyle: "encouraging", // encouraging, challenging, analytical, celebratory
+      personalityType: "achiever",
+      motivationStyle: "encouraging",
       riskLevel: "medium",
       preferredTiming: "morning",
-      communicationFreq: "moderate", // minimal, moderate, frequent
+      communicationFreq: "moderate",
       stressLevel: "low",
       energyPattern: [7, 8, 9, 8, 6, 5, 4],
       successFactors: ["consistency", "small-steps", "visual-progress"]
@@ -88,12 +87,10 @@ const BetterHabitsApp = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
 
-  // AI-Powered Follow-Up Flow System
   const getMotivationalMessage = (type, data = {}) => {
     const { personalityType, motivationStyle } = currentUser.aiProfile;
     const { completionRate, bestTimeForHabits, weeklyAvg } = currentUser.behaviorData;
 
-    // Premium AI-powered personalized messages
     if (currentUser.isPremium) {
       const personalizedMessages = {
         habitCompleted: {
@@ -162,7 +159,6 @@ const BetterHabitsApp = () => {
         ]
       };
 
-      // Select appropriate message based on personality and motivation style
       if (type === 'aiInsight') {
         return personalizedMessages.aiInsights[Math.floor(Math.random() * personalizedMessages.aiInsights.length)];
       }
@@ -196,11 +192,6 @@ const BetterHabitsApp = () => {
         "🌅 New day, new opportunities to grow! Let's make it count!",
         "Morning champion! Your habits are waiting for you ✨"
       ],
-      eveningReflection: [
-        "How did today go? Every check-in counts! 🌟",
-        "Time to reflect on today's wins! Even small progress matters 💫",
-        "Quick check-in time! Your consistency journey is important 📱"
-      ],
       streakCelebration: {
         1: "First step taken! 🎯 Every journey begins with day one!",
         3: "3 days strong! 💪 You're already building a pattern!",
@@ -208,12 +199,7 @@ const BetterHabitsApp = () => {
         14: "TWO WEEKS! 🌟 This is where real change happens!",
         21: "21 DAYS! 🎊 Scientists say this is when habits start to stick!",
         30: "ONE MONTH! 👑 You're now officially a habit-building champion!"
-      },
-      missedDay: [
-        "🌱 Just checking in! Noticed you missed yesterday - totally normal! Life happens, and that's perfectly okay. Ready for a fresh start today? ✨",
-        "💙 No worries! Sometimes life gets busy - we've all been there! Remember: You're not starting over, you're just continuing your journey.",
-        "🤗 Back in action! Consistency isn't perfection - it's showing up again! 💫"
-      ]
+      }
     };
 
     if (type === 'streakCelebration' && basicMessages[type][data.streak]) {
@@ -224,7 +210,6 @@ const BetterHabitsApp = () => {
     return messageArray[Math.floor(Math.random() * messageArray.length)];
   };
 
-  // AI Email Generation System
   const generateAIEmail = (daysMissed, userProfile) => {
     const { personalityType, motivationStyle } = userProfile.aiProfile;
     const { lastCompletedHabit, longestStreak, completionRate } = userProfile.behaviorData;
@@ -275,56 +260,7 @@ Your future self is counting on today's decision. What if we started with just 2
 
 I believe in your comeback story.
 
-Your AI Coach 🤖💪`,
-
-        challenging: `${userProfile.name},
-
-${daysMissed} days without progress. Let's be honest about what's happening here.
-
-You've proven you can build a ${longestStreak}-day streak. You've shown ${Math.round(completionRate * 100)}% consistency in the past. But champions aren't made by past victories - they're made by how they respond to setbacks.
-
-The question isn't whether you'll restart. It's whether you'll restart today or let another day slip by.
-
-Your ${lastCompletedHabit} habit is waiting. Your goals aren't going to achieve themselves.
-
-What's it going to be?
-
-Your AI Coach 🤖🔥`
-      },
-      explorer: {
-        encouraging: `Dear ${userProfile.name},
-
-I've been thinking about your unique journey, and I miss seeing your daily discoveries.
-
-Remember when you built that beautiful ${longestStreak}-day streak with ${lastCompletedHabit}? Each day was like adding a new color to your personal masterpiece.
-
-Life has seasons, and maybe these ${daysMissed} days were your winter. But spring is here whenever you're ready to bloom again.
-
-Your habit journey isn't about perfection - it's about exploration, growth, and becoming who you're meant to be.
-
-What calls to your heart today? Maybe just 2 minutes of ${lastCompletedHabit.toLowerCase()}?
-
-The adventure continues when you're ready.
-
-Your AI Coach 🤖✨`
-      },
-      perfectionist: {
-        analytical: `Hello ${userProfile.name},
-
-Data analysis shows you've been inactive for ${daysMissed} days. Let me share what the numbers tell us:
-
-• Previous success rate: ${Math.round(completionRate * 100)}%
-• Longest streak achieved: ${longestStreak} days
-• Last successful habit: ${lastCompletedHabit}
-• Optimal restart strategy: Begin with highest-probability habit
-
-Research indicates that users who restart within 48 hours of receiving this email maintain 89% of their previous success rate.
-
-The most efficient path forward: Complete ${lastCompletedHabit.toLowerCase()} for 2 minutes today. This creates a new baseline for habit reconstruction.
-
-Your system is optimized for success. Let's execute the restart protocol.
-
-Your AI Coach 🤖📊`
+Your AI Coach 🤖💪`
       }
     };
 
@@ -379,14 +315,12 @@ Your AI Coach 🤖📊`
             newStreak = habit.streak + 1;
           }
           
-          // Show completion message with AI personalization
           const message = getMotivationalMessage('habitCompleted', {
             habitName: habit.name,
             streak: newStreak
           });
           showMessage(message);
           
-          // Check for streak milestones
           if ([1, 3, 7, 14, 21, 30].includes(newStreak)) {
             setTimeout(() => {
               const streakMessage = getMotivationalMessage('streakCelebration', { streak: newStreak });
@@ -394,7 +328,6 @@ Your AI Coach 🤖📊`
             }, 2000);
           }
 
-          // Check if it's a struggling day and show AI support
           const currentDay = new Date().toLocaleDateString('en', {weekday: 'long'}).toLowerCase();
           if (currentUser.isPremium && currentUser.behaviorData.strugglingDays.includes(currentDay)) {
             setTimeout(() => {
@@ -403,7 +336,6 @@ Your AI Coach 🤖📊`
             }, 3000);
           }
 
-          // Update last active date
           setCurrentUser(prev => ({
             ...prev,
             lastActiveDate: new Date()
@@ -438,7 +370,6 @@ Your AI Coach 🤖📊`
     };
   };
 
-  // Email Preview Component
   const EmailPreview = ({ email }) => (
     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
@@ -468,14 +399,12 @@ Your AI Coach 🤖📊`
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Notification */}
       {showNotification && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-sm animate-pulse">
           <p className="text-sm font-medium">{notificationMessage}</p>
         </div>
       )}
       
-      {/* Navigation */}
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
@@ -519,9 +448,7 @@ Your AI Coach 🤖📊`
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Dashboard View */}
         {currentView === 'dashboard' && (
           <div className="space-y-6">
             <div className="text-center py-6">
@@ -529,7 +456,6 @@ Your AI Coach 🤖📊`
               <p className="text-gray-600">Building the engagement that keeps you consistent</p>
             </div>
 
-            {/* AI Insights Panel - Premium Feature */}
             {currentUser.isPremium && (
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white mb-6">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -570,7 +496,6 @@ Your AI Coach 🤖📊`
               </div>
             )}
 
-            {/* Weekly Reflection */}
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white mb-6">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Target className="w-5 h-5" />
@@ -588,10 +513,481 @@ Your AI Coach 🤖📊`
               </div>
             </div>
 
-            {/* Today's Habits */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-blue-500" />
                 Today's Habits
               </h2>
               <div className="space-y-4">
+                {habits.map(habit => (
+                  <div
+                    key={habit.id}
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => toggleHabit(habit.id)}
+                        className="flex-shrink-0"
+                      >
+                        {habit.completedToday ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-500" />
+                        ) : (
+                          <Circle className="w-6 h-6 text-gray-400 hover:text-green-500" />
+                        )}
+                      </button>
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{habit.name}</h3>
+                        <p className="text-sm text-gray-600 capitalize">{habit.category}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      <span className="font-bold text-orange-500">{habit.streak}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
+                <p className="text-gray-600">Today's Progress</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
+                <p className="text-gray-600">Total Streak Days</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                <Award className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                <h3 className="font-bold text-2xl text-gray-800">{habits.length}</h3>
+                <p className="text-gray-600">Active Habits</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'messages' && (
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Motivation Feed</h2>
+              <p className="text-gray-600">
+                {currentUser.isPremium ? "AI-powered personalized encouragement" : "Personalized encouragement and insights"}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-6 text-white mb-6">
+              <h3 className="text-xl font-bold mb-4">⚡ MIDWEEK MOMENTUM ⚡</h3>
+              <p className="mb-4">You're halfway through the week!</p>
+              <div className="space-y-2">
+                <p className="font-semibold">Current streak status:</p>
+                {habits.map(habit => (
+                  <p key={habit.id} className="flex items-center gap-2">
+                    <Flame className="w-4 h-4" />
+                    {habit.name}: {habit.streak} days
+                  </p>
+                ))}
+              </div>
+              <p className="mt-4 font-medium">You've got this! What's working best so far?</p>
+            </div>
+
+            {currentUser.isPremium && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-blue-500" />
+                  AI Email Coach
+                  <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">PREMIUM</span>
+                </h3>
+                <div className="mb-4">
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-800 mb-2">🤖 Smart Email System Active</h4>
+                    <p className="text-sm text-blue-700 mb-3">AI will send personalized re-engagement emails based on your personality type and behavior patterns.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="font-medium">Email after:</span> 2 days inactive
+                      </div>
+                      <div>
+                        <span className="font-medium">Personality:</span> {currentUser.aiProfile.personalityType}
+                      </div>
+                      <div>
+                        <span className="font-medium">Style:</span> {currentUser.aiProfile.motivationStyle}
+                      </div>
+                      <div>
+                        <span className="font-medium">Last active:</span> {Math.floor((new Date() - new Date(currentUser.lastActiveDate)) / (1000 * 60 * 60 * 24))} days ago
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => sendAIEmail(2)}
+                      className="mt-3 bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700"
+                    >
+                      📧 Preview AI Email (Demo)
+                    </button>
+                  </div>
+                </div>
+                
+                {currentUser.emailHistory && currentUser.emailHistory.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {currentUser.emailHistory.slice(0, 3).map(email => (
+                        <EmailPreview key={email.id} email={email} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-blue-500" />
+                {currentUser.isPremium ? "AI-Personalized Messages" : "Recent Messages"}
+                {currentUser.isPremium && <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">PREMIUM</span>}
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-green-50 border-l-4 border-green-500 p-4">
+                  <p className="text-green-800">
+                    {currentUser.isPremium 
+                      ? `🎯 Perfect execution! Reading completed with 80% consistency rate over 4 attempts. Your precision is paying off, ${currentUser.name}!`
+                      : "🎉 Amazing job completing Reading yesterday! That's 4 days in a row - you're building real momentum!"
+                    }
+                  </p>
+                  <p className="text-xs text-green-600 mt-2">Yesterday, 8:15 PM</p>
+                </div>
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                  <p className="text-blue-800">
+                    {currentUser.isPremium
+                      ? getMotivationalMessage('morningMotivation', {})
+                      : `🌅 Good morning, ${currentUser.name}! Ready to build some amazing habits today? Your consistency journey matters!`
+                    }
+                  </p>
+                  <p className="text-xs text-blue-600 mt-2">Today, 8:00 AM</p>
+                </div>
+                {currentUser.isPremium && (
+                  <div className="bg-purple-50 border-l-4 border-purple-500 p-4">
+                    <p className="text-purple-800">
+                      🧠 AI Insight: Your energy peaks on mid-week days. Consider scheduling your hardest habit then! Current success pattern shows 89% completion on Wednesdays.
+                    </p>
+                    <p className="text-xs text-purple-600 mt-2">AI Analysis • Confidence: 92%</p>
+                  </div>
+                )}
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+                  <p className="text-orange-800">🔥 ONE WEEK! You officially have a habit in progress with Exercise! Scientists say this is when real change happens!</p>
+                  <p className="text-xs text-orange-600 mt-2">3 days ago</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4">💙 Gentle Accountability</h3>
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <p className="text-yellow-800">
+                  {currentUser.isPremium && currentUser.aiProfile.personalityType === 'achiever'
+                    ? getMotivationalMessage('strugglingDay', {})
+                    : "🌱 Just checking in! Remember: Progress > Perfection, always! Every small action is building your future self ✨"
+                  }
+                </p>
+                <p className="text-xs text-yellow-600 mt-2">
+                  {currentUser.isPremium ? "AI-personalized support" : "Personalized insight"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'profile' && (
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
+              <p className="text-gray-600">
+                {currentUser.isPremium ? "AI-powered personalization & settings" : "Customize your habit-building experience"}
+              </p>
+            </div>
+
+            {currentUser.isPremium && (
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  🧠 AI Personality Profile
+                  <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">PREMIUM</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-3">Core Profile</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Personality Type</label>
+                        <select 
+                          value={currentUser.aiProfile.personalityType}
+                          onChange={(e) => setCurrentUser(prev => ({
+                            ...prev,
+                            aiProfile: { ...prev.aiProfile, personalityType: e.target.value }
+                          }))}
+                          className="w-full px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-md text-white"
+                        >
+                          <option value="achiever" className="text-gray-800">🏆 Achiever - Goal-driven & competitive</option>
+                          <option value="explorer" className="text-gray-800">🌟 Explorer - Curious & creative</option>
+                          <option value="socializer" className="text-gray-800">🤝 Socializer - Community-focused</option>
+                          <option value="perfectionist" className="text-gray-800">🎯 Perfectionist - Detail-oriented</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Motivation Style</label>
+                        <select 
+                          value={currentUser.aiProfile.motivationStyle}
+                          onChange={(e) => setCurrentUser(prev => ({
+                            ...prev,
+                            aiProfile: { ...prev.aiProfile, motivationStyle: e.target.value }
+                          }))}
+                          className="w-full px-3 py-2 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-md text-white"
+                        >
+                          <option value="encouraging" className="text-gray-800">💫 Encouraging & supportive</option>
+                          <option value="challenging" className="text-gray-800">💪 Challenging & pushing</option>
+                          <option value="analytical" className="text-gray-800">📊 Analytical & data-driven</option>
+                          <option value="celebratory" className="text-gray-800">🎉 Celebratory & fun</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-3">Behavioral Insights</h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="bg-white bg-opacity-10 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span>Success Rate</span>
+                          <span className="font-bold">{Math.round(currentUser.behaviorData.completionRate * 100)}%</span>
+                        </div>
+                        <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                          <div 
+                            className="bg-white h-2 rounded-full transition-all duration-300" 
+                            style={{width: `${currentUser.behaviorData.completionRate * 100}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="bg-white bg-opacity-10 rounded-lg p-3">
+                        <div className="mb-2">
+                          <span className="font-medium">Peak Energy Time:</span>
+                          <span className="ml-2 capitalize">{currentUser.behaviorData.bestTimeForHabits}</span>
+                        </div>
+                        <div className="mb-2">
+                          <span className="font-medium">Challenge Days:</span>
+                          <span className="ml-2 capitalize">{currentUser.behaviorData.strugglingDays.join(", ")}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium">Trend:</span>
+                          <span className="ml-2 capitalize text-green-200">{currentUser.behaviorData.monthlyTrend}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-500" />
+                Account Information
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={currentUser.name}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={currentUser.email}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
+                  <p className="text-gray-600">{currentUser.joinDate.toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-green-500" />
+                Follow-Up Preferences
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Morning Reminder</label>
+                  <input
+                    type="time"
+                    value="08:00"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Evening Check-in</label>
+                  <input
+                    type="time"
+                    value="20:00"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.notifications}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, notifications: e.target.checked }
+                      }))}
+                      className="rounded"
+                    />
+                    <label className="text-sm text-gray-700">
+                      Enable {currentUser.isPremium ? "AI-personalized" : "motivational"} notifications
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.emailCoaching}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, emailCoaching: e.target.checked }
+                      }))}
+                      className="rounded"
+                      disabled={!currentUser.isPremium}
+                    />
+                    <label className="text-sm text-gray-700">
+                      📧 Enable AI email coaching (re-engagement after 2 days) {!currentUser.isPremium && "(Premium only)"}
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.phoneCoaching}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
+                      }))}
+                      className="rounded"
+                      disabled={!currentUser.isPremium}
+                    />
+                    <label className="text-sm text-gray-700">
+                      📞 Enable AI phone coaching (call after 4 days) {!currentUser.isPremium && "(Premium only)"}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={`rounded-xl p-6 text-white ${
+              currentUser.isPremium 
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
+                : 'bg-gradient-to-r from-blue-500 to-purple-500'
+            }`}>
+              <h3 className="text-lg font-bold mb-2">
+                {currentUser.isPremium ? '✨ Premium AI Features Active' : '✨ Upgrade to Premium AI'}
+              </h3>
+              
+              {currentUser.isPremium ? (
+                <div>
+                  <p className="text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">🧠 AI Features Active:</h4>
+                      <ul className="space-y-1 text-sm">
+                        <li>✅ Personality-based messaging</li>
+                        <li>✅ AI email coaching (2-day trigger)</li>
+                        <li>✅ AI phone coaching (4-day trigger)</li>
+                        <li>✅ Predictive insights & recommendations</li>
+                        <li>✅ Adaptive notification timing</li>
+                        <li>✅ Pattern recognition & optimization</li>
+                        <li>✅ Smart habit suggestions</li>
+                        <li>✅ Behavioral analytics dashboard</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">📊 Your AI Stats:</h4>
+                      <div className="space-y-1 text-sm">
+                        <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% accuracy in predictions</p>
+                        <p>• 7 behavior patterns identified</p>
+                        <p>• Email coaching system active</p>
+                        <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-4">
+                    <button className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                      Manage Subscription
+                    </button>
+                    <button 
+                      onClick={() => setCurrentUser(prev => ({ ...prev, isPremium: false }))}
+                      className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-30 transition-colors"
+                    >
+                      Demo Free Version
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm opacity-90 mb-4">Unlock AI-powered personalization for 10x better results!</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">🆓 Free Tier:</h4>
+                      <ul className="space-y-1 text-sm">
+                        <li>✅ Track up to 5 habits</li>
+                        <li>✅ Basic motivational messages</li>
+                        <li>✅ Simple streak tracking</li>
+                        <li>✅ Weekly progress summaries</li>
+                        <li>✅ Gentle accountability system</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">🚀 Premium AI:</h4>
+                      <ul className="space-y-1 text-sm">
+                        <li>✨ AI personality profiling</li>
+                        <li>✨ AI email coaching system</li>
+                        <li>✨ AI phone coaching calls</li>
+                        <li>✨ Predictive success insights</li>
+                        <li>✨ Smart habit recommendations</li>
+                        <li>✨ Adaptive messaging & timing</li>
+                        <li>✨ Pattern recognition & optimization</li>
+                        <li>✨ Unlimited habits & analytics</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setCurrentUser(prev => ({ ...prev, isPremium: true }))}
+                      className="bg-white text-purple-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                    >
+                      Upgrade to Premium AI 🚀
+                    </button>
+                    <button className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-30 transition-colors">
+                      Learn More
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+
+      <footer className="bg-white border-t mt-12">
+        <div className="max-w-4xl mx-auto px-4 py-6 text-center text-gray-600">
+          <p className="text-sm">Building the engagement mechanism that keeps users consistent ✨</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default BetterHabitsApp;
