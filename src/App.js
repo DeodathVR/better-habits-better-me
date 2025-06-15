@@ -86,6 +86,47 @@ function App() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
 
+  const exportData = () => {
+    const data = {
+      user: currentUser,
+      habits: habits,
+      exportDate: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `better-habits-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showMessage('📥 Data exported successfully!');
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.user && data.habits) {
+          setCurrentUser(data.user);
+          setHabits(data.habits);
+          showMessage('📤 Data restored successfully!');
+        } else {
+          showMessage('❌ Invalid backup file format');
+        }
+      } catch (error) {
+        showMessage('❌ Error reading backup file');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset input
+  };
+
   const getMotivationalMessage = (type, data = {}) => {
     if (currentUser.isPremium) {
       const personalizedMessages = {
@@ -322,7 +363,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <Star className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-xl text-gray-800">Better Habits</span>
+              <span className="font-bold text-xl text-gray-800">Better Habits to Make a Better Me</span>
             </div>
             <div className="flex gap-1">
               <button
@@ -358,8 +399,8 @@ Research indicates that users who restart within 24 hours of this call maintain 
         {currentView === 'dashboard' && (
           <div className="space-y-6">
             <div className="text-center py-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Better Habits</h1>
-              <p className="text-gray-600">Building the engagement that keeps you consistent</p>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Better Habits to Make a Better Me</h1>
+              <p className="text-gray-600">Transform your daily habits, transform your life.</p>
             </div>
 
             {currentUser.isPremium && (
@@ -457,399 +498,3 @@ Research indicates that users who restart within 24 hours of this call maintain 
                           <option value="Health">Health</option>
                           <option value="Productivity">Productivity</option>
                           <option value="Social">Social</option>
-                        </select>
-                      </div>
-                      <div className="flex gap-3 pt-4">
-                        <button
-                          onClick={addNewHabit}
-                          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
-                        >
-                          Add Habit
-                        </button>
-                        <button
-                          onClick={() => setShowAddHabit(false)}
-                          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                {habits.map(habit => (
-                  <div
-                    key={habit.id}
-                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
-                  >
-                    {/* Habit Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-800 mb-1">{habit.name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{habit.description}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                            {habit.category}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <Flame className="w-4 h-4 text-orange-500" />
-                            <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
-                          </div>
-                          {habit.missedDays > 0 && (
-                            <span className="text-orange-600 text-sm">
-                              {habit.missedDays} missed days
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
-                        <span className="text-sm font-medium text-gray-700">
-                          {Math.round((habit.progress / habit.target) * 100)}% complete
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                          style={{width: `${(habit.progress / habit.target) * 100}%`}}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <button
-                      onClick={() => toggleHabit(habit.id)}
-                      className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                        habit.completedToday
-                          ? 'bg-green-500 hover:bg-green-600 text-white'
-                          : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
-                      }`}
-                    >
-                      {habit.completedToday ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <CheckCircle2 className="w-5 h-5" />
-                          Completed Today!
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          <Circle className="w-5 h-5" />
-                          Mark Complete
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
-                <p className="text-gray-600">Today's Progress</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
-                <p className="text-gray-600">Total Streak Days</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                <Award className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                <h3 className="font-bold text-2xl text-gray-800">{habits.length}</h3>
-                <p className="text-gray-600">Active Habits</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {currentView === 'messages' && (
-          <div className="space-y-6">
-            <div className="text-center py-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Motivation Feed</h2>
-              <p className="text-gray-600">AI-powered personalized encouragement</p>
-            </div>
-
-            {currentUser.isPremium && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-blue-500" />
-                  AI Email Coach
-                  <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">PREMIUM</span>
-                </h3>
-                <div className="mb-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">🤖 Smart Email System Active</h4>
-                    <p className="text-sm text-blue-700 mb-3">AI will send personalized re-engagement emails based on your personality type.</p>
-                    <button 
-                      onClick={sendAIEmail}
-                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700 mr-2"
-                    >
-                      📧 Preview AI Email (Demo)
-                    </button>
-                  </div>
-                </div>
-                
-                {currentUser.emailHistory.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
-                    <div className="space-y-3">
-                      {currentUser.emailHistory.map(email => (
-                        <div key={email.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
-                              <div>
-                                <p className="font-medium text-gray-800">Your AI Coach</p>
-                                <p className="text-xs text-gray-500">coach@betterhabits.ai</p>
-                              </div>
-                            </div>
-                            <span className="text-xs text-gray-500">{email.sent.toLocaleDateString()}</span>
-                          </div>
-                          <h4 className="font-semibold text-gray-800 mb-2">📧 {email.subject}</h4>
-                          <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded border-l-4 border-blue-500">
-                            {email.content}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {currentUser.isPremium && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-green-500" />
-                  AI Phone Coach
-                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">WORLD FIRST</span>
-                </h3>
-                <div className="mb-4">
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-800 mb-2">📞 AI Voice Calling System</h4>
-                    <p className="text-sm text-green-700 mb-3">After 4 days inactive, AI will call you with personalized voice coaching matching your personality.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3">
-                      <div><span className="font-medium">Voice Style:</span> Energetic & confident (Achiever)</div>
-                      <div><span className="font-medium">Call Time:</span> {currentUser.preferences.optimalCallTime}</div>
-                      <div><span className="font-medium">Duration:</span> 45-60 seconds</div>
-                      <div><span className="font-medium">Last Active:</span> {Math.floor((new Date() - new Date(currentUser.lastActiveDate)) / (1000 * 60 * 60 * 24))} days ago</div>
-                    </div>
-                    <button 
-                      onClick={() => scheduleAICall(4)}
-                      className="bg-green-600 text-white text-xs px-3 py-1 rounded-full hover:bg-green-700"
-                    >
-                      📞 Preview AI Call (Demo)
-                    </button>
-                  </div>
-                </div>
-                
-                {currentUser.callHistory && currentUser.callHistory.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3">Scheduled AI Calls</h4>
-                    <div className="space-y-3">
-                      {currentUser.callHistory.map(call => (
-                        <div key={call.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">📞</div>
-                              <div>
-                                <p className="font-medium text-gray-800">AI Voice Coach</p>
-                                <p className="text-xs text-gray-500">Scheduled for {call.scheduledTime}</p>
-                              </div>
-                            </div>
-                            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">{call.status}</span>
-                          </div>
-                          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-green-500">
-                            <p className="font-medium mb-2">📜 Call Script Preview ({call.voiceStyle}):</p>
-                            <p className="whitespace-pre-line">{call.script}</p>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-2">Duration: {call.duration} • After {call.daysMissed} days inactive</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-500" />
-                Life Coach Messages
-                {currentUser.isPremium && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">AI POWERED</span>}
-              </h3>
-              <div className="mb-4">
-                <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-red-800 mb-2">💝 Deep Personal Connection</h4>
-                  <p className="text-sm text-red-700 mb-3">AI creates meaningful messages connecting your habits to your bigger life goals and personal journey.</p>
-                  <button 
-                    onClick={sendLifeCoachMessage}
-                    className="bg-red-600 text-white text-xs px-3 py-1 rounded-full hover:bg-red-700"
-                  >
-                    💬 Get Life Coach Message
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-blue-500" />
-                Recent Messages
-              </h3>
-              <div className="space-y-4">
-                <div className="bg-green-50 border-l-4 border-green-500 p-4">
-                  <p className="text-green-800">🎉 Amazing job completing Reading yesterday! That's 4 days in a row - you're building real momentum!</p>
-                  <p className="text-xs text-green-600 mt-2">Yesterday, 8:15 PM</p>
-                </div>
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                  <p className="text-blue-800">🌅 Good morning, {currentUser.name}! Ready to build some amazing habits today?</p>
-                  <p className="text-xs text-blue-600 mt-2">Today, 8:00 AM</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {currentView === 'profile' && (
-          <div className="space-y-6">
-            <div className="text-center py-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-500" />
-                Account Information
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={currentUser.name}
-                    onChange={(e) => setCurrentUser(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={currentUser.email}
-                    onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={currentUser.phone}
-                    onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-green-500" />
-                AI Coaching Preferences
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Optimal Call Time</label>
-                  <input
-                    type="time"
-                    value="10:00"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={currentUser.preferences.emailCoaching}
-                      onChange={(e) => setCurrentUser(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, emailCoaching: e.target.checked }
-                      }))}
-                      className="rounded"
-                    />
-                    <label className="text-sm text-gray-700">
-                      📧 Enable AI email coaching (after 2 days inactive)
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={currentUser.preferences.phoneCoaching}
-                      onChange={(e) => setCurrentUser(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
-                      }))}
-                      className="rounded"
-                    />
-                    <label className="text-sm text-gray-700">
-                      📞 Enable AI phone coaching (after 4 days inactive) - WORLD FIRST!
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
-              <h3 className="text-lg font-bold mb-2">✨ Premium AI Features Active</h3>
-              <p className="text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">🧠 AI Features Active:</h4>
-                  <ul className="space-y-1 text-sm">
-                    <li>✅ Personality-based messaging</li>
-                    <li>✅ AI email coaching (2-day trigger)</li>
-                    <li>✅ AI phone coaching (4-day trigger)</li>
-                    <li>✅ Life coach-style messaging</li>
-                    <li>✅ Predictive insights & recommendations</li>
-                    <li>✅ Smart habit suggestions</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">📊 Your AI Stats:</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% success rate</p>
-                    <p>• Email coaching system active</p>
-                    <p>• Phone coaching system active</p>
-                    <p>• Life coaching system active</p>
-                    <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
-                  </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => setCurrentUser(prev => ({ ...prev, isPremium: false }))}
-                className="mt-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-30 transition-colors"
-              >
-                Demo Free Version
-              </button>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-6 text-center text-gray-600">
-          <p className="text-sm">Building the engagement mechanism that keeps users consistent ✨</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-export default App;
