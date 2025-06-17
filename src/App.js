@@ -363,7 +363,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <Star className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-xl text-gray-800">Zenithal Life</span>
+              <span className="font-bold text-xl text-gray-800">Zenithal Life - Your Life at its Zenith</span>
             </div>
             <div className="flex gap-1">
               <button
