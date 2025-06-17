@@ -99,27 +99,64 @@ function App() {
       
       console.log('URL Parameters:', { action, habitName, percent });
       
+      // Method 1: URL parameters (existing)
       if (action === 'log-habit' && habitName) {
-        console.log('Voice command detected!');
+        console.log('Voice command detected via URL!');
         logHabitViaVoice(habitName, percent);
         
-        // Clear URL parameters after processing to avoid re-triggering
+        // Clear URL parameters after processing
         const newUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
       }
+      
+      // Method 2: Parse URL hash for natural language
+      const hash = window.location.hash;
+      console.log('URL Hash:', hash);
+      
+      if (hash && hash.includes('update')) {
+        console.log('Natural language voice command detected!');
+        parseNaturalVoiceCommand(hash);
+      }
     };
 
-    // Check URL on app load with a small delay to ensure habits are loaded
+    // Check URL on app load with a small delay
     const timer = setTimeout(handleVoiceCommand, 1000);
 
-    // Listen for URL changes (for single page app)
+    // Listen for URL changes
     window.addEventListener('popstate', handleVoiceCommand);
+    window.addEventListener('hashchange', handleVoiceCommand);
     
     return () => {
       clearTimeout(timer);
       window.removeEventListener('popstate', handleVoiceCommand);
+      window.removeEventListener('hashchange', handleVoiceCommand);
     };
-  }, [habits]); // Add habits dependency
+  }, [habits]);
+
+  const parseNaturalVoiceCommand = (hash) => {
+    console.log('Parsing natural command:', hash);
+    
+    // Parse patterns like: #update-meditation-75-percent
+    const text = hash.toLowerCase().replace('#', '');
+    
+    // Look for habit names
+    const habitMatch = habits.find(h => 
+      text.includes(h.name.toLowerCase()) || 
+      h.name.toLowerCase().includes(text.split('-')[1] || '')
+    );
+    
+    // Look for percentage
+    const percentMatch = text.match(/(\d+)\s*percent?/);
+    const percent = percentMatch ? parseInt(percentMatch[1]) : 100;
+    
+    console.log('Parsed:', { habitMatch, percent });
+    
+    if (habitMatch) {
+      logHabitViaVoice(habitMatch.name, percent.toString());
+    } else {
+      showMessage(`🎤 Couldn't parse voice command: "${hash}". Try: "update meditation 75 percent"`);
+    }
+  };
 
   const logHabitViaVoice = (habitName, percentString) => {
     console.log('logHabitViaVoice called with:', { habitName, percentString });
@@ -567,8 +604,12 @@ Example URLs you can bookmark or use:
                       <p className="text-gray-600">"Hey Google, open zenithallife.com?action=log-habit&name=meditation&percent=75"</p>
                     </div>
                     <div className="bg-white p-3 rounded border-l-4 border-purple-500">
-                      <p className="font-medium mb-1">Or for 100% completion:</p>
-                      <p className="text-gray-600">"Hey Google, open zenithallife.com?action=log-habit&name=exercise&percent=100"</p>
+                      <p className="font-medium mb-1">Or try natural language:</p>
+                      <p className="text-gray-600">"Hey Google, open habit tracker zenithallife and update meditation to 75 percent"</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border-l-4 border-purple-500">
+                      <p className="font-medium mb-1">Simplified version:</p>
+                      <p className="text-gray-600">"Open my habit tracker zenithallife.com#update-meditation-75-percent"</p>
                     </div>
                   </div>
                   <button 
