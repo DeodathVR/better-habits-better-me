@@ -89,40 +89,64 @@ function App() {
   // Voice command handling
   useEffect(() => {
     const handleVoiceCommand = () => {
+      console.log('Checking for voice commands...');
+      console.log('Current URL:', window.location.href);
+      
       const urlParams = new URLSearchParams(window.location.search);
       const action = urlParams.get('action');
       const habitName = urlParams.get('name');
       const percent = urlParams.get('percent');
       
+      console.log('URL Parameters:', { action, habitName, percent });
+      
       if (action === 'log-habit' && habitName) {
+        console.log('Voice command detected!');
         logHabitViaVoice(habitName, percent);
+        
+        // Clear URL parameters after processing to avoid re-triggering
+        const newUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
       }
     };
 
-    // Check URL on app load
-    handleVoiceCommand();
+    // Check URL on app load with a small delay to ensure habits are loaded
+    const timer = setTimeout(handleVoiceCommand, 1000);
 
     // Listen for URL changes (for single page app)
     window.addEventListener('popstate', handleVoiceCommand);
     
-    return () => window.removeEventListener('popstate', handleVoiceCommand);
-  }, []);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('popstate', handleVoiceCommand);
+    };
+  }, [habits]); // Add habits dependency
 
   const logHabitViaVoice = (habitName, percentString) => {
-    const percent = parseInt(percentString) || 100; // Default to 100% if no percentage given
+    console.log('logHabitViaVoice called with:', { habitName, percentString });
     
-    // Find habit by name (case insensitive)
-    const habit = habits.find(h => 
-      h.name.toLowerCase().includes(habitName.toLowerCase()) ||
-      habitName.toLowerCase().includes(h.name.toLowerCase())
-    );
+    const percent = parseInt(percentString) || 100; // Default to 100% if no percentage given
+    console.log('Parsed percentage:', percent);
+    
+    // Find habit by name (case insensitive, flexible matching)
+    const habit = habits.find(h => {
+      const habitLower = h.name.toLowerCase();
+      const searchLower = habitName.toLowerCase();
+      return habitLower.includes(searchLower) || searchLower.includes(habitLower);
+    });
+    
+    console.log('Found habit:', habit);
+    console.log('All habits:', habits.map(h => h.name));
     
     if (habit) {
+      console.log('Updating habit:', habit.name);
+      
       // Update the habit with voice completion
       setHabits(prev => prev.map(h => {
         if (h.id === habit.id) {
           const newStreak = percent >= 50 ? h.streak + 1 : h.streak; // Count as streak if 50%+
           const newProgress = Math.min(h.progress + Math.ceil(percent/100), h.target);
+          
+          console.log('Habit updated:', { percent, newStreak, newProgress });
           
           return {
             ...h,
@@ -140,6 +164,7 @@ function App() {
         ? `🎤 Voice logged: ${habit.name} completed!`
         : `🎤 Voice logged: ${habit.name} at ${percent}% - Great progress!`;
       
+      console.log('Showing message:', voiceMessage);
       showMessage(voiceMessage);
       
       // Speak confirmation if browser supports it
@@ -147,10 +172,13 @@ function App() {
         const utterance = new SpeechSynthesisUtterance(
           `Great job! I've logged your ${habit.name} at ${percent} percent.`
         );
+        console.log('Speaking confirmation');
         speechSynthesis.speak(utterance);
       }
     } else {
-      showMessage(`🎤 Voice command: Couldn't find habit "${habitName}". Try being more specific.`);
+      const errorMessage = `🎤 Voice command: Couldn't find habit "${habitName}". Available habits: ${habits.map(h => h.name).join(', ')}`;
+      console.log('Habit not found:', errorMessage);
+      showMessage(errorMessage);
     }
   };
 
