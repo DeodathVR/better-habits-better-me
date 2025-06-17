@@ -363,7 +363,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <Star className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-xl text-gray-800">Better Habits to Make a Better Me</span>
+              <span className="font-bold text-xl text-gray-800">Zenithal Life</span>
             </div>
             <div className="flex gap-1">
               <button
@@ -399,7 +399,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
         {currentView === 'dashboard' && (
           <div className="space-y-6">
             <div className="text-center py-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Better Habits to Make a Better Me</h1>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Zenithal Life</h1>
               <p className="text-gray-600">Transform your daily habits, transform your life.</p>
             </div>
 
@@ -647,7 +647,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
                               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
                               <div>
                                 <p className="font-medium text-gray-800">Your AI Coach</p>
-                                <p className="text-xs text-gray-500">coach@betterhabits.ai</p>
+                                <p className="text-xs text-gray-500">coach@zenithallife.com</p>
                               </div>
                             </div>
                             <span className="text-xs text-gray-500">{email.sent.toLocaleDateString()}</span>
