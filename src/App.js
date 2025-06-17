@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic } from 'lucide-react';
 
 function App() {
   const [currentUser, setCurrentUser] = useState({
@@ -85,6 +85,74 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+
+  // Voice command handling
+  useEffect(() => {
+    const handleVoiceCommand = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+      const habitName = urlParams.get('name');
+      const percent = urlParams.get('percent');
+      
+      if (action === 'log-habit' && habitName) {
+        logHabitViaVoice(habitName, percent);
+      }
+    };
+
+    // Check URL on app load
+    handleVoiceCommand();
+
+    // Listen for URL changes (for single page app)
+    window.addEventListener('popstate', handleVoiceCommand);
+    
+    return () => window.removeEventListener('popstate', handleVoiceCommand);
+  }, []);
+
+  const logHabitViaVoice = (habitName, percentString) => {
+    const percent = parseInt(percentString) || 100; // Default to 100% if no percentage given
+    
+    // Find habit by name (case insensitive)
+    const habit = habits.find(h => 
+      h.name.toLowerCase().includes(habitName.toLowerCase()) ||
+      habitName.toLowerCase().includes(h.name.toLowerCase())
+    );
+    
+    if (habit) {
+      // Update the habit with voice completion
+      setHabits(prev => prev.map(h => {
+        if (h.id === habit.id) {
+          const newStreak = percent >= 50 ? h.streak + 1 : h.streak; // Count as streak if 50%+
+          const newProgress = Math.min(h.progress + Math.ceil(percent/100), h.target);
+          
+          return {
+            ...h,
+            completedToday: percent >= 50,
+            voiceCompletion: percent,
+            streak: newStreak,
+            progress: newProgress
+          };
+        }
+        return h;
+      }));
+      
+      // Show voice confirmation
+      const voiceMessage = percent === 100 
+        ? `🎤 Voice logged: ${habit.name} completed!`
+        : `🎤 Voice logged: ${habit.name} at ${percent}% - Great progress!`;
+      
+      showMessage(voiceMessage);
+      
+      // Speak confirmation if browser supports it
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(
+          `Great job! I've logged your ${habit.name} at ${percent} percent.`
+        );
+        speechSynthesis.speak(utterance);
+      }
+    } else {
+      showMessage(`🎤 Voice command: Couldn't find habit "${habitName}". Try being more specific.`);
+    }
+  };
 
   const exportData = () => {
     const data = {
@@ -324,18 +392,34 @@ Research indicates that users who restart within 24 hours of this call maintain 
             ...habit,
             completedToday: newCompleted,
             streak: newStreak,
-            progress: newProgress
+            progress: newProgress,
+            voiceCompletion: undefined // Clear any voice completion when manually toggling
           };
         }
         
         return {
           ...habit,
           completedToday: newCompleted,
-          streak: newStreak
+          streak: newStreak,
+          voiceCompletion: undefined
         };
       }
       return habit;
     }));
+  };
+
+  const generateVoiceInstructions = () => {
+    return `To use voice commands with Google Assistant:
+
+1. Say: "Hey Google, open zenithallife.com?action=log-habit&name=meditation&percent=80"
+2. Or set up shortcuts in Google Assistant app for easier commands like:
+   - "Log my meditation" → opens the meditation logging URL
+   - "Log my exercise" → opens the exercise logging URL
+
+Example URLs you can bookmark or use:
+• ${window.location.origin}?action=log-habit&name=meditation&percent=100
+• ${window.location.origin}?action=log-habit&name=exercise&percent=75
+• ${window.location.origin}?action=log-habit&name=reading&percent=50`;
   };
 
   const getWeeklyProgress = () => {
@@ -436,6 +520,36 @@ Research indicates that users who restart within 24 hours of this call maintain 
                   <p>✅ Building {getWeeklyProgress().activeHabits} life-changing habits</p>
                 </div>
                 <p className="text-sm">Ready to level up next week? 🚀</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Mic className="w-5 h-5 text-purple-500" />
+                Voice Commands
+                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">WORLD FIRST</span>
+              </h3>
+              <div className="mb-4">
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-purple-800 mb-2">🎤 Voice Logging Active</h4>
+                  <p className="text-sm text-purple-700 mb-3">Log your habits hands-free using Google Assistant! No more fumbling with your phone.</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="bg-white p-3 rounded border-l-4 border-purple-500">
+                      <p className="font-medium mb-1">Try saying:</p>
+                      <p className="text-gray-600">"Hey Google, open zenithallife.com?action=log-habit&name=meditation&percent=75"</p>
+                    </div>
+                    <div className="bg-white p-3 rounded border-l-4 border-purple-500">
+                      <p className="font-medium mb-1">Or for 100% completion:</p>
+                      <p className="text-gray-600">"Hey Google, open zenithallife.com?action=log-habit&name=exercise&percent=100"</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => showMessage(generateVoiceInstructions())}
+                    className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full hover:bg-purple-700 mt-3"
+                  >
+                    📱 Show Setup Instructions
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -575,7 +689,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
                       {habit.completedToday ? (
                         <span className="flex items-center justify-center gap-2">
                           <CheckCircle2 className="w-5 h-5" />
-                          Completed Today!
+                          {habit.voiceCompletion ? `Voice Logged: ${habit.voiceCompletion}%` : 'Completed Today!'}
                         </span>
                       ) : (
                         <span className="flex items-center justify-center gap-2">
