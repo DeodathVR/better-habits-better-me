@@ -476,10 +476,10 @@ Research indicates that users who restart within 24 hours of this call maintain 
   const generateVoiceInstructions = () => {
     return `To use voice commands with Google Assistant:
 
-1. Say: "Hey Google, open zenithallife.com?action=log-habit&name=meditation&percent=80"
+1. Say: "Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=80"
 2. Or set up shortcuts in Google Assistant app for easier commands like:
+   - "Open my awesome life habits" → opens the app
    - "Log my meditation" → opens the meditation logging URL
-   - "Log my exercise" → opens the exercise logging URL
 
 Example URLs you can bookmark or use:
 • ${window.location.origin}?action=log-habit&name=meditation&percent=100
@@ -512,7 +512,7 @@ Example URLs you can bookmark or use:
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <Star className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-xl text-gray-800">Zenithal Life - Your Life at its Zenith</span>
+              <span className="font-bold text-xl text-gray-800">My Awesome Life Habits</span>
             </div>
             <div className="flex gap-1">
               <button
@@ -548,7 +548,7 @@ Example URLs you can bookmark or use:
         {currentView === 'dashboard' && (
           <div className="space-y-6">
             <div className="text-center py-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">Zenithal Life</h1>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">My Awesome Life Habits</h1>
               <p className="text-gray-600">Transform your daily habits, transform your life.</p>
             </div>
 
@@ -601,15 +601,15 @@ Example URLs you can bookmark or use:
                   <div className="space-y-2 text-sm">
                     <div className="bg-white p-3 rounded border-l-4 border-purple-500">
                       <p className="font-medium mb-1">Try saying:</p>
-                      <p className="text-gray-600">"Hey Google, open zenithallife.com?action=log-habit&name=meditation&percent=75"</p>
+                      <p className="text-gray-600">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</p>
                     </div>
                     <div className="bg-white p-3 rounded border-l-4 border-purple-500">
                       <p className="font-medium mb-1">Or try natural language:</p>
-                      <p className="text-gray-600">"Hey Google, open habit tracker zenithallife and update meditation to 75 percent"</p>
+                      <p className="text-gray-600">"Hey Google, open my awesome life habits and update meditation to 75 percent"</p>
                     </div>
                     <div className="bg-white p-3 rounded border-l-4 border-purple-500">
                       <p className="font-medium mb-1">Simplified version:</p>
-                      <p className="text-gray-600">"Open my habit tracker zenithallife.com#update-meditation-75-percent"</p>
+                      <p className="text-gray-600">"Open my awesome life habits myawesomelifehabits.com#update-meditation-75-percent"</p>
                     </div>
                   </div>
                   <button 
@@ -830,7 +830,7 @@ Example URLs you can bookmark or use:
                               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
                               <div>
                                 <p className="font-medium text-gray-800">Your AI Coach</p>
-                                <p className="text-xs text-gray-500">coach@zenithallife.com</p>
+                                <p className="text-xs text-gray-500">coach@myawesomelifehabits.com</p>
                               </div>
                             </div>
                             <span className="text-xs text-gray-500">{email.sent.toLocaleDateString()}</span>
