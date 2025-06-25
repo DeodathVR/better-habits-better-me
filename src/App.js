@@ -1,79 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
-  const [currentUser, setCurrentUser] = useState({
-    name: "Alex",
-    email: "alex@example.com",
-    phone: "+1 (555) 123-4567",
-    isPremium: true,
-    lastActiveDate: new Date('2025-06-11'),
-    preferences: {
-      emailCoaching: true,
-      phoneCoaching: true,
-      optimalCallTime: "10:00 AM"
-    },
-    aiProfile: {
-      personalityType: "achiever",
-      motivationStyle: "encouraging"
-    },
-    behaviorData: {
-      completionRate: 0.78,
-      bestTimeForHabits: "morning",
-      strugglingDays: ["monday", "friday"],
-      lastCompletedHabit: "Morning Meditation",
-      longestStreak: 21,
-      biggerGoals: ["become a focused leader", "build mental strength for career"],
-      proudestMoment: "completing 21-day meditation streak"
-    },
-    emailHistory: [{
-      id: 1,
-      subject: "Your meditation streak is waiting for you, Alex",
-      sent: new Date(),
-      daysMissed: 2,
-      content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach 🤖💪"
-    }],
-    callHistory: []
+  // Initialize state from localStorage or defaults
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('habitTracker_currentUser');
+    return saved ? JSON.parse(saved) : {
+      name: "Alex",
+      email: "alex@example.com",
+      phone: "+1 (555) 123-4567",
+      isPremium: true,
+      lastActiveDate: new Date('2025-06-11'),
+      preferences: {
+        emailCoaching: true,
+        phoneCoaching: true,
+        optimalCallTime: "10:00 AM"
+      },
+      aiProfile: {
+        personalityType: "achiever",
+        motivationStyle: "encouraging"
+      },
+      behaviorData: {
+        completionRate: 0.78,
+        bestTimeForHabits: "morning",
+        strugglingDays: ["monday", "friday"],
+        lastCompletedHabit: "Morning Meditation",
+        longestStreak: 21,
+        biggerGoals: ["become a focused leader", "build mental strength for career"],
+        proudestMoment: "completing 21-day meditation streak"
+      },
+      emailHistory: [{
+        id: 1,
+        subject: "Your meditation streak is waiting for you, Alex",
+        sent: new Date(),
+        daysMissed: 2,
+        content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach 🤖💪"
+      }],
+      callHistory: []
+    };
   });
 
-  const [habits, setHabits] = useState([
-    {
-      id: 1,
-      name: "Morning Meditation",
-      description: "Start the day with mindfulness",
-      streak: 5,
-      missedDays: 3,
-      completedToday: false,
-      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-      category: "Mindfulness",
-      progress: 0,
-      target: 10
-    },
-    {
-      id: 2,
-      name: "Read 20 Minutes",
-      description: "Expand knowledge through daily reading",
-      streak: 3,
-      missedDays: 1,
-      completedToday: true,
-      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
-      category: "Learning",
-      progress: 5,
-      target: 10
-    },
-    {
-      id: 3,
-      name: "Exercise",
-      description: "Move your body for at least 30 minutes",
-      streak: 8,
-      missedDays: 0,
-      completedToday: false,
-      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-      category: "Fitness",
-      progress: 2,
-      target: 10
-    }
-  ]);
+  const [habits, setHabits] = useState(() => {
+    const saved = localStorage.getItem('habitTracker_habits');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 1,
+        name: "Morning Meditation",
+        description: "Start the day with mindfulness",
+        streak: 5,
+        missedDays: 3,
+        completedToday: false,
+        completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+        category: "Mindfulness",
+        progress: 0,
+        target: 10
+      },
+      {
+        id: 2,
+        name: "Read 20 Minutes",
+        description: "Expand knowledge through daily reading",
+        streak: 3,
+        missedDays: 1,
+        completedToday: true,
+        completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
+        category: "Learning",
+        progress: 5,
+        target: 10
+      },
+      {
+        id: 3,
+        name: "Exercise",
+        description: "Move your body for at least 30 minutes",
+        streak: 8,
+        missedDays: 0,
+        completedToday: false,
+        completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+        category: "Fitness",
+        progress: 2,
+        target: 10
+      }
+    ];
+  });
 
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
@@ -85,6 +92,22 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [showBacklogModal, setShowBacklogModal] = useState(false);
+  const [selectedHabitForBacklog, setSelectedHabitForBacklog] = useState(null);
+  const [showSliderModal, setShowSliderModal] = useState(false);
+  const [selectedHabitForSlider, setSelectedHabitForSlider] = useState(null);
+  const [sliderValue, setSliderValue] = useState(100);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState(null);
+
+  // Save data to localStorage whenever state changes
+  useEffect(() => {
+    localStorage.setItem('habitTracker_currentUser', JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('habitTracker_habits', JSON.stringify(habits));
+  }, [habits]);
 
   // Voice command handling
   useEffect(() => {
@@ -473,6 +496,141 @@ Research indicates that users who restart within 24 hours of this call maintain 
     }));
   };
 
+  // Backlog functionality - NEW
+  const openBacklogModal = (habit) => {
+    setSelectedHabitForBacklog(habit);
+    setShowBacklogModal(true);
+  };
+
+  const closeBacklogModal = () => {
+    setShowBacklogModal(false);
+    setSelectedHabitForBacklog(null);
+  };
+
+  // Slider functionality - NEW
+  const openSliderModal = (habit) => {
+    setSelectedHabitForSlider(habit);
+    setSliderValue(habit.completionPercentage || 100);
+    setShowSliderModal(true);
+  };
+
+  const closeSliderModal = () => {
+    setShowSliderModal(false);
+    setSelectedHabitForSlider(null);
+    setSliderValue(100);
+  };
+
+  const confirmSliderCompletion = () => {
+    if (!selectedHabitForSlider) return;
+
+    setHabits(prev => prev.map(habit => {
+      if (habit.id === selectedHabitForSlider.id) {
+        const newStreak = sliderValue >= 50 ? habit.streak + 1 : habit.streak;
+        const newProgress = Math.min(habit.progress + Math.ceil(sliderValue/100), habit.target);
+        
+        const message = sliderValue === 100 
+          ? getMotivationalMessage('habitCompleted', {
+              habitName: habit.name,
+              streak: newStreak
+            })
+          : `Great progress on ${habit.name}! ${sliderValue}% completion shows real dedication! 💪`;
+        
+        showMessage(message);
+        
+        if (sliderValue === 100 && [7, 14, 21].includes(newStreak)) {
+          setTimeout(() => {
+            const streakMessage = getMotivationalMessage('streakCelebration', { streak: newStreak });
+            showMessage(streakMessage);
+          }, 2000);
+        }
+        
+        return {
+          ...habit,
+          completedToday: sliderValue >= 50,
+          completionPercentage: sliderValue,
+          streak: newStreak,
+          progress: newProgress,
+          voiceCompletion: undefined
+        };
+      }
+      return habit;
+    }));
+
+    closeSliderModal();
+  };
+
+  // Delete habit functionality
+  const openDeleteConfirm = (habit) => {
+    setHabitToDelete(habit);
+    setShowDeleteConfirm(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setHabitToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const confirmDeleteHabit = () => {
+    if (!habitToDelete) return;
+    
+    setHabits(prev => prev.filter(habit => habit.id !== habitToDelete.id));
+    showMessage(`🗑️ "${habitToDelete.name}" habit deleted. You can always add it back later!`);
+    closeDeleteConfirm();
+  };
+
+  const getPastDates = (days = 3) => {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 1; i <= days; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      dates.push(date);
+    }
+    
+    return dates.reverse(); // Show oldest first
+  };
+
+  const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const isDateCompleted = (habit, date) => {
+    const dateString = formatDate(date);
+    return habit.completedDates.includes(dateString);
+  };
+
+  const toggleBacklogDate = (habitId, date) => {
+    const dateString = formatDate(date);
+    
+    setHabits(prev => prev.map(habit => {
+      if (habit.id === habitId) {
+        const isCurrentlyCompleted = habit.completedDates.includes(dateString);
+        let newCompletedDates;
+        let newStreak = habit.streak;
+        let newProgress = habit.progress;
+        
+        if (isCurrentlyCompleted) {
+          // Remove the date
+          newCompletedDates = habit.completedDates.filter(d => d !== dateString);
+          newProgress = Math.max(newProgress - 1, 0);
+          // Note: We don't recalculate streak here as it's complex
+        } else {
+          // Add the date
+          newCompletedDates = [...habit.completedDates, dateString].sort();
+          newProgress = Math.min(newProgress + 1, habit.target);
+        }
+        
+        return {
+          ...habit,
+          completedDates: newCompletedDates,
+          progress: newProgress
+        };
+      }
+      return habit;
+    }));
+  };
+
   const generateVoiceInstructions = () => {
     return `To use voice commands with Google Assistant:
 
@@ -497,6 +655,235 @@ Example URLs you can bookmark or use:
       totalStreak,
       activeHabits: totalHabits
     };
+  };
+
+  const BacklogModal = () => {
+    if (!showBacklogModal || !selectedHabitForBacklog) return null;
+
+    const pastDates = getPastDates(3);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">Update Past Days</h3>
+            <button onClick={closeBacklogModal}>
+              <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+          
+          <div className="mb-4">
+            <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
+            <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
+          </div>
+
+          <div className="space-y-3">
+            {pastDates.map(date => {
+              const isCompleted = isDateCompleted(selectedHabitForBacklog, date);
+              const dayName = date.toLocaleDateString('en', { weekday: 'long' });
+              const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+              
+              return (
+                <div key={formatDate(date)} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-800">{dayName}</p>
+                    <p className="text-sm text-gray-600">{dateString}</p>
+                  </div>
+                  <button
+                    onClick={() => toggleBacklogDate(selectedHabitForBacklog.id, date)}
+                    className={`p-2 rounded-full transition-colors ${
+                      isCompleted
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : (
+                      <Circle className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-3 pt-4 mt-6 border-t">
+            <button
+              onClick={closeBacklogModal}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const SliderModal = () => {
+    if (!showSliderModal || !selectedHabitForSlider) return null;
+
+    const getSliderColor = (value) => {
+      if (value >= 80) return 'from-green-400 to-green-600';
+      if (value >= 60) return 'from-yellow-400 to-yellow-600';
+      if (value >= 40) return 'from-orange-400 to-orange-600';
+      return 'from-red-400 to-red-600';
+    };
+
+    const getEncouragementText = (value) => {
+      if (value === 100) return "Perfect! 🎉 Full completion!";
+      if (value >= 80) return "Excellent! 💪 Almost there!";
+      if (value >= 60) return "Great progress! 👍 Keep it up!";
+      if (value >= 40) return "Good effort! 💪 Every step counts!";
+      if (value >= 20) return "Nice start! 🌱 Progress is progress!";
+      return "Every little bit helps! 🌟";
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">Set Completion Level</h3>
+            <button onClick={closeSliderModal}>
+              <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+          
+          <div className="mb-6">
+            <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForSlider.name}</h4>
+            <p className="text-sm text-gray-600 mb-4">How much did you accomplish today?</p>
+            
+            {/* Big Percentage Display */}
+            <div className="text-center mb-6">
+              <div className={`text-6xl font-bold bg-gradient-to-r ${getSliderColor(sliderValue)} bg-clip-text text-transparent mb-2`}>
+                {sliderValue}%
+              </div>
+              <p className="text-sm text-gray-600">{getEncouragementText(sliderValue)}</p>
+            </div>
+
+            {/* Slider */}
+            <div className="relative mb-4">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={sliderValue}
+                onChange={(e) => setSliderValue(parseInt(e.target.value))}
+                className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${sliderValue}%, #e5e7eb ${sliderValue}%, #e5e7eb 100%)`
+                }}
+              />
+              
+              {/* Quick percentage buttons */}
+              <div className="flex justify-between mt-3 gap-2">
+                {[25, 50, 75, 100].map(percentage => (
+                  <button
+                    key={percentage}
+                    onClick={() => setSliderValue(percentage)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      sliderValue === percentage 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    {percentage}%
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Progress indication */}
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Will count as:</span>
+                <span className={`font-medium ${sliderValue >= 50 ? 'text-green-600' : 'text-orange-600'}`}>
+                  {sliderValue >= 50 ? '✅ Completed day' : '⚠️ Partial progress'}
+                </span>
+              </div>
+              {sliderValue >= 50 && (
+                <p className="text-xs text-green-600 mt-1">This will continue your streak!</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={closeSliderModal}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmSliderCompletion}
+              className={`flex-1 py-3 rounded-lg font-medium transition-colors text-white ${
+                sliderValue >= 50 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+            >
+              {sliderValue >= 50 ? 'Complete!' : 'Log Progress'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const DeleteConfirmModal = () => {
+    if (!showDeleteConfirm || !habitToDelete) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-red-600">Delete Habit</h3>
+            <button onClick={closeDeleteConfirm}>
+              <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+          
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-800">{habitToDelete.name}</h4>
+                <p className="text-sm text-gray-600">Are you sure you want to delete this habit?</p>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h5 className="font-medium text-red-800 mb-2">This will permanently remove:</h5>
+              <ul className="text-sm text-red-700 space-y-1">
+                <li>• {habitToDelete.streak} day streak</li>
+                <li>• All completion history</li>
+                <li>• Progress data ({habitToDelete.progress}/{habitToDelete.target})</li>
+              </ul>
+              <p className="text-xs text-red-600 mt-3">This action cannot be undone, but you can always create the habit again.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={closeDeleteConfirm}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDeleteHabit}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors"
+            >
+              Delete Habit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -711,7 +1098,16 @@ Example URLs you can bookmark or use:
                     {/* Habit Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-800 mb-1">{habit.name}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-bold text-gray-800">{habit.name}</h3>
+                          <button
+                            onClick={() => openDeleteConfirm(habit)}
+                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                            title="Delete habit"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                         <p className="text-sm text-gray-600 mb-2">{habit.description}</p>
                         <div className="flex items-center gap-4 text-sm">
                           <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
@@ -746,27 +1142,55 @@ Example URLs you can bookmark or use:
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    <button
-                      onClick={() => toggleHabit(habit.id)}
-                      className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                        habit.completedToday
-                          ? 'bg-green-500 hover:bg-green-600 text-white'
-                          : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
-                      }`}
-                    >
-                      {habit.completedToday ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <CheckCircle2 className="w-5 h-5" />
-                          {habit.voiceCompletion ? `Voice Logged: ${habit.voiceCompletion}%` : 'Completed Today!'}
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          <Circle className="w-5 h-5" />
-                          Mark Complete
-                        </span>
-                      )}
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => toggleHabit(habit.id)}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+                          habit.completedToday
+                            ? 'bg-green-500 hover:bg-green-600 text-white'
+                            : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
+                        }`}
+                      >
+                        {habit.completedToday ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-5 h-5" />
+                            {habit.voiceCompletion ? `Voice: ${habit.voiceCompletion}%` : 
+                             habit.completionPercentage && habit.completionPercentage !== 100 ? `${habit.completionPercentage}% Done` : 
+                             'Completed!'}
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2">
+                            <Circle className="w-5 h-5" />
+                            Complete
+                          </span>
+                        )}
+                      </button>
+                      
+                      {/* Partial Completion Slider Button */}
+                      <button
+                        onClick={() => openSliderModal(habit)}
+                        className="px-4 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                        title="Set partial completion"
+                      >
+                        <div className="w-4 h-4 bg-blue-500 rounded-full relative">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                        </div>
+                        <span className="hidden sm:inline">%</span>
+                      </button>
+                      
+                      {/* Update Past Days Button */}
+                      <button
+                        onClick={() => openBacklogModal(habit)}
+                        className="px-4 py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                        title="Update past 3 days"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span className="hidden sm:inline">Past</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1100,6 +1524,15 @@ Example URLs you can bookmark or use:
           </div>
         )}
       </main>
+
+      {/* Backlog Modal */}
+      <BacklogModal />
+
+      {/* Slider Modal */}
+      <SliderModal />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal />
 
       <footer className="bg-white border-t mt-12">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-gray-600">
