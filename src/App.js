@@ -89,7 +89,7 @@ function App() {
     category: 'Mindfulness'
   });
 
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('habits');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [showBacklogModal, setShowBacklogModal] = useState(false);
@@ -909,20 +909,20 @@ Example URLs you can bookmark or use:
             </div>
             <div className="flex gap-1">
               <button
+                onClick={() => setCurrentView('habits')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentView === 'habits' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Awesome Life Habits Tracker
+              </button>
+              <button
                 onClick={() => setCurrentView('dashboard')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   currentView === 'dashboard' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 Dashboard
-              </button>
-              <button
-                onClick={() => setCurrentView('messages')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'messages' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Messages
               </button>
               <button
                 onClick={() => setCurrentView('profile')}
@@ -937,130 +937,340 @@ Example URLs you can bookmark or use:
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {currentView === 'dashboard' && (
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {currentView === 'habits' && (
           <div className="space-y-6">
             <div className="text-center py-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">My Awesome Life Habits</h1>
-              <p className="text-gray-600">Transform your daily habits, transform your life.</p>
-            </div>
-
-            {currentUser.isPremium && (
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white mb-6">
-                <h3 className="text-xl font-bold mb-4">🧠 AI Personal Coach</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Your Profile</h4>
-                    <div className="text-sm space-y-1">
-                      <p>Type: <span className="font-medium capitalize">{currentUser.aiProfile.personalityType}</span></p>
-                      <p>Style: <span className="font-medium capitalize">{currentUser.aiProfile.motivationStyle}</span></p>
-                      <p>Success Rate: <span className="font-medium">{Math.round(currentUser.behaviorData.completionRate * 100)}%</span></p>
+              <h1 className="text-4xl font-bold text-gray-800 mb-4">Awesome Life Habits Tracker</h1>
+              <div className="max-w-4xl mx-auto">
+                <p className="text-lg text-gray-600 mb-4">Transform your daily habits, transform your life.</p>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-3">🌟 Why Track Your Habits?</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">🎯</div>
+                      <p className="font-medium text-gray-700">Build Consistency</p>
+                      <p className="text-gray-600">Turn daily actions into automatic behaviors</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">🚀</div>
+                      <p className="font-medium text-gray-700">Achieve Goals</p>
+                      <p className="text-gray-600">Small daily steps lead to massive results</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">📈</div>
+                      <p className="font-medium text-gray-700">Track Progress</p>
+                      <p className="text-gray-600">See your growth and celebrate wins</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">💪</div>
+                      <p className="font-medium text-gray-700">Stay Motivated</p>
+                      <p className="text-gray-600">AI coaching keeps you on track</p>
                     </div>
                   </div>
-                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Smart Insight</h4>
-                    <p className="text-sm">🎯 Focus on your Morning Meditation first - it sets the winning tone for your entire day!</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white mb-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                🎯 WEEK WRAP-UP
-              </h3>
-              <div className="space-y-3">
-                <p className="text-sm opacity-90">Time to celebrate your progress!</p>
-                <div className="space-y-2">
-                  <p>✅ Today's completion rate: {getWeeklyProgress().completionRate}%</p>
-                  <p>✅ Total active streaks: {getWeeklyProgress().totalStreak} days</p>
-                  <p>✅ Building {getWeeklyProgress().activeHabits} life-changing habits</p>
-                </div>
-                <p className="text-sm">Ready to level up next week? 🚀</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Mic className="w-5 h-5 text-purple-500" />
-                Voice Commands
-                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">WORLD FIRST</span>
-              </h3>
-              <div className="mb-4">
-                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-purple-800 mb-2">🎤 Voice Logging Active</h4>
-                  <p className="text-sm text-purple-700 mb-3">Log your habits hands-free using Google Assistant! No more fumbling with your phone.</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="bg-white p-3 rounded border-l-4 border-purple-500">
-                      <p className="font-medium mb-1">Try saying:</p>
-                      <p className="text-gray-600">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</p>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-purple-500">
-                      <p className="font-medium mb-1">Or try natural language:</p>
-                      <p className="text-gray-600">"Hey Google, open my awesome life habits and update meditation to 75 percent"</p>
-                    </div>
-                    <div className="bg-white p-3 rounded border-l-4 border-purple-500">
-                      <p className="font-medium mb-1">Simplified version:</p>
-                      <p className="text-gray-600">"Open my awesome life habits myawesomelifehabits.com#update-meditation-75-percent"</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => showMessage(generateVoiceInstructions())}
-                    className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full hover:bg-purple-700 mt-3"
-                  >
-                    📱 Show Setup Instructions
-                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-500" />
-                  Today's Habits
-                </h2>
-                <button
-                  onClick={() => setShowAddHabit(true)}
-                  className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add New Habit
-                </button>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Main Content - Today's Habits */}
+              <div className="lg:col-span-3">
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-500" />
+                      Today's Habits
+                    </h2>
+                    <button
+                      onClick={() => setShowAddHabit(true)}
+                      className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add New Habit
+                    </button>
+                  </div>
+
+                  {/* Add New Habit Modal */}
+                  {showAddHabit && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                      <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-bold">Add New Habit</h3>
+                          <button onClick={() => setShowAddHabit(false)}>
+                            <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+                          </button>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Habit Name</label>
+                            <input
+                              type="text"
+                              value={newHabit.name}
+                              onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="e.g., Morning Yoga"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <input
+                              type="text"
+                              value={newHabit.description}
+                              onChange={(e) => setNewHabit(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="e.g., Start the day with mindful movement"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <select
+                              value={newHabit.category}
+                              onChange={(e) => setNewHabit(prev => ({ ...prev, category: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="Mindfulness">Mindfulness</option>
+                              <option value="Fitness">Fitness</option>
+                              <option value="Learning">Learning</option>
+                              <option value="Health">Health</option>
+                              <option value="Productivity">Productivity</option>
+                              <option value="Social">Social</option>
+                            </select>
+                          </div>
+                          <div className="flex gap-3 pt-4">
+                            <button
+                              onClick={addNewHabit}
+                              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
+                            >
+                              Add Habit
+                            </button>
+                            <button
+                              onClick={() => setShowAddHabit(false)}
+                              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {habits.map(habit => (
+                      <div
+                        key={habit.id}
+                        className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
+                      >
+                        {/* Habit Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-bold text-gray-800">{habit.name}</h3>
+                              <button
+                                onClick={() => openDeleteConfirm(habit)}
+                                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                title="Delete habit"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{habit.description}</p>
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                                {habit.category}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Flame className="w-4 h-4 text-orange-500" />
+                                <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
+                              </div>
+                              {habit.missedDays > 0 && (
+                                <span className="text-orange-600 text-sm">
+                                  {habit.missedDays} missed days
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mb-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {Math.round((habit.progress / habit.target) * 100)}% complete
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                              style={{width: `${(habit.progress / habit.target) * 100}%`}}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => toggleHabit(habit.id)}
+                            className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+                              habit.completedToday
+                                ? 'bg-green-500 hover:bg-green-600 text-white'
+                                : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
+                            }`}
+                          >
+                            {habit.completedToday ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <CheckCircle2 className="w-5 h-5" />
+                                {habit.voiceCompletion ? `Voice: ${habit.voiceCompletion}%` : 
+                                 habit.completionPercentage && habit.completionPercentage !== 100 ? `${habit.completionPercentage}% Done` : 
+                                 'Completed!'}
+                              </span>
+                            ) : (
+                              <span className="flex items-center justify-center gap-2">
+                                <Circle className="w-5 h-5" />
+                                Complete
+                              </span>
+                            )}
+                          </button>
+                          
+                          {/* Partial Completion Slider Button */}
+                          <button
+                            onClick={() => openSliderModal(habit)}
+                            className="px-4 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                            title="Set partial completion"
+                          >
+                            <div className="w-4 h-4 bg-blue-500 rounded-full relative">
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              </div>
+                            </div>
+                            <span className="hidden sm:inline">%</span>
+                          </button>
+                          
+                          {/* Update Past Days Button */}
+                          <button
+                            onClick={() => openBacklogModal(habit)}
+                            className="px-4 py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                            title="Update past 3 days"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            <span className="hidden sm:inline">Past</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
+                    <p className="text-gray-600">Today's Progress</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                    <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
+                    <p className="text-gray-600">Total Streak Days</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                    <Award className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <h3 className="font-bold text-2xl text-gray-800">{habits.length}</h3>
+                    <p className="text-gray-600">Active Habits</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Add New Habit Modal */}
-              {showAddHabit && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold">Add New Habit</h3>
-                      <button onClick={() => setShowAddHabit(false)}>
-                        <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
-                      </button>
-                    </div>
+              {/* Sidebar - App Benefits */}
+              <div className="lg:col-span-1">
+                <div className="space-y-6">
+                  {/* Voice Commands */}
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Mic className="w-5 h-5 text-purple-500" />
+                      Voice Commands
+                      <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">WORLD FIRST</span>
+                    </h3>
                     <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Habit Name</label>
-                        <input
-                          type="text"
-                          value={newHabit.name}
-                          onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="e.g., Morning Yoga"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-800 mb-2">🎤 Voice Logging</h4>
+                        <p className="text-sm text-purple-700 mb-3">Log habits hands-free with Google Assistant!</p>
+                        <div className="space-y-2 text-xs">
+                          <div className="bg-white p-2 rounded border-l-2 border-purple-500">
+                            <p className="font-medium mb-1">Try saying:</p>
+                            <p className="text-gray-600">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => showMessage(generateVoiceInstructions())}
+                          className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full hover:bg-purple-700 mt-3"
+                        >
+                          📱 Setup Guide
+                        </button>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <input
-                          type="text"
-                          value={newHabit.description}
-                          onChange={(e) => setNewHabit(prev => ({ ...prev, description: e.target.value }))}
-                          placeholder="e.g., Start the day with mindful movement"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    </div>
+                  </div>
+
+                  {/* App Benefits */}
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-500" />
+                      App Benefits
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 text-sm">Smart Completion</h4>
+                          <p className="text-xs text-gray-600">Track partial progress with percentage sliders</p>
+                        </div>
                       </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Calendar className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 text-sm">Backlog Updates</h4>
+                          <p className="text-xs text-gray-600">Update up to 3 past days to maintain streaks</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Heart className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 text-sm">AI Coaching</h4>
+                          <p className="text-xs text-gray-600">Personalized motivation based on your personality</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Flame className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 text-sm">Streak Tracking</h4>
+                          <p className="text-xs text-gray-600">Build momentum with visual streak counters</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Phone className="w-4 h-4 text-red-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 text-sm">Phone Coaching</h4>
+                          <p className="text-xs text-gray-600">AI calls you when you need motivation most</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}</div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select
@@ -1222,13 +1432,48 @@ Example URLs you can bookmark or use:
           </div>
         )}
 
-        {currentView === 'messages' && (
+        {currentView === 'dashboard' && (
           <div className="space-y-6">
             <div className="text-center py-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Motivation Feed</h2>
-              <p className="text-gray-600">AI-powered personalized encouragement</p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Your AI-Powered Dashboard</h2>
+              <p className="text-gray-600">Personalized insights and motivation</p>
             </div>
 
+            {currentUser.isPremium && (
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white mb-6">
+                <h3 className="text-xl font-bold mb-4">🧠 AI Personal Coach</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">Your Profile</h4>
+                    <div className="text-sm space-y-1">
+                      <p>Type: <span className="font-medium capitalize">{currentUser.aiProfile.personalityType}</span></p>
+                      <p>Style: <span className="font-medium capitalize">{currentUser.aiProfile.motivationStyle}</span></p>
+                      <p>Success Rate: <span className="font-medium">{Math.round(currentUser.behaviorData.completionRate * 100)}%</span></p>
+                    </div>
+                  </div>
+                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">Smart Insight</h4>
+                    <p className="text-sm">🎯 Focus on your Morning Meditation first - it sets the winning tone for your entire day!</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white mb-6">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                🎯 WEEK WRAP-UP
+              </h3>
+              <div className="space-y-3">
+                <p className="text-sm opacity-90">Time to celebrate your progress!</p>
+                <div className="space-y-2">
+                  <p>✅ Today's completion rate: {getWeeklyProgress().completionRate}%</p>
+                  <p>✅ Total active streaks: {getWeeklyProgress().totalStreak} days</p>
+                  <p>✅ Building {getWeeklyProgress().activeHabits} life-changing habits</p>
+                </div>
+                <p className="text-sm">Ready to level up next week? 🚀</p>
+              </div>
+            </div>
             {currentUser.isPremium && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
