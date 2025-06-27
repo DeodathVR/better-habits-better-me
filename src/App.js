@@ -1786,6 +1786,184 @@ Example URLs you can bookmark or use:
       <DeleteConfirmModal />
 
       <footer className="bg-white border-t mt-12">
+        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
+          <p className="text-sm">Transform your daily habits, transform your life ✨</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-500" />
+                Account Information
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={currentUser.name}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={currentUser.email}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={currentUser.phone}
+                    onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-green-500" />
+                AI Coaching Preferences
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Optimal Call Time</label>
+                  <input
+                    type="time"
+                    value="10:00"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.emailCoaching}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, emailCoaching: e.target.checked }
+                      }))}
+                      className="rounded"
+                    />
+                    <label className="text-sm text-gray-700">
+                      📧 Enable AI email coaching (after 2 days inactive)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={currentUser.preferences.phoneCoaching}
+                      onChange={(e) => setCurrentUser(prev => ({
+                        ...prev,
+                        preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
+                      }))}
+                      className="rounded"
+                    />
+                    <label className="text-sm text-gray-700">
+                      📞 Enable AI phone coaching (after 4 days inactive) - WORLD FIRST!
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-orange-500" />
+                Data & Privacy
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-800 mb-2">🔒 Privacy Protected</p>
+                  <p className="text-xs text-green-700">Your habit data is stored securely on your device and never leaves your computer</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-3">Backup & Restore</h4>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={exportData}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      📥 Export Data
+                    </button>
+                    <label className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                      📤 Import Data
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={importData}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Export your data as a backup file or restore from a previous backup</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
+              <h3 className="text-lg font-bold mb-2">✨ Premium AI Features Active</h3>
+              <p className="text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2">🧠 AI Features Active:</h4>
+                  <ul className="space-y-1 text-sm">
+                    <li>✅ Personality-based messaging</li>
+                    <li>✅ AI email coaching (2-day trigger)</li>
+                    <li>✅ AI phone coaching (4-day trigger)</li>
+                    <li>✅ Life coach-style messaging</li>
+                    <li>✅ Predictive insights & recommendations</li>
+                    <li>✅ Smart habit suggestions</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">📊 Your AI Stats:</h4>
+                  <div className="space-y-1 text-sm">
+                    <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% success rate</p>
+                    <p>• Email coaching system active</p>
+                    <p>• Phone coaching system active</p>
+                    <p>• Life coaching system active</p>
+                    <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCurrentUser(prev => ({ ...prev, isPremium: false }))}
+                className="mt-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-30 transition-colors"
+              >
+                Demo Free Version
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Backlog Modal */}
+      <BacklogModal />
+
+      {/* Slider Modal */}
+      <SliderModal />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal />
+
+      <footer className="bg-white border-t mt-12">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-gray-600">
           <p className="text-sm">Transform your daily habits, transform your life ✨</p>
         </div>
