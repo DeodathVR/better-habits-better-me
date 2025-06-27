@@ -32,7 +32,7 @@ function App() {
       emailHistory: [{
         id: 1,
         subject: "Your meditation streak is waiting for you, Alex",
-        sent: new Date(),
+        sent: new Date().toISOString(),
         daysMissed: 2,
         content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach 🤖💪"
       }],
@@ -390,7 +390,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
       voiceStyle: callData.voiceStyle,
       duration: callData.duration,
       scheduledTime: callData.scheduledTime,
-      scheduled: new Date(),
+      scheduled: new Date().toISOString(),
       daysMissed: daysMissed,
       status: "scheduled"
     };
@@ -408,7 +408,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
       id: Date.now(),
       subject: `Your ${currentUser.behaviorData.lastCompletedHabit.toLowerCase()} streak is waiting for you, ${currentUser.name}`,
       content: `Hi ${currentUser.name},\n\nI noticed you haven't checked in for 2 days. You've built a ${currentUser.behaviorData.longestStreak}-day streak before!\n\nYour AI Coach 🤖💪`,
-      sent: new Date(),
+      sent: new Date().toISOString(),
       daysMissed: 2
     };
 
@@ -1274,35 +1274,28 @@ Example URLs you can bookmark or use:
 
         {currentView === 'dashboard' && (
           <div className="space-y-6">
-            {/* Debug info - remove this after testing */}
-            <div className="bg-yellow-100 border border-yellow-300 rounded p-2 text-sm">
-              Debug: Dashboard view active, currentView = {currentView}
-            </div>
-            
             <div className="text-center py-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Your AI-Powered Dashboard</h2>
               <p className="text-gray-600">Personalized insights and motivation</p>
             </div>
 
-            {currentUser.isPremium && (
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white mb-6">
-                <h3 className="text-xl font-bold mb-4">🧠 AI Personal Coach</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Your Profile</h4>
-                    <div className="text-sm space-y-1">
-                      <p>Type: <span className="font-medium capitalize">{currentUser.aiProfile.personalityType}</span></p>
-                      <p>Style: <span className="font-medium capitalize">{currentUser.aiProfile.motivationStyle}</span></p>
-                      <p>Success Rate: <span className="font-medium">{Math.round(currentUser.behaviorData.completionRate * 100)}%</span></p>
-                    </div>
-                  </div>
-                  <div className="bg-white bg-opacity-10 rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">Smart Insight</h4>
-                    <p className="text-sm">🎯 Focus on your Morning Meditation first - it sets the winning tone for your entire day!</p>
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white mb-6">
+              <h3 className="text-xl font-bold mb-4">🧠 AI Personal Coach</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Your Profile</h4>
+                  <div className="text-sm space-y-1">
+                    <p>Type: <span className="font-medium capitalize">{currentUser.aiProfile.personalityType}</span></p>
+                    <p>Style: <span className="font-medium capitalize">{currentUser.aiProfile.motivationStyle}</span></p>
+                    <p>Success Rate: <span className="font-medium">{Math.round(currentUser.behaviorData.completionRate * 100)}%</span></p>
                   </div>
                 </div>
+                <div className="bg-white bg-opacity-10 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">Smart Insight</h4>
+                  <p className="text-sm">🎯 Focus on your Morning Meditation first - it sets the winning tone for your entire day!</p>
+                </div>
               </div>
-            )}
+            </div>
 
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white mb-6">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -1339,31 +1332,29 @@ Example URLs you can bookmark or use:
                 </div>
               </div>
               
-              {currentUser.emailHistory.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
-                  <div className="space-y-3">
-                    {currentUser.emailHistory.map(email => (
-                      <div key={email.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
-                            <div>
-                              <p className="font-medium text-gray-800">Your AI Coach</p>
-                              <p className="text-xs text-gray-500">coach@myawesomelifehabits.com</p>
-                            </div>
+              <div>
+                <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
+                <div className="space-y-3">
+                  {currentUser.emailHistory.map(email => (
+                    <div key={email.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
+                          <div>
+                            <p className="font-medium text-gray-800">Your AI Coach</p>
+                            <p className="text-xs text-gray-500">coach@myawesomelifehabits.com</p>
                           </div>
-                          <span className="text-xs text-gray-500">{email.sent.toLocaleDateString()}</span>
                         </div>
-                        <h4 className="font-semibold text-gray-800 mb-2">📧 {email.subject}</h4>
-                        <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded border-l-4 border-blue-500">
-                          {email.content}
-                        </div>
+                        <span className="text-xs text-gray-500">{new Date(email.sent).toLocaleDateString()}</span>
                       </div>
-                    ))}
-                  </div>
+                      <h4 className="font-semibold text-gray-800 mb-2">📧 {email.subject}</h4>
+                      <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded border-l-4 border-blue-500">
+                        {email.content}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -1397,7 +1388,7 @@ Example URLs you can bookmark or use:
                   <div className="space-y-3">
                     {currentUser.callHistory.map(call => (
                       <div key={call.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">📞</div>
                             <div>
@@ -1405,7 +1396,7 @@ Example URLs you can bookmark or use:
                               <p className="text-xs text-gray-500">Scheduled for {call.scheduledTime}</p>
                             </div>
                           </div>
-                          <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full self-start">{call.status}</span>
+                          <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">{call.status}</span>
                         </div>
                         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-green-500">
                           <p className="font-medium mb-2">📜 Call Script Preview ({call.voiceStyle}):</p>
