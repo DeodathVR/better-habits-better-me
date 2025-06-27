@@ -1274,6 +1274,11 @@ Example URLs you can bookmark or use:
 
         {currentView === 'dashboard' && (
           <div className="space-y-6">
+            {/* Debug info - remove this after testing */}
+            <div className="bg-yellow-100 border border-yellow-300 rounded p-2 text-sm">
+              Debug: Dashboard view active, currentView = {currentView}
+            </div>
+            
             <div className="text-center py-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Your AI-Powered Dashboard</h2>
               <p className="text-gray-600">Personalized insights and motivation</p>
@@ -1315,114 +1320,110 @@ Example URLs you can bookmark or use:
               </div>
             </div>
 
-            {currentUser.isPremium && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-blue-500" />
-                  AI Email Coach
-                  <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">PREMIUM</span>
-                </h3>
-                <div className="mb-4">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">🤖 Smart Email System Active</h4>
-                    <p className="text-sm text-blue-700 mb-3">AI will send personalized re-engagement emails based on your personality type.</p>
-                    <button 
-                      onClick={sendAIEmail}
-                      className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700 mr-2"
-                    >
-                      📧 Preview AI Email (Demo)
-                    </button>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-500" />
+                AI Email Coach
+                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">PREMIUM</span>
+              </h3>
+              <div className="mb-4">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">🤖 Smart Email System Active</h4>
+                  <p className="text-sm text-blue-700 mb-3">AI will send personalized re-engagement emails based on your personality type.</p>
+                  <button 
+                    onClick={sendAIEmail}
+                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700 mr-2"
+                  >
+                    📧 Preview AI Email (Demo)
+                  </button>
+                </div>
+              </div>
+              
+              {currentUser.emailHistory.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
+                  <div className="space-y-3">
+                    {currentUser.emailHistory.map(email => (
+                      <div key={email.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
+                            <div>
+                              <p className="font-medium text-gray-800">Your AI Coach</p>
+                              <p className="text-xs text-gray-500">coach@myawesomelifehabits.com</p>
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-500">{email.sent.toLocaleDateString()}</span>
+                        </div>
+                        <h4 className="font-semibold text-gray-800 mb-2">📧 {email.subject}</h4>
+                        <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded border-l-4 border-blue-500">
+                          {email.content}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
-                {currentUser.emailHistory.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
-                    <div className="space-y-3">
-                      {currentUser.emailHistory.map(email => (
-                        <div key={email.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
-                              <div>
-                                <p className="font-medium text-gray-800">Your AI Coach</p>
-                                <p className="text-xs text-gray-500">coach@myawesomelifehabits.com</p>
-                              </div>
-                            </div>
-                            <span className="text-xs text-gray-500">{email.sent.toLocaleDateString()}</span>
-                          </div>
-                          <h4 className="font-semibold text-gray-800 mb-2">📧 {email.subject}</h4>
-                          <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded border-l-4 border-blue-500">
-                            {email.content}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
-            {currentUser.isPremium && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-green-500" />
-                  AI Phone Coach
-                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">WORLD FIRST</span>
-                </h3>
-                <div className="mb-4">
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-800 mb-2">📞 AI Voice Calling System</h4>
-                    <p className="text-sm text-green-700 mb-3">After 4 days inactive, AI will call you with personalized voice coaching matching your personality.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3">
-                      <div><span className="font-medium">Voice Style:</span> Energetic & confident (Achiever)</div>
-                      <div><span className="font-medium">Call Time:</span> {currentUser.preferences.optimalCallTime}</div>
-                      <div><span className="font-medium">Duration:</span> 45-60 seconds</div>
-                      <div><span className="font-medium">Last Active:</span> {Math.floor((new Date() - new Date(currentUser.lastActiveDate)) / (1000 * 60 * 60 * 24))} days ago</div>
-                    </div>
-                    <button 
-                      onClick={() => scheduleAICall(4)}
-                      className="bg-green-600 text-white text-xs px-3 py-1 rounded-full hover:bg-green-700"
-                    >
-                      📞 Preview AI Call (Demo)
-                    </button>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Phone className="w-5 h-5 text-green-500" />
+                AI Phone Coach
+                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">WORLD FIRST</span>
+              </h3>
+              <div className="mb-4">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-green-800 mb-2">📞 AI Voice Calling System</h4>
+                  <p className="text-sm text-green-700 mb-3">After 4 days inactive, AI will call you with personalized voice coaching matching your personality.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-3">
+                    <div><span className="font-medium">Voice Style:</span> Energetic & confident (Achiever)</div>
+                    <div><span className="font-medium">Call Time:</span> {currentUser.preferences.optimalCallTime}</div>
+                    <div><span className="font-medium">Duration:</span> 45-60 seconds</div>
+                    <div><span className="font-medium">Last Active:</span> {Math.floor((new Date() - new Date(currentUser.lastActiveDate)) / (1000 * 60 * 60 * 24))} days ago</div>
+                  </div>
+                  <button 
+                    onClick={() => scheduleAICall(4)}
+                    className="bg-green-600 text-white text-xs px-3 py-1 rounded-full hover:bg-green-700"
+                  >
+                    📞 Preview AI Call (Demo)
+                  </button>
+                </div>
+              </div>
+              
+              {currentUser.callHistory && currentUser.callHistory.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-3">Scheduled AI Calls</h4>
+                  <div className="space-y-3">
+                    {currentUser.callHistory.map(call => (
+                      <div key={call.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">📞</div>
+                            <div>
+                              <p className="font-medium text-gray-800">AI Voice Coach</p>
+                              <p className="text-xs text-gray-500">Scheduled for {call.scheduledTime}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full self-start">{call.status}</span>
+                        </div>
+                        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-green-500">
+                          <p className="font-medium mb-2">📜 Call Script Preview ({call.voiceStyle}):</p>
+                          <p className="whitespace-pre-line">{call.script}</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Duration: {call.duration} • After {call.daysMissed} days inactive</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
-                {currentUser.callHistory && currentUser.callHistory.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-3">Scheduled AI Calls</h4>
-                    <div className="space-y-3">
-                      {currentUser.callHistory.map(call => (
-                        <div key={call.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">📞</div>
-                              <div>
-                                <p className="font-medium text-gray-800">AI Voice Coach</p>
-                                <p className="text-xs text-gray-500">Scheduled for {call.scheduledTime}</p>
-                              </div>
-                            </div>
-                            <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">{call.status}</span>
-                          </div>
-                          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-green-500">
-                            <p className="font-medium mb-2">📜 Call Script Preview ({call.voiceStyle}):</p>
-                            <p className="whitespace-pre-line">{call.script}</p>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-2">Duration: {call.duration} • After {call.daysMissed} days inactive</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
                 Life Coach Messages
-                {currentUser.isPremium && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">AI POWERED</span>}
+                <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">AI POWERED</span>
               </h3>
               <div className="mb-4">
                 <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
