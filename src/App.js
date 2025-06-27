@@ -614,11 +614,12 @@ Research indicates that users who restart within 24 hours of this call maintain 
           // Remove the date
           newCompletedDates = habit.completedDates.filter(d => d !== dateString);
           newProgress = Math.max(newProgress - 1, 0);
-          // Note: We don't recalculate streak here as it's complex
+          showMessage(`📅 Removed ${habit.name} completion for ${new Date(dateString).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })}`);
         } else {
           // Add the date
           newCompletedDates = [...habit.completedDates, dateString].sort();
           newProgress = Math.min(newProgress + 1, habit.target);
+          showMessage(`✅ Marked ${habit.name} complete for ${new Date(dateString).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })}!`);
         }
         
         return {
@@ -661,6 +662,9 @@ Example URLs you can bookmark or use:
     if (!showBacklogModal || !selectedHabitForBacklog) return null;
 
     const pastDates = getPastDates(3);
+    
+    // Find the current habit state (this ensures we get the latest updates)
+    const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -673,28 +677,30 @@ Example URLs you can bookmark or use:
           </div>
           
           <div className="mb-4">
-            <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
+            <h4 className="font-semibold text-gray-800 mb-2">{currentHabit.name}</h4>
             <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
           </div>
 
           <div className="space-y-3">
             {pastDates.map(date => {
-              const isCompleted = isDateCompleted(selectedHabitForBacklog, date);
+              const isCompleted = isDateCompleted(currentHabit, date);
               const dayName = date.toLocaleDateString('en', { weekday: 'long' });
               const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
               
               return (
-                <div key={formatDate(date)} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div key={formatDate(date)} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                  isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'
+                }`}>
                   <div>
                     <p className="font-medium text-gray-800">{dayName}</p>
                     <p className="text-sm text-gray-600">{dateString}</p>
                   </div>
                   <button
-                    onClick={() => toggleBacklogDate(selectedHabitForBacklog.id, date)}
-                    className={`p-2 rounded-full transition-colors ${
+                    onClick={() => toggleBacklogDate(currentHabit.id, date)}
+                    className={`p-2 rounded-full transition-all duration-200 ${
                       isCompleted
-                        ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white'
+                        ? 'bg-green-500 text-white hover:bg-green-600 scale-110'
+                        : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white hover:scale-105'
                     }`}
                   >
                     {isCompleted ? (
