@@ -925,6 +925,14 @@ Example URLs you can bookmark or use:
                 Dashboard
               </button>
               <button
+                onClick={() => setCurrentView('learn')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentView === 'learn' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Learn
+              </button>
+              <button
                 onClick={() => setCurrentView('profile')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   currentView === 'profile' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
@@ -1444,6 +1452,176 @@ Example URLs you can bookmark or use:
                   <p className="text-blue-800">🌅 Good morning, {currentUser.name}! Ready to build some amazing habits today?</p>
                   <p className="text-xs text-blue-600 mt-2">Today, 8:00 AM</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'learn' && (
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Learn & Grow</h2>
+              <p className="text-gray-600">Insights, guides, and inspiration for your habit journey</p>
+            </div>
+
+            {/* Articles Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Article 1: Why a BIG Vision Needs Good Habits */}
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-6 h-6" />
+                    <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED ARTICLE</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Why a BIG Vision Needs Good Habits</h3>
+                  <p className="text-purple-100 text-sm">Discover how small daily actions build the foundation for extraordinary achievements</p>
+                </div>
+                <div className="p-6">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with an extraordinary vision, but it's the boring, daily habits that actually make it happen.
+                    </p>
+                    
+                    <h4 className="font-semibold text-gray-800 mb-2">🎯 The Vision-Habit Connection</h4>
+                    <p className="text-gray-700 mb-4">
+                      Your big vision is the <em>destination</em>. Your habits are the <em>vehicle</em>. Without reliable daily systems, even the most inspiring goals remain out of reach.
+                    </p>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">🔧 Why Small Habits Create Big Results</h4>
+                    <ul className="text-gray-700 space-y-1 mb-4">
+                      <li><strong>Compound Effect:</strong> 1% better daily = 37x better in a year</li>
+                      <li><strong>Identity Shift:</strong> You become the person who does the thing</li>
+                      <li><strong>Momentum Building:</strong> Success breeds more success</li>
+                      <li><strong>Stress Reduction:</strong> Systems eliminate decision fatigue</li>
+                    </ul>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">💡 The Professional Athlete Mindset</h4>
+                    <p className="text-gray-700 mb-4">
+                      Olympic athletes don't wake up motivated every day. They wake up <em>committed</em> to their systems. Their habits are so automatic that motivation becomes irrelevant.
+                    </p>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">🚀 Your Action Steps</h4>
+                    <ol className="text-gray-700 space-y-1 mb-4">
+                      <li><strong>Start Ridiculously Small:</strong> 2 minutes of meditation > 30 minutes once a week</li>
+                      <li><strong>Stack Your Habits:</strong> After I [existing habit], I will [new habit]</li>
+                      <li><strong>Track Your Progress:</strong> What gets measured gets managed</li>
+                      <li><strong>Celebrate Small Wins:</strong> Dopamine reinforces the behavior loop</li>
+                    </ol>
+
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
+                      <p className="text-blue-800 font-medium">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
+                    </div>
+
+                    <p className="text-gray-700">
+                      <strong>The bottom line:</strong> Your big vision gives you direction and motivation. Your small habits give you the actual path to get there. Start building that path today, one habit at a time.
+                    </p>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span>📖 5 min read</span>
+                      <span>🎯 Goal Setting</span>
+                      <span>💪 Motivation</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Article 2: How to Use This App */}
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-6 text-white">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Star className="w-6 h-6" />
+                    <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO GUIDE</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">How to Use My Awesome Life Habits</h3>
+                  <p className="text-green-100 text-sm">Master every feature and become a habit-building pro</p>
+                </div>
+                <div className="p-6">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
+                    </p>
+                    
+                    <h4 className="font-semibold text-gray-800 mb-2">🏁 Getting Started</h4>
+                    <ol className="text-gray-700 space-y-2 mb-4">
+                      <li><strong>Start Small:</strong> Begin with 1-2 habits you can do in under 5 minutes</li>
+                      <li><strong>Choose Your Time:</strong> Pick the same time each day for consistency</li>
+                      <li><strong>Set Your Environment:</strong> Make good habits obvious and easy</li>
+                    </ol>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">✅ Tracking Your Habits</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <p className="text-gray-700 mb-2"><strong>Three Ways to Log Completion:</strong></p>
+                      <ul className="text-gray-700 space-y-1">
+                        <li><strong>Complete Button:</strong> One-click for 100% completion</li>
+                        <li><strong>% Slider:</strong> Set partial completion (25%, 50%, 75%, 100%)</li>
+                        <li><strong>Voice Commands:</strong> "Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</li>
+                      </ul>
+                    </div>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">📅 Catch Up on Missed Days</h4>
+                    <p className="text-gray-700 mb-4">
+                      Life happens! Use the <strong>"Past"</strong> button to update up to 3 previous days. This helps maintain your streak momentum without being overly forgiving.
+                    </p>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">🤖 AI Coaching Features</h4>
+                    <ul className="text-gray-700 space-y-1 mb-4">
+                      <li><strong>Personal Coach:</strong> Get insights based on your personality type</li>
+                      <li><strong>Email Coaching:</strong> Automatic re-engagement after 2 days inactive</li>
+                      <li><strong>Phone Coaching:</strong> AI calls you after 4 days (World First!)</li>
+                      <li><strong>Life Coach Messages:</strong> Deep, meaningful motivation tied to your bigger goals</li>
+                    </ul>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">🎯 Dashboard Insights</h4>
+                    <p className="text-gray-700 mb-4">
+                      Your Dashboard shows AI-powered insights, recent coaching messages, and weekly progress summaries. Check it regularly for motivation and course-correction.
+                    </p>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">⚙️ Pro Tips</h4>
+                    <ul className="text-gray-700 space-y-1 mb-4">
+                      <li><strong>Use the % Slider:</strong> 50% completion still counts as a streak day!</li>
+                      <li><strong>Export Your Data:</strong> Regular backups in Profile → Data & Privacy</li>
+                      <li><strong>Delete Old Habits:</strong> Click the trash icon to remove habits you've outgrown</li>
+                      <li><strong>Celebrate Milestones:</strong> Watch for special messages at 7, 14, and 21-day streaks</li>
+                    </ul>
+
+                    <div className="bg-green-50 border-l-4 border-green-500 p-4 my-4">
+                      <p className="text-green-800 font-medium">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
+                    </div>
+
+                    <h4 className="font-semibold text-gray-800 mb-2">🚀 Advanced Features</h4>
+                    <ul className="text-gray-700 space-y-1 mb-4">
+                      <li><strong>Voice Commands:</strong> Log habits hands-free while driving, exercising, or cooking</li>
+                      <li><strong>Smart Notifications:</strong> AI learns your patterns and sends timely encouragement</li>
+                      <li><strong>Progress Analytics:</strong> Track completion rates and identify your best/worst days</li>
+                    </ul>
+
+                    <p className="text-gray-700">
+                      <strong>Ready to build your awesome life?</strong> Start with one small habit today. Remember: you're not just tracking habits, you're becoming the person who does these things naturally.
+                    </p>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span>📖 7 min read</span>
+                      <span>🎓 Tutorial</span>
+                      <span>⚡ Quick Start</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Coming Soon Section */}
+            <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-6 text-white text-center">
+              <h3 className="text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
+              <p className="text-orange-100">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🧠 Habit Science</span>
+                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">💪 Success Stories</span>
+                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🎯 Advanced Strategies</span>
+                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">📺 Video Guides</span>
               </div>
             </div>
           </div>
