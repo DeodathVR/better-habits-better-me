@@ -377,7 +377,18 @@ Respond in JSON format:
           newStreak = habit.streak + 1;
           const newProgress = Math.min(habit.progress + 1, habit.target);
           
-          showMessage(`${habit.name} completed! Day ${newStreak} streak!`);
+          const message = getMotivationalMessage('habitCompleted', {
+            habitName: habit.name,
+            streak: newStreak
+          });
+          showMessage(message);
+          
+          if ([7, 14, 21].includes(newStreak)) {
+            setTimeout(() => {
+              const streakMessage = getMotivationalMessage('streakCelebration', { streak: newStreak });
+              showMessage(streakMessage);
+            }, 2000);
+          }
           
           return {
             ...habit,
