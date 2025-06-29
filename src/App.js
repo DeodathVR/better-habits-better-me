@@ -1,34 +1,4 @@
-{/* URL Voice Commands Panel */}
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-red-800 flex items-center gap-2 mb-4">
-              <Phone className="w-5 h-5" />
-              🌐 URL Voice Commands (Google Assistant)
-            </h2>
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border-l-4 border-red-500">
-                <h3 className="font-semibold text-sm mb-2">📱 External Voice Integration</h3>
-                <p className="text-xs text-gray-600 mb-3">Use with Google Assistant, Siri Shortcuts, or any voice assistant!</p>
-                <div className="space-y-2 text-xs">
-                  <div className="bg-gray-50 p-2 rounded border">
-                    <p className="font-medium mb-1">Google Assistant Example:</p>
-                    <p className="text-gray-600">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=80"</p>
-                  </div>
-                  <div className="bg-gray-50 p-2 rounded border">
-                    <p className="font-medium mb-1">Available Parameters:</p>
-                    <p className="text-gray-600">action=log-habit, name=[habit], percent=[0-100]</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => showMessage(generateVoiceInstructions())}
-                  className="bg-red-600 text-white text-xs px-3 py-1 rounded-full hover:bg-red-700 mt-3"
-                >
-                  📋 Full Setup Guide
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {currentView === 'habits' && (
+{currentView === 'habits' && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Main Content - Today's Habits */}
               <div className="lg:col-span-3">
@@ -574,14 +544,18 @@
   );
 }
 
-export default App;import React, { useState, useEffect, useRef } from 'react';
+export default App;
+                    </h2>
+                    <button
+                      onClick={() => setShowAddHabit(true)}
+                      className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
   // Your Gemini API Key (replace with your actual key)
   const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
 
-  // Initialize state from memory (not localStorage per Claude.ai restrictions)
+  // Initialize state in memory (not localStorage per Claude.ai restrictions)
   const [currentUser, setCurrentUser] = useState(() => ({
     name: "Alex",
     email: "alex@example.com",
@@ -1019,6 +993,7 @@ Respond in JSON format:
           completedToday: percentage >= 50,
           voiceCompletion: source === 'voice' ? percentage : undefined,
           aiCompletion: source === 'ai' ? percentage : undefined,
+          completionPercentage: source === 'manual' ? percentage : undefined,
           streak: newStreak,
           progress: newProgress
         };
@@ -1027,7 +1002,7 @@ Respond in JSON format:
     }));
     
     // Success message
-    const icon = source === 'voice' ? '🎤' : source === 'ai' ? '🤖' : '🎤';
+    const icon = source === 'voice' ? '🎤' : source === 'ai' ? '🤖' : '📱';
     const successMessage = percentage === 100 
       ? `${icon}✅ ${source.toUpperCase()} logged: ${habit.name} completed!`
       : `${icon}📊 ${source.toUpperCase()} logged: ${habit.name} at ${percentage}%!`;
@@ -1237,7 +1212,8 @@ Respond in JSON format:
             streak: newStreak,
             progress: newProgress,
             voiceCompletion: undefined,
-            aiCompletion: undefined
+            aiCompletion: undefined,
+            completionPercentage: undefined
           };
         }
         
@@ -1246,7 +1222,8 @@ Respond in JSON format:
           completedToday: newCompleted,
           streak: newStreak,
           voiceCompletion: undefined,
-          aiCompletion: undefined
+          aiCompletion: undefined,
+          completionPercentage: undefined
         };
       }
       return habit;
@@ -1866,6 +1843,36 @@ Example URLs you can bookmark or use:
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* URL Voice Commands Panel */}
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6">
+            <h2 className="text-xl font-bold text-red-800 flex items-center gap-2 mb-4">
+              <Phone className="w-5 h-5" />
+              🌐 URL Voice Commands (Google Assistant)
+            </h2>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-red-500">
+                <h3 className="font-semibold text-sm mb-2">📱 External Voice Integration</h3>
+                <p className="text-xs text-gray-600 mb-3">Use with Google Assistant, Siri Shortcuts, or any voice assistant!</p>
+                <div className="space-y-2 text-xs">
+                  <div className="bg-gray-50 p-2 rounded border">
+                    <p className="font-medium mb-1">Google Assistant Example:</p>
+                    <p className="text-gray-600">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=80"</p>
+                  </div>
+                  <div className="bg-gray-50 p-2 rounded border">
+                    <p className="font-medium mb-1">Available Parameters:</p>
+                    <p className="text-gray-600">action=log-habit, name=[habit], percent=[0-100]</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => showMessage(generateVoiceInstructions())}
+                  className="bg-red-600 text-white text-xs px-3 py-1 rounded-full hover:bg-red-700 mt-3"
+                >
+                  📋 Full Setup Guide
+                </button>
               </div>
             </div>
           </div>
