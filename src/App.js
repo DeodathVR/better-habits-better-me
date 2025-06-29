@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
+  // Your Gemini API Key
+  const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
+
   // Initialize state from localStorage or defaults
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('habitTracker_currentUser');
@@ -88,6 +91,12 @@ function App() {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [recognition, setRecognition] = useState(null);
 
+  // AI Agent states
+  const [showAIChat, setShowAIChat] = useState(false);
+  const [aiChatInput, setAiChatInput] = useState('');
+  const [aiChatHistory, setAiChatHistory] = useState([]);
+  const [aiProcessing, setAiProcessing] = useState(false);
+
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
     name: '',
@@ -109,11 +118,10 @@ function App() {
     localStorage.setItem('habitTracker_habits', JSON.stringify(habits));
   }, [habits]);
 
-  // BUILT-IN VOICE RECOGNITION SETUP
+  // BUILT-IN VOICE RECOGNITION SETUP (Keep our champion!)
   useEffect(() => {
     console.log('🎤 Checking for speech recognition support...');
     
-    // Check if speech recognition is supported
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (SpeechRecognition) {
@@ -179,7 +187,130 @@ function App() {
     }
   }, []);
 
-  // Process voice commands
+  // GEMINI AI AGENT INTEGRATION - The Redemption Arc!
+  const processWithAI = async (userMessage) => {
+    console.log('🤖 Processing with Gemini AI:', userMessage);
+    setAiProcessing(true);
+    
+    try {
+      const prompt = `You are an intelligent habit tracking assistant. The user says: "${userMessage}"
+
+Current habits available:
+${habits.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak, ${h.completedToday ? 'completed today' : 'not completed today'})`).join('\n')}
+
+User profile: ${currentUser.name}, ${currentUser.aiProfile.personalityType} personality, goals: ${currentUser.behaviorData.biggerGoals.join(', ')}
+
+Your task:
+1. Determine if the user is logging a habit completion or asking a question
+2. If logging a habit, extract: habit name and completion percentage (0-100)
+3. Respond in an encouraging, coaching tone matching their ${currentUser.aiProfile.personalityType} personality
+
+Respond in JSON format:
+{
+  "action": "log_habit" | "conversation" | "question",
+  "habit_name": "exact habit name if logging" | null,
+  "percentage": number 0-100 if logging | null,
+  "response": "encouraging message to user",
+  "reasoning": "brief explanation of what you understood"
+}
+
+Examples:
+- "I just finished an amazing workout!" → log_habit, Exercise, 100
+- "Had a good meditation session, about 15 minutes" → log_habit, Morning Meditation, 100  
+- "Started reading but only got through a few pages" → log_habit, Read 20 Minutes, 25
+- "How's my meditation streak going?" → question, null, null`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 500,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiText = data.candidates[0].content.parts[0].text;
+      
+      console.log('🤖 Raw AI response:', aiText);
+      
+      // Extract JSON from AI response
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const aiResult = JSON.parse(jsonMatch[0]);
+        console.log('🤖 Parsed AI result:', aiResult);
+        
+        // Add to chat history
+        setAiChatHistory(prev => [...prev, 
+          { type: 'user', message: userMessage, timestamp: new Date() },
+          { type: 'ai', message: aiResult.response, timestamp: new Date(), action: aiResult }
+        ]);
+        
+        // Execute action if it's a habit log
+        if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
+          const habit = habits.find(h => h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase()) || 
+                                         aiResult.habit_name.toLowerCase().includes(h.name.toLowerCase()));
+          
+          if (habit) {
+            console.log(`🤖 AI logging habit: ${habit.name} at ${aiResult.percentage}%`);
+            executeHabitUpdate(habit, aiResult.percentage, 'ai');
+            
+            // Speak the AI response
+            if ('speechSynthesis' in window) {
+              const utterance = new SpeechSynthesisUtterance(aiResult.response);
+              speechSynthesis.speak(utterance);
+            }
+          } else {
+            console.log('❌ AI identified habit not found:', aiResult.habit_name);
+            showMessage(`🤖 AI understood "${aiResult.habit_name}" but couldn't match it to your habits.`);
+          }
+        }
+        
+        return aiResult;
+      } else {
+        throw new Error('Invalid AI response format');
+      }
+      
+    } catch (error) {
+      console.error('❌ AI processing error:', error);
+      const errorMessage = `🤖 AI Error: ${error.message}. Don't worry, your voice commands still work perfectly!`;
+      
+      setAiChatHistory(prev => [...prev, 
+        { type: 'user', message: userMessage, timestamp: new Date() },
+        { type: 'error', message: errorMessage, timestamp: new Date() }
+      ]);
+      
+      showMessage(errorMessage);
+      return null;
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
+  // Send AI chat message
+  const sendAIMessage = async () => {
+    if (!aiChatInput.trim()) return;
+    
+    const message = aiChatInput.trim();
+    setAiChatInput('');
+    
+    await processWithAI(message);
+  };
+
+  // Process voice commands (our champion system!)
   const processVoiceCommand = (transcript) => {
     console.log('🧠 Processing voice command:', transcript);
     
@@ -189,10 +320,10 @@ function App() {
     const matchedHabit = findHabitInSpeech(text);
     const percentage = extractPercentageFromSpeech(text);
     
-    console.log('🎯 Analysis:', { matchedHabit: matchedHabit?.name, percentage });
+    console.log('🎯 Voice analysis:', { matchedHabit: matchedHabit?.name, percentage });
     
     if (matchedHabit) {
-      executeVoiceCommand(matchedHabit, percentage);
+      executeHabitUpdate(matchedHabit, percentage, 'voice');
     } else {
       console.log('❌ No habit found in speech');
       showMessage(`🎤 Couldn't identify a habit in: "${transcript}". Try saying "Exercise complete" or "Meditation 75 percent"`);
@@ -207,22 +338,59 @@ function App() {
     }
   };
 
-  // Find habit mentioned in speech
+  // Execute habit update (unified function for both voice and AI)
+  const executeHabitUpdate = (habit, percentage, source) => {
+    console.log(`🚀 Executing ${source} command: ${habit.name} at ${percentage}%`);
+    
+    setHabits(prev => prev.map(h => {
+      if (h.id === habit.id) {
+        const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
+        const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
+        
+        return {
+          ...h,
+          completedToday: percentage >= 50,
+          voiceCompletion: source === 'voice' ? percentage : undefined,
+          aiCompletion: source === 'ai' ? percentage : undefined,
+          streak: newStreak,
+          progress: newProgress
+        };
+      }
+      return h;
+    }));
+    
+    // Success message
+    const icon = source === 'voice' ? '🎤' : '🤖';
+    const successMessage = percentage === 100 
+      ? `${icon}✅ ${source.toUpperCase()} logged: ${habit.name} completed!`
+      : `${icon}📊 ${source.toUpperCase()} logged: ${habit.name} at ${percentage}%!`;
+    
+    console.log('📢 Success:', successMessage);
+    showMessage(successMessage);
+    
+    // Speak confirmation for voice commands
+    if (source === 'voice' && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(
+        percentage === 100 
+          ? `Perfect! ${habit.name} completed and logged!`
+          : `Great! ${habit.name} logged at ${percentage} percent!`
+      );
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Find habit mentioned in speech (keep our proven logic)
   const findHabitInSpeech = (text) => {
     console.log('🔍 Searching for habits in:', text);
     
-    // Keyword mapping for each habit
     const habitKeywords = {
       'Morning Meditation': ['meditation', 'meditate', 'mindful', 'mindfulness', 'zen', 'calm', 'breathing'],
       'Exercise': ['exercise', 'workout', 'fitness', 'gym', 'run', 'running', 'cardio', 'training'],
       'Read 20 Minutes': ['reading', 'read', 'book', 'study', 'studying', 'learning']
     };
     
-    // Check each habit for keyword matches
     for (const habit of habits) {
       const keywords = habitKeywords[habit.name] || [];
-      
-      // Also check the habit name itself (split into words)
       const nameWords = habit.name.toLowerCase().split(' ');
       const allKeywords = [...keywords, ...nameWords];
       
@@ -238,11 +406,10 @@ function App() {
     return null;
   };
 
-  // Extract percentage from speech
+  // Extract percentage from speech (keep our proven logic)
   const extractPercentageFromSpeech = (text) => {
     console.log('📊 Extracting percentage from:', text);
     
-    // Look for explicit percentages
     const percentMatches = [
       /(\d+)\s*percent/,
       /(\d+)\s*%/,
@@ -258,19 +425,11 @@ function App() {
       }
     }
     
-    // Look for completion words
     const completionWords = {
-      // 100% words
       'complete': 100, 'completed': 100, 'done': 100, 'finished': 100, 
       'full': 100, 'fully': 100, 'totally': 100, 'entirely': 100,
-      
-      // 75% words  
       'mostly': 75, 'almost': 75, 'nearly': 75, 'three quarters': 75,
-      
-      // 50% words
       'half': 50, 'halfway': 50, 'partially': 50, 'some': 50,
-      
-      // 25% words
       'little': 25, 'bit': 25, 'started': 25, 'began': 25, 'quarter': 25
     };
     
@@ -281,48 +440,8 @@ function App() {
       }
     }
     
-    // Default to 100% if no percentage specified
     console.log('📊 No percentage found, defaulting to 100%');
     return 100;
-  };
-
-  // Execute voice command
-  const executeVoiceCommand = (habit, percentage) => {
-    console.log(`🚀 Executing voice command: ${habit.name} at ${percentage}%`);
-    
-    setHabits(prev => prev.map(h => {
-      if (h.id === habit.id) {
-        const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
-        const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
-        
-        return {
-          ...h,
-          completedToday: percentage >= 50,
-          voiceCompletion: percentage,
-          streak: newStreak,
-          progress: newProgress
-        };
-      }
-      return h;
-    }));
-    
-    // Success message
-    const successMessage = percentage === 100 
-      ? `🎤✅ Voice logged: ${habit.name} completed!`
-      : `🎤📊 Voice logged: ${habit.name} at ${percentage}%!`;
-    
-    console.log('📢 Success:', successMessage);
-    showMessage(successMessage);
-    
-    // Speak confirmation
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(
-        percentage === 100 
-          ? `Perfect! ${habit.name} completed and logged!`
-          : `Great! ${habit.name} logged at ${percentage} percent!`
-      );
-      speechSynthesis.speak(utterance);
-    }
   };
 
   // Start voice recognition
@@ -367,7 +486,8 @@ function App() {
             completedToday: newCompleted,
             streak: newStreak,
             progress: newProgress,
-            voiceCompletion: undefined
+            voiceCompletion: undefined,
+            aiCompletion: undefined
           };
         }
         
@@ -375,7 +495,8 @@ function App() {
           ...habit,
           completedToday: newCompleted,
           streak: newStreak,
-          voiceCompletion: undefined
+          voiceCompletion: undefined,
+          aiCompletion: undefined
         };
       }
       return habit;
@@ -436,6 +557,113 @@ function App() {
     );
   };
 
+  const AIChatModal = () => {
+    if (!showAIChat) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl w-full max-w-2xl mx-4 h-[600px] flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Bot className="w-5 h-5 text-purple-500" />
+              AI Habit Coach
+              <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">GEMINI POWERED</span>
+            </h3>
+            <button onClick={() => setShowAIChat(false)}>
+              <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {aiChatHistory.length === 0 && (
+              <div className="text-center text-gray-500 mt-20">
+                <Bot className="w-12 h-12 text-purple-300 mx-auto mb-4" />
+                <p className="font-medium">Chat with your AI habit coach!</p>
+                <p className="text-sm mt-2">Try saying things like:</p>
+                <div className="mt-4 space-y-2 text-sm">
+                  <div className="bg-purple-50 rounded-lg p-2">"I just finished an amazing workout!"</div>
+                  <div className="bg-purple-50 rounded-lg p-2">"Had a good meditation session"</div>
+                  <div className="bg-purple-50 rounded-lg p-2">"How's my streak going?"</div>
+                </div>
+              </div>
+            )}
+            
+            {aiChatHistory.map((chat, index) => (
+              <div key={index} className={`flex gap-3 ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {chat.type !== 'user' && (
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    chat.type === 'error' ? 'bg-red-100' : 'bg-purple-100'
+                  }`}>
+                    <Bot className={`w-4 h-4 ${chat.type === 'error' ? 'text-red-500' : 'text-purple-500'}`} />
+                  </div>
+                )}
+                <div className={`max-w-[80%] p-3 rounded-lg ${
+                  chat.type === 'user' 
+                    ? 'bg-blue-500 text-white' 
+                    : chat.type === 'error'
+                    ? 'bg-red-50 text-red-700 border border-red-200'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  <p className="text-sm">{chat.message}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  {chat.action && (
+                    <div className="mt-2 text-xs bg-black bg-opacity-10 rounded p-2">
+                      <p>Action: {chat.action.action}</p>
+                      {chat.action.habit_name && <p>Habit: {chat.action.habit_name}</p>}
+                      {chat.action.percentage && <p>Progress: {chat.action.percentage}%</p>}
+                    </div>
+                  )}
+                </div>
+                {chat.type === 'user' && (
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-blue-500" />
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {aiProcessing && (
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-purple-500" />
+                </div>
+                <div className="bg-gray-100 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-500 animate-spin" />
+                    <span className="text-sm text-gray-600">AI is thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-6 border-t">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={aiChatInput}
+                onChange={(e) => setAiChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendAIMessage()}
+                placeholder="Message your AI coach... (e.g., 'I just finished a great workout!')"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={aiProcessing}
+              />
+              <button
+                onClick={sendAIMessage}
+                disabled={aiProcessing || !aiChatInput.trim()}
+                className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {showNotification && (
@@ -468,84 +696,116 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="text-center py-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">🎤 Built-in Voice Recognition!</h1>
-            <p className="text-lg text-gray-600 mb-4">No Google Assistant drama - direct speech processing!</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">🎤🤖 Voice + AI Power Combo!</h1>
+            <p className="text-lg text-gray-600 mb-4">Choose your method: Lightning-fast voice commands OR intelligent AI conversations!</p>
           </div>
 
-          {/* Voice Control Panel */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-blue-800">🎙️ Voice Control Center</h2>
-              <button
-                onClick={() => setShowVoiceHelp(true)}
-                className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
-              >
-                📋 Help
-              </button>
+          {/* Control Panel with Both Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Voice Control Panel (Our Champion!) */}
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-blue-800 flex items-center gap-2">
+                  <Mic className="w-5 h-5" />
+                  🏆 Voice Commands (Champion!)
+                </h2>
+                <button
+                  onClick={() => setShowVoiceHelp(true)}
+                  className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                >
+                  📋 Help
+                </button>
+              </div>
+              
+              {voiceSupported ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center gap-4">
+                    <button
+                      onClick={isListening ? stopListening : startListening}
+                      disabled={!voiceSupported}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                        isListening 
+                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                          : 'bg-blue-500 hover:bg-blue-600 text-white hover:scale-105'
+                      }`}
+                    >
+                      {isListening ? (
+                        <>
+                          <MicOff className="w-5 h-5" />
+                          Stop Listening
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-5 h-5" />
+                          Quick Voice Command
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {isListening && (
+                    <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Volume2 className="w-4 h-4 text-blue-500" />
+                        <span className="font-medium text-blue-800">Listening for quick commands...</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {voiceTranscript || 'Say: "Exercise complete" or "Meditation 75 percent"'}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!isListening && (
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="bg-white p-3 rounded-lg border-l-4 border-green-500">
+                        <h3 className="font-semibold text-sm mb-1">⚡ Lightning Fast</h3>
+                        <p className="text-xs text-gray-600">Perfect for quick habit logging</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ Voice recognition not supported in this browser. Try using Chrome, Edge, or Safari.
+                  </p>
+                </div>
+              )}
             </div>
-            
-            {voiceSupported ? (
+
+            {/* AI Chat Panel (Gemini's Redemption) */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-purple-800 flex items-center gap-2">
+                  <Bot className="w-5 h-5" />
+                  🎭 AI Coach (Gemini's Redemption!)
+                </h2>
+                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">GEMINI POWERED</span>
+              </div>
+              
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-4">
                   <button
-                    onClick={isListening ? stopListening : startListening}
-                    disabled={!voiceSupported}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                      isListening 
-                        ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                        : 'bg-blue-500 hover:bg-blue-600 text-white hover:scale-105'
-                    }`}
+                    onClick={() => setShowAIChat(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105"
                   >
-                    {isListening ? (
-                      <>
-                        <MicOff className="w-5 h-5" />
-                        Stop Listening
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="w-5 h-5" />
-                        Start Voice Command
-                      </>
-                    )}
+                    <MessageCircle className="w-5 h-5" />
+                    Chat with AI Coach
                   </button>
                 </div>
                 
-                {isListening && (
-                  <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Volume2 className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium text-blue-800">Listening...</span>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {voiceTranscript || 'Speak now! Try: "Exercise complete" or "Meditation 75 percent"'}
-                    </p>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="bg-white p-3 rounded-lg border-l-4 border-purple-500">
+                    <h3 className="font-semibold text-sm mb-1">🧠 Smart Conversations</h3>
+                    <p className="text-xs text-gray-600">Natural language understanding</p>
                   </div>
-                )}
-                
-                {!isListening && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-3 rounded-lg border-l-4 border-green-500">
-                      <h3 className="font-semibold text-sm mb-1">✅ Complete</h3>
-                      <p className="text-xs text-gray-600">"Exercise complete"</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg border-l-4 border-yellow-500">
-                      <h3 className="font-semibold text-sm mb-1">📊 Percentage</h3>
-                      <p className="text-xs text-gray-600">"Meditation 75 percent"</p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg border-l-4 border-purple-500">
-                      <h3 className="font-semibold text-sm mb-1">🌓 Partial</h3>
-                      <p className="text-xs text-gray-600">"Reading half done"</p>
-                    </div>
+                  <div className="bg-white p-3 rounded-lg border-l-4 border-pink-500">
+                    <h3 className="font-semibold text-sm mb-1">💬 Examples:</h3>
+                    <p className="text-xs text-gray-600">"I just crushed my workout!" or "How's my streak?"</p>
                   </div>
-                )}
+                </div>
               </div>
-            ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800 text-sm">
-                  ⚠️ Voice recognition not supported in this browser. Try using Chrome, Edge, or Safari.
-                </p>
-              </div>
-            )}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -602,7 +862,9 @@ function App() {
                     {habit.completedToday ? (
                       <span className="flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-5 h-5" />
-                        {habit.voiceCompletion ? `🎤 Voice: ${habit.voiceCompletion}%` : 'Completed!'}
+                        {habit.voiceCompletion && `🎤 Voice: ${habit.voiceCompletion}%`}
+                        {habit.aiCompletion && `🤖 AI: ${habit.aiCompletion}%`}
+                        {!habit.voiceCompletion && !habit.aiCompletion && 'Completed!'}
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-2">
@@ -616,30 +878,42 @@ function App() {
             </div>
           </div>
 
-          {/* Test Instructions */}
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-green-800 mb-2">🧪 Test Your Voice Commands!</h3>
-            <p className="text-sm text-green-700 mb-4">
-              Perfect timing! You just finished your workout. Let's test the built-in voice recognition:
+          {/* Comparison Section */}
+          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-yellow-800 mb-2">🥊 The Ultimate Showdown!</h3>
+            <p className="text-sm text-yellow-700 mb-4">
+              Test both methods and see which one you prefer! Will our champion voice commands stay undefeated, or can Gemini redeem itself?
             </p>
-            <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
-              <p className="font-medium mb-2">🎤 Steps to test:</p>
-              <ol className="text-sm text-gray-600 space-y-1">
-                <li>1. Click the "Start Voice Command" button above</li>
-                <li>2. When it says "Listening..." speak clearly: <strong>"Exercise complete"</strong></li>
-                <li>3. Watch the magic happen - no Google drama!</li>
-              </ol>
-              <p className="text-xs text-gray-600 mt-2">✨ This works entirely in your browser - no external services!</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
+                <h4 className="font-semibold mb-2">🏆 Voice Commands (Proven Champion)</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>✅ Lightning fast</li>
+                  <li>✅ Works offline</li>
+                  <li>✅ 100% reliable</li>
+                  <li>✅ No Google drama</li>
+                </ul>
+              </div>
+              <div className="bg-white p-4 rounded-lg border-l-4 border-purple-500">
+                <h4 className="font-semibold mb-2">🎭 AI Agent (Redemption Arc)</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>🧠 Smart understanding</li>
+                  <li>💬 Natural conversations</li>
+                  <li>🎯 Context awareness</li>
+                  <li>❓ Can it redeem Gemini?</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </main>
 
       <VoiceHelpModal />
+      <AIChatModal />
 
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
-          <p className="text-sm">🎤 Built-in voice recognition: No Google Assistant required! ✨</p>
+          <p className="text-sm">🎤🤖 The perfect combo: Reliable voice commands + Intelligent AI conversations! ✨</p>
         </div>
       </footer>
     </div>
