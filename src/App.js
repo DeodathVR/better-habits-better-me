@@ -491,6 +491,24 @@ Respond in JSON format:
     return 'Completed!';
   };
 
+  const exportData = () => {
+    const data = {
+      user: currentUser,
+      habits: habits,
+      exportDate: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `habit-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showMessage('📥 Data exported successfully!');
+  };
+
   const SliderModal = () => {
     if (!showSliderModal || !selectedHabitForSlider) return null;
 
@@ -594,6 +612,22 @@ Respond in JSON format:
               >
                 Dashboard
               </button>
+              <button
+                onClick={() => setCurrentView('learn')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentView === 'learn' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Learn
+              </button>
+              <button
+                onClick={() => setCurrentView('profile')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentView === 'profile' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Profile
+              </button>
             </div>
           </div>
         </div>
@@ -643,6 +677,278 @@ Respond in JSON format:
                           Start Voice Command
                         </>
                       )}
+
+          {currentView === 'learn' && (
+            <div className="space-y-6">
+              <div className="text-center py-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Learn & Grow</h2>
+                <p className="text-gray-600">Insights, guides, and inspiration for your habit journey</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="w-6 h-6" />
+                      <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED ARTICLE</span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Why a BIG Vision Needs Good Habits</h3>
+                    <p className="text-purple-100 text-sm">Discover how small daily actions build the foundation for extraordinary achievements</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose prose-sm max-w-none">
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with an extraordinary vision, but it's the boring, daily habits that actually make it happen.
+                      </p>
+                      
+                      <h4 className="font-semibold text-gray-800 mb-2">🎯 The Vision-Habit Connection</h4>
+                      <p className="text-gray-700 mb-4">
+                        Your big vision is the <em>destination</em>. Your habits are the <em>vehicle</em>. Without reliable daily systems, even the most inspiring goals remain out of reach.
+                      </p>
+
+                      <h4 className="font-semibold text-gray-800 mb-2">🔧 Why Small Habits Create Big Results</h4>
+                      <ul className="text-gray-700 space-y-1 mb-4">
+                        <li><strong>Compound Effect:</strong> 1% better daily = 37x better in a year</li>
+                        <li><strong>Identity Shift:</strong> You become the person who does the thing</li>
+                        <li><strong>Momentum Building:</strong> Success breeds more success</li>
+                        <li><strong>Stress Reduction:</strong> Systems eliminate decision fatigue</li>
+                      </ul>
+
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
+                        <p className="text-blue-800 font-medium">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
+                      </div>
+
+                      <p className="text-gray-700">
+                        <strong>The bottom line:</strong> Your big vision gives you direction and motivation. Your small habits give you the actual path to get there.
+                      </p>
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>📖 5 min read</span>
+                        <span>🎯 Goal Setting</span>
+                        <span>💪 Motivation</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-green-500 to-teal-600 p-6 text-white">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Star className="w-6 h-6" />
+                      <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO GUIDE</span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">How to Use Ultimate Habit Tracker</h3>
+                    <p className="text-green-100 text-sm">Master every feature and become a habit-building pro</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="prose prose-sm max-w-none">
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
+                      </p>
+                      
+                      <h4 className="font-semibold text-gray-800 mb-2">🏁 Getting Started</h4>
+                      <ol className="text-gray-700 space-y-2 mb-4">
+                        <li><strong>Start Small:</strong> Begin with 1-2 habits you can do in under 5 minutes</li>
+                        <li><strong>Choose Your Time:</strong> Pick the same time each day for consistency</li>
+                        <li><strong>Set Your Environment:</strong> Make good habits obvious and easy</li>
+                      </ol>
+
+                      <h4 className="font-semibold text-gray-800 mb-2">✅ Tracking Your Habits</h4>
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                        <p className="text-gray-700 mb-2"><strong>Multiple Ways to Log:</strong></p>
+                        <ul className="text-gray-700 space-y-1">
+                          <li><strong>Complete Button:</strong> One-click for 100% completion</li>
+                          <li><strong>% Slider:</strong> Set partial completion (25%, 50%, 75%, 100%)</li>
+                          <li><strong>Voice Commands:</strong> Natural speech recognition</li>
+                          <li><strong>AI Chat:</strong> Conversational habit logging</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-green-50 border-l-4 border-green-500 p-4 my-4">
+                        <p className="text-green-800 font-medium">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
+                      </div>
+
+                      <h4 className="font-semibold text-gray-800 mb-2">🚀 Advanced Features</h4>
+                      <ul className="text-gray-700 space-y-1 mb-4">
+                        <li><strong>Voice Commands:</strong> Log habits hands-free while multitasking</li>
+                        <li><strong>AI Assistant:</strong> Smart habit detection in natural conversation</li>
+                        <li><strong>Progress Analytics:</strong> Track completion rates and streaks</li>
+                      </ul>
+
+                      <p className="text-gray-700">
+                        <strong>Ready to build your awesome life?</strong> Start with one small habit today. You're not just tracking habits, you're becoming the person who does these things naturally.
+                      </p>
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span>📖 7 min read</span>
+                        <span>🎓 Tutorial</span>
+                        <span>⚡ Quick Start</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-6 text-white text-center">
+                <h3 className="text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
+                <p className="text-orange-100">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🧠 Habit Science</span>
+                  <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">💪 Success Stories</span>
+                  <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🎯 Advanced Strategies</span>
+                  <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">📺 Video Guides</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentView === 'profile' && (
+            <div className="space-y-6">
+              <div className="text-center py-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-500" />
+                  Account Information
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={currentUser.name}
+                      onChange={(e) => setCurrentUser(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={currentUser.email}
+                      onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={currentUser.phone}
+                      onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-green-500" />
+                  AI Coaching Preferences
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Optimal Call Time</label>
+                    <input
+                      type="time"
+                      value="10:00"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={currentUser.preferences.emailCoaching}
+                        onChange={(e) => setCurrentUser(prev => ({
+                          ...prev,
+                          preferences: { ...prev.preferences, emailCoaching: e.target.checked }
+                        }))}
+                        className="rounded"
+                      />
+                      <label className="text-sm text-gray-700">
+                        📧 Enable AI email coaching (after 2 days inactive)
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={currentUser.preferences.phoneCoaching}
+                        onChange={(e) => setCurrentUser(prev => ({
+                          ...prev,
+                          preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
+                        }))}
+                        className="rounded"
+                      />
+                      <label className="text-sm text-gray-700">
+                        📞 Enable AI phone coaching (after 4 days inactive)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-orange-500" />
+                  Data & Privacy
+                </h3>
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800 mb-2">🔒 Privacy Protected</p>
+                    <p className="text-xs text-green-700">Your habit data is stored securely in memory during your session</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-3">Backup & Restore</h4>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={exportData}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        📥 Export Data
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Export your data as a backup file</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
+                <h3 className="text-lg font-bold mb-2">✨ Premium AI Features Active</h3>
+                <p className="text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">🧠 AI Features Active:</h4>
+                    <ul className="space-y-1 text-sm">
+                      <li>✅ Personality-based messaging</li>
+                      <li>✅ AI habit detection</li>
+                      <li>✅ Voice command processing</li>
+                      <li>✅ Natural language understanding</li>
+                      <li>✅ Predictive insights & recommendations</li>
+                      <li>✅ Smart habit suggestions</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">📊 Your AI Stats:</h4>
+                    <div className="space-y-1 text-sm">
+                      <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% success rate</p>
+                      <p>• AI agent system active</p>
+                      <p>• Voice recognition enabled</p>
+                      <p>• Life coaching system active</p>
+                      <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
                     </button>
                   </div>
                   
