@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
   // Initialize state from localStorage or defaults
@@ -82,6 +82,12 @@ function App() {
     ];
   });
 
+  // Voice recognition states
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [recognition, setRecognition] = useState(null);
+
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
     name: '',
@@ -92,13 +98,7 @@ function App() {
   const [currentView, setCurrentView] = useState('habits');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
-  const [showBacklogModal, setShowBacklogModal] = useState(false);
-  const [selectedHabitForBacklog, setSelectedHabitForBacklog] = useState(null);
-  const [showSliderModal, setShowSliderModal] = useState(false);
-  const [selectedHabitForSlider, setSelectedHabitForSlider] = useState(null);
-  const [sliderValue, setSliderValue] = useState(100);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [habitToDelete, setHabitToDelete] = useState(null);
+  const [showVoiceHelp, setShowVoiceHelp] = useState(false);
 
   // Save data to localStorage whenever state changes
   useEffect(() => {
@@ -109,197 +109,242 @@ function App() {
     localStorage.setItem('habitTracker_habits', JSON.stringify(habits));
   }, [habits]);
 
-  // PATH-BASED VOICE COMMANDS - The Ultimate Solution!
+  // BUILT-IN VOICE RECOGNITION SETUP
   useEffect(() => {
-    const handlePathBasedVoiceCommand = () => {
-      console.log('🎯 PATH-BASED VOICE COMMAND DETECTOR ACTIVATED!');
-      console.log('📍 Current URL:', window.location.href);
-      console.log('🛤️ Current Path:', window.location.pathname);
+    console.log('🎤 Checking for speech recognition support...');
+    
+    // Check if speech recognition is supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      console.log('✅ Speech recognition supported!');
+      setVoiceSupported(true);
       
-      const path = window.location.pathname;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
       
-      // Skip if we're just on the home page
-      if (path === '/' || path === '') {
-        console.log('🏠 Home page - no voice command to process');
-        return;
-      }
-      
-      console.log('🔍 Analyzing path for voice commands...');
-      
-      // Remove leading slash and split by dashes
-      const pathParts = path.substring(1).split('-');
-      console.log('📋 Path parts:', pathParts);
-      
-      if (pathParts.length >= 2) {
-        const habitKeyword = pathParts[0];
-        const action = pathParts.slice(1).join('-'); // rejoin in case action has dashes
-        
-        console.log(`🎯 Extracted: habit="${habitKeyword}", action="${action}"`);
-        
-        console.log('🏃 Available habits for matching:');
-        habits.forEach((habit, index) => {
-          console.log(`  ${index + 1}. "${habit.name}" (id: ${habit.id})`);
-        });
-        
-        const matchedHabit = findHabitByKeyword(habitKeyword);
-        if (matchedHabit) {
-          const percentage = parseActionToPercentage(action);
-          console.log(`✅ PATH MATCH FOUND: ${matchedHabit.name} → ${percentage}%`);
-          
-          executeVoiceCommand(matchedHabit, percentage);
-          
-          // Redirect to home page after processing to clean URL
-          setTimeout(() => {
-            window.history.replaceState({}, document.title, '/');
-            console.log('🧹 Redirected to home page');
-          }, 2000);
-        } else {
-          console.log(`❌ No habit found for keyword: "${habitKeyword}"`);
-          showMessage(`🎤 Voice command failed: No habit found for "${habitKeyword}"`);
-          
-          // Still redirect to home
-          setTimeout(() => {
-            window.history.replaceState({}, document.title, '/');
-          }, 3000);
-        }
-      } else {
-        console.log('❌ Invalid path format. Expected: /habit-action');
-        showMessage(`🎤 Invalid voice command format in URL: "${path}"`);
-        
-        // Redirect to home
-        setTimeout(() => {
-          window.history.replaceState({}, document.title, '/');
-        }, 3000);
-      }
-    };
-
-    // Smart habit matching by keyword
-    const findHabitByKeyword = (keyword) => {
-      const searchTerm = keyword.toLowerCase();
-      console.log(`🔍 Searching for habit with keyword: "${searchTerm}"`);
-      
-      // Direct keyword mapping for reliability
-      const keywordMap = {
-        'meditation': ['meditation', 'meditate', 'mindful', 'zen', 'morning'],
-        'exercise': ['exercise', 'workout', 'fitness', 'gym', 'run'],
-        'reading': ['reading', 'read', 'book', 'study'],
+      recognitionInstance.onstart = () => {
+        console.log('🎤 Voice recognition started');
+        setIsListening(true);
+        setVoiceTranscript('');
       };
       
-      // First, try exact habit name matching
-      let match = habits.find(h => h.name.toLowerCase().includes(searchTerm));
-      if (match) {
-        console.log(`✅ Direct name match: "${match.name}"`);
-        return match;
-      }
-      
-      // Then try keyword mapping
-      for (const [habitType, keywords] of Object.entries(keywordMap)) {
-        if (keywords.includes(searchTerm)) {
-          match = habits.find(h => h.name.toLowerCase().includes(habitType));
-          if (match) {
-            console.log(`✅ Keyword match: "${match.name}" via "${habitType}"`);
-            return match;
+      recognitionInstance.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
           }
         }
-      }
-      
-      console.log(`❌ No match found for: "${searchTerm}"`);
-      return null;
-    };
-
-    // Convert action words to percentages
-    const parseActionToPercentage = (action) => {
-      const actionLower = action.toLowerCase();
-      console.log(`📊 Parsing action: "${actionLower}"`);
-      
-      // Check if it's already a number
-      const numericMatch = actionLower.match(/(\d+)/);
-      if (numericMatch) {
-        const percent = parseInt(numericMatch[1]);
-        console.log(`📊 Numeric percentage found: ${percent}%`);
-        return Math.min(percent, 100); // Cap at 100%
-      }
-      
-      // Word-based actions
-      const actionMap = {
-        'complete': 100,
-        'completed': 100,
-        'done': 100,
-        'finished': 100,
-        'full': 100,
-        'half': 50,
-        'partial': 50,
-        'some': 50,
-        'little': 25,
-        'bit': 25,
-        'started': 25,
-        'quarter': 25,
-        'three-quarters': 75,
-        'threequarters': 75
+        
+        const currentTranscript = finalTranscript || interimTranscript;
+        console.log('🗣️ Speech detected:', currentTranscript);
+        setVoiceTranscript(currentTranscript);
+        
+        if (finalTranscript) {
+          console.log('✅ Final transcript:', finalTranscript);
+          processVoiceCommand(finalTranscript);
+        }
       };
       
-      const percentage = actionMap[actionLower] || 100; // Default to 100%
-      console.log(`📊 Action "${actionLower}" → ${percentage}%`);
-      return percentage;
-    };
-
-    // Execute the voice command
-    const executeVoiceCommand = (habit, percentage) => {
-      console.log(`🚀 Executing: ${habit.name} at ${percentage}%`);
-      
-      setHabits(prev => prev.map(h => {
-        if (h.id === habit.id) {
-          const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
-          const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
-          
-          console.log(`📈 Updated: streak=${newStreak}, progress=${newProgress}`);
-          
-          return {
-            ...h,
-            completedToday: percentage >= 50,
-            voiceCompletion: percentage,
-            streak: newStreak,
-            progress: newProgress
-          };
+      recognitionInstance.onerror = (event) => {
+        console.error('❌ Speech recognition error:', event.error);
+        setIsListening(false);
+        
+        if (event.error === 'not-allowed') {
+          showMessage('🎤 Microphone access denied. Please allow microphone permissions and try again.');
+        } else if (event.error === 'no-speech') {
+          showMessage('🎤 No speech detected. Try speaking more clearly.');
+        } else {
+          showMessage(`🎤 Speech recognition error: ${event.error}`);
         }
-        return h;
-      }));
+      };
       
-      // Success message and confirmation
-      const successMessage = percentage === 100 
-        ? `🎤✅ VOICE SUCCESS: ${habit.name} completed!`
-        : `🎤📊 VOICE SUCCESS: ${habit.name} logged at ${percentage}%!`;
+      recognitionInstance.onend = () => {
+        console.log('🎤 Voice recognition ended');
+        setIsListening(false);
+      };
       
-      console.log('📢 Success:', successMessage);
-      showMessage(successMessage);
+      setRecognition(recognitionInstance);
+    } else {
+      console.log('❌ Speech recognition not supported');
+      setVoiceSupported(false);
+    }
+  }, []);
+
+  // Process voice commands
+  const processVoiceCommand = (transcript) => {
+    console.log('🧠 Processing voice command:', transcript);
+    
+    const text = transcript.toLowerCase().trim();
+    
+    // Smart habit matching
+    const matchedHabit = findHabitInSpeech(text);
+    const percentage = extractPercentageFromSpeech(text);
+    
+    console.log('🎯 Analysis:', { matchedHabit: matchedHabit?.name, percentage });
+    
+    if (matchedHabit) {
+      executeVoiceCommand(matchedHabit, percentage);
+    } else {
+      console.log('❌ No habit found in speech');
+      showMessage(`🎤 Couldn't identify a habit in: "${transcript}". Try saying "Exercise complete" or "Meditation 75 percent"`);
       
-      // Speak confirmation
+      // Speak the error
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(
-          percentage === 100 
-            ? `Awesome! ${habit.name} completed successfully!`
-            : `Great work! ${habit.name} logged at ${percentage} percent!`
+          "Sorry, I couldn't identify which habit you meant. Try saying something like exercise complete or meditation 75 percent."
         );
-        console.log('🔊 Speaking confirmation');
         speechSynthesis.speak(utterance);
       }
-    };
+    }
+  };
 
-    // Check for voice commands on page load
-    console.log('🚀 Setting up path-based voice command listener...');
-    const timer = setTimeout(() => {
-      console.log('⏰ Checking for path-based voice commands...');
-      handlePathBasedVoiceCommand();
-    }, 500);
-
-    // Listen for URL changes
-    window.addEventListener('popstate', handlePathBasedVoiceCommand);
+  // Find habit mentioned in speech
+  const findHabitInSpeech = (text) => {
+    console.log('🔍 Searching for habits in:', text);
     
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('popstate', handlePathBasedVoiceCommand);
+    // Keyword mapping for each habit
+    const habitKeywords = {
+      'Morning Meditation': ['meditation', 'meditate', 'mindful', 'mindfulness', 'zen', 'calm', 'breathing'],
+      'Exercise': ['exercise', 'workout', 'fitness', 'gym', 'run', 'running', 'cardio', 'training'],
+      'Read 20 Minutes': ['reading', 'read', 'book', 'study', 'studying', 'learning']
     };
-  }, [habits]);
+    
+    // Check each habit for keyword matches
+    for (const habit of habits) {
+      const keywords = habitKeywords[habit.name] || [];
+      
+      // Also check the habit name itself (split into words)
+      const nameWords = habit.name.toLowerCase().split(' ');
+      const allKeywords = [...keywords, ...nameWords];
+      
+      for (const keyword of allKeywords) {
+        if (text.includes(keyword)) {
+          console.log(`✅ Found habit "${habit.name}" via keyword "${keyword}"`);
+          return habit;
+        }
+      }
+    }
+    
+    console.log('❌ No habit keywords found');
+    return null;
+  };
+
+  // Extract percentage from speech
+  const extractPercentageFromSpeech = (text) => {
+    console.log('📊 Extracting percentage from:', text);
+    
+    // Look for explicit percentages
+    const percentMatches = [
+      /(\d+)\s*percent/,
+      /(\d+)\s*%/,
+      /(\d+)\s*per\s*cent/
+    ];
+    
+    for (const pattern of percentMatches) {
+      const match = text.match(pattern);
+      if (match) {
+        const percent = parseInt(match[1]);
+        console.log(`📊 Found explicit percentage: ${percent}%`);
+        return Math.min(percent, 100);
+      }
+    }
+    
+    // Look for completion words
+    const completionWords = {
+      // 100% words
+      'complete': 100, 'completed': 100, 'done': 100, 'finished': 100, 
+      'full': 100, 'fully': 100, 'totally': 100, 'entirely': 100,
+      
+      // 75% words  
+      'mostly': 75, 'almost': 75, 'nearly': 75, 'three quarters': 75,
+      
+      // 50% words
+      'half': 50, 'halfway': 50, 'partially': 50, 'some': 50,
+      
+      // 25% words
+      'little': 25, 'bit': 25, 'started': 25, 'began': 25, 'quarter': 25
+    };
+    
+    for (const [word, percent] of Object.entries(completionWords)) {
+      if (text.includes(word)) {
+        console.log(`📊 Found completion word "${word}" = ${percent}%`);
+        return percent;
+      }
+    }
+    
+    // Default to 100% if no percentage specified
+    console.log('📊 No percentage found, defaulting to 100%');
+    return 100;
+  };
+
+  // Execute voice command
+  const executeVoiceCommand = (habit, percentage) => {
+    console.log(`🚀 Executing voice command: ${habit.name} at ${percentage}%`);
+    
+    setHabits(prev => prev.map(h => {
+      if (h.id === habit.id) {
+        const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
+        const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
+        
+        return {
+          ...h,
+          completedToday: percentage >= 50,
+          voiceCompletion: percentage,
+          streak: newStreak,
+          progress: newProgress
+        };
+      }
+      return h;
+    }));
+    
+    // Success message
+    const successMessage = percentage === 100 
+      ? `🎤✅ Voice logged: ${habit.name} completed!`
+      : `🎤📊 Voice logged: ${habit.name} at ${percentage}%!`;
+    
+    console.log('📢 Success:', successMessage);
+    showMessage(successMessage);
+    
+    // Speak confirmation
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(
+        percentage === 100 
+          ? `Perfect! ${habit.name} completed and logged!`
+          : `Great! ${habit.name} logged at ${percentage} percent!`
+      );
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Start voice recognition
+  const startListening = () => {
+    if (recognition && !isListening) {
+      console.log('🎤 Starting voice recognition...');
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('❌ Error starting recognition:', error);
+        showMessage('🎤 Error starting voice recognition. Try again.');
+      }
+    }
+  };
+
+  // Stop voice recognition
+  const stopListening = () => {
+    if (recognition && isListening) {
+      console.log('🎤 Stopping voice recognition...');
+      recognition.stop();
+    }
+  };
 
   const showMessage = (message) => {
     setNotificationMessage(message);
@@ -322,7 +367,7 @@ function App() {
             completedToday: newCompleted,
             streak: newStreak,
             progress: newProgress,
-            voiceCompletion: undefined // Clear voice completion when manually toggling
+            voiceCompletion: undefined
           };
         }
         
@@ -337,30 +382,58 @@ function App() {
     }));
   };
 
-  const generateVoiceExamples = () => {
-    return `🎤 NEW PATH-BASED VOICE COMMANDS:
+  const VoiceHelpModal = () => {
+    if (!showVoiceHelp) return null;
 
-Try saying these to Google Assistant:
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">🎤 Voice Commands Help</h3>
+            <button onClick={() => setShowVoiceHelp(false)}>
+              <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2">✅ Complete Commands:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• "Exercise complete"</li>
+                <li>• "Meditation done"</li>
+                <li>• "Reading finished"</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2">📊 Percentage Commands:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• "Exercise 75 percent"</li>
+                <li>• "Meditation half done"</li>
+                <li>• "Reading mostly complete"</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2">🎯 Tips:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Speak clearly and at normal speed</li>
+                <li>• Use simple phrases</li>
+                <li>• Wait for the microphone to activate</li>
+                <li>• Try different ways if not recognized</li>
+              </ul>
+            </div>
+          </div>
 
-✅ "Hey Google, open myawesomelifehabits.com/exercise-complete"
-✅ "Hey Google, open myawesomelifehabits.com/meditation-done" 
-✅ "Hey Google, open myawesomelifehabits.com/reading-75"
-✅ "Hey Google, open myawesomelifehabits.com/meditation-half"
-✅ "Hey Google, open myawesomelifehabits.com/exercise-50"
-
-📊 Percentage words that work:
-• complete/done/finished = 100%
-• half/partial/some = 50% 
-• little/bit/started/quarter = 25%
-• three-quarters = 75%
-• Any number (25, 75, 90, etc.)
-
-🎯 Habit keywords that work:
-• meditation, meditate, mindful → Morning Meditation
-• exercise, workout, fitness, gym → Exercise  
-• reading, read, book, study → Read 20 Minutes
-
-🔥 These are MUCH easier for Google to handle!`;
+          <button
+            onClick={() => setShowVoiceHelp(false)}
+            className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
+          >
+            Got it!
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -395,40 +468,84 @@ Try saying these to Google Assistant:
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="text-center py-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">🛤️ Path-Based Voice Commands!</h1>
-            <p className="text-lg text-gray-600 mb-4">Simple URLs that Google can actually handle!</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">🎤 Built-in Voice Recognition!</h1>
+            <p className="text-lg text-gray-600 mb-4">No Google Assistant drama - direct speech processing!</p>
           </div>
 
-          {/* Voice Command Examples */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-purple-800 mb-3">🎯 New & Improved Voice Commands!</h2>
-            <p className="text-sm text-purple-700 mb-4">
-              These use simple paths instead of complex parameters - much easier for Google to understand!
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
-                <h3 className="font-semibold mb-2">✅ Complete Your Exercise:</h3>
-                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/exercise-complete</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
-                <h3 className="font-semibold mb-2">📊 Partial Meditation:</h3>
-                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/meditation-75</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border-l-4 border-yellow-500">
-                <h3 className="font-semibold mb-2">🌓 Half Reading:</h3>
-                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/reading-half</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border-l-4 border-purple-500">
-                <h3 className="font-semibold mb-2">🌱 Started Meditation:</h3>
-                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/meditation-started</p>
-              </div>
+          {/* Voice Control Panel */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-blue-800">🎙️ Voice Control Center</h2>
+              <button
+                onClick={() => setShowVoiceHelp(true)}
+                className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
+              >
+                📋 Help
+              </button>
             </div>
-            <button 
-              onClick={() => showMessage(generateVoiceExamples())}
-              className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
-            >
-              📋 Show All New Commands
-            </button>
+            
+            {voiceSupported ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={isListening ? stopListening : startListening}
+                    disabled={!voiceSupported}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                      isListening 
+                        ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                        : 'bg-blue-500 hover:bg-blue-600 text-white hover:scale-105'
+                    }`}
+                  >
+                    {isListening ? (
+                      <>
+                        <MicOff className="w-5 h-5" />
+                        Stop Listening
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-5 h-5" />
+                        Start Voice Command
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                {isListening && (
+                  <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Volume2 className="w-4 h-4 text-blue-500" />
+                      <span className="font-medium text-blue-800">Listening...</span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {voiceTranscript || 'Speak now! Try: "Exercise complete" or "Meditation 75 percent"'}
+                    </p>
+                  </div>
+                )}
+                
+                {!isListening && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-3 rounded-lg border-l-4 border-green-500">
+                      <h3 className="font-semibold text-sm mb-1">✅ Complete</h3>
+                      <p className="text-xs text-gray-600">"Exercise complete"</p>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border-l-4 border-yellow-500">
+                      <h3 className="font-semibold text-sm mb-1">📊 Percentage</h3>
+                      <p className="text-xs text-gray-600">"Meditation 75 percent"</p>
+                    </div>
+                    <div className="bg-white p-3 rounded-lg border-l-4 border-purple-500">
+                      <h3 className="font-semibold text-sm mb-1">🌓 Partial</h3>
+                      <p className="text-xs text-gray-600">"Reading half done"</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-yellow-800 text-sm">
+                  ⚠️ Voice recognition not supported in this browser. Try using Chrome, Edge, or Safari.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -501,22 +618,28 @@ Try saying these to Google Assistant:
 
           {/* Test Instructions */}
           <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-green-800 mb-2">🧪 Test Time - Log Your Workout!</h3>
+            <h3 className="text-lg font-bold text-green-800 mb-2">🧪 Test Your Voice Commands!</h3>
             <p className="text-sm text-green-700 mb-4">
-              Perfect timing! You just finished exercising. Let's test the new path-based commands:
+              Perfect timing! You just finished your workout. Let's test the built-in voice recognition:
             </p>
             <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
-              <p className="font-medium mb-2">🎤 Say this to Google:</p>
-              <p className="text-lg font-bold text-green-800">"Hey Google, open myawesomelifehabits.com/exercise-complete"</p>
-              <p className="text-xs text-gray-600 mt-2">This should FINALLY work! No more complex parameters for Google to mess up! 🎯</p>
+              <p className="font-medium mb-2">🎤 Steps to test:</p>
+              <ol className="text-sm text-gray-600 space-y-1">
+                <li>1. Click the "Start Voice Command" button above</li>
+                <li>2. When it says "Listening..." speak clearly: <strong>"Exercise complete"</strong></li>
+                <li>3. Watch the magic happen - no Google drama!</li>
+              </ol>
+              <p className="text-xs text-gray-600 mt-2">✨ This works entirely in your browser - no external services!</p>
             </div>
           </div>
         </div>
       </main>
 
+      <VoiceHelpModal />
+
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
-          <p className="text-sm">🛤️ Path-based commands: The solution to Google's URL confusion! ✨</p>
+          <p className="text-sm">🎤 Built-in voice recognition: No Google Assistant required! ✨</p>
         </div>
       </footer>
     </div>
