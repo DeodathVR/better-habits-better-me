@@ -1248,8 +1248,10 @@ Respond in JSON format:
                     <p className="text-gray-600">Active Habits</p>
                   </div>
                 </div>
+                              </div>
               </div>
 
+              {/* Sidebar - Only on Habits tab */}
               <div className="lg:col-span-1">
                 <div className="space-y-6">
                   <div className="bg-white rounded-xl shadow-lg p-6">
