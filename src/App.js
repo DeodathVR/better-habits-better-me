@@ -4,6 +4,36 @@ import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, Messag
 function App() {
   const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
 
+  // Add the missing getMotivationalMessage function
+  const getMotivationalMessage = (type, context = {}) => {
+    const messages = {
+      habitCompleted: [
+        `🎉 Amazing! You completed ${context.habitName}! Streak: ${context.streak} days!`,
+        `✨ Well done on ${context.habitName}! Building habits one day at a time!`,
+        `🔥 ${context.habitName} complete! You're on fire with a ${context.streak}-day streak!`,
+        `💪 Fantastic work on ${context.habitName}! Consistency is key!`,
+        `🌟 ${context.habitName} done! You're building an amazing routine!`
+      ],
+      streakCelebration: [
+        `🎊 INCREDIBLE! ${context.streak} days straight! You're unstoppable!`,
+        `🏆 ${context.streak}-day streak achieved! You're a habit champion!`,
+        `🚀 ${context.streak} days in a row! Your consistency is inspiring!`,
+        `💎 ${context.streak}-day diamond streak! Keep shining!`,
+        `⭐ ${context.streak} consecutive days! You're a true habit master!`
+      ],
+      encouragement: [
+        `🌱 Every small step counts! Keep growing!`,
+        `💪 You've got this! One habit at a time!`,
+        `🎯 Focus on progress, not perfection!`,
+        `🔥 Your future self will thank you!`,
+        `✨ Consistency beats intensity every time!`
+      ]
+    };
+
+    const messageArray = messages[type] || messages.encouragement;
+    return messageArray[Math.floor(Math.random() * messageArray.length)];
+  };
+
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
     email: "alex@example.com",
@@ -864,6 +894,123 @@ Respond in JSON format:
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Dashboard</h2>
+              <p className="text-gray-600">Your habit journey at a glance</p>
+            </div>
+
+            {/* Dashboard Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 text-sm">Today's Progress</p>
+                    <p className="text-3xl font-bold">{getWeeklyProgress().completionRate}%</p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-blue-200" />
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-100 text-sm">Total Streaks</p>
+                    <p className="text-3xl font-bold">{getWeeklyProgress().totalStreak}</p>
+                  </div>
+                  <Flame className="w-8 h-8 text-orange-200" />
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-100 text-sm">Active Habits</p>
+                    <p className="text-3xl font-bold">{habits.length}</p>
+                  </div>
+                  <Target className="w-8 h-8 text-green-200" />
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-100 text-sm">Best Streak</p>
+                    <p className="text-3xl font-bold">{Math.max(...habits.map(h => h.streak), 0)}</p>
+                  </div>
+                  <Award className="w-8 h-8 text-purple-200" />
+                </div>
+              </div>
+            </div>
+
+            {/* Habit Progress Chart */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4">Habit Progress Overview</h3>
+              <div className="space-y-4">
+                {habits.map(habit => (
+                  <div key={habit.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-gray-800">{habit.name}</h4>
+                      <div className="flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-orange-500" />
+                        <span className="text-sm font-medium text-orange-600">{habit.streak} days</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                          <span>Progress</span>
+                          <span>{habit.progress}/{habit.target}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
+                            style={{width: `${Math.min((habit.progress / habit.target) * 100, 100)}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        habit.completedToday ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {habit.completedToday ? 'Done Today' : 'Pending'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button
+                  onClick={() => setShowAddHabit(true)}
+                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Plus className="w-5 h-5 text-blue-500" />
+                  <span className="font-medium">Add New Habit</span>
+                </button>
+                <button
+                  onClick={() => setShowAIChat(true)}
+                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Bot className="w-5 h-5 text-green-500" />
+                  <span className="font-medium">Chat with AI Coach</span>
+                </button>
+                <button
+                  onClick={() => setCurrentView('profile')}
+                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <User className="w-5 h-5 text-purple-500" />
+                  <span className="font-medium">View Profile</span>
+                </button>
               </div>
             </div>
           </div>
