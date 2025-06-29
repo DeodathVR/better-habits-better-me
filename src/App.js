@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
@@ -96,6 +96,14 @@ function App() {
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiChatHistory, setAiChatHistory] = useState([]);
   const [aiProcessing, setAiProcessing] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [aiChatHistory, aiProcessing]);
 
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
@@ -671,6 +679,9 @@ REMEMBER:
                 </div>
               </div>
             )}
+            
+            {/* Auto-scroll anchor */}
+            <div ref={chatEndRef} />
           </div>
           
           <div className="p-6 border-t">
