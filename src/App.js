@@ -1,86 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
-  // Initialize state from localStorage or defaults
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('habitTracker_currentUser');
-    return saved ? JSON.parse(saved) : {
-      name: "Alex",
-      email: "alex@example.com",
-      phone: "+1 (555) 123-4567",
-      isPremium: true,
-      lastActiveDate: new Date('2025-06-11'),
-      preferences: {
-        emailCoaching: true,
-        phoneCoaching: true,
-        optimalCallTime: "10:00 AM"
-      },
-      aiProfile: {
-        personalityType: "achiever",
-        motivationStyle: "encouraging"
-      },
-      behaviorData: {
-        completionRate: 0.78,
-        bestTimeForHabits: "morning",
-        strugglingDays: ["monday", "friday"],
-        lastCompletedHabit: "Morning Meditation",
-        longestStreak: 21,
-        biggerGoals: ["become a focused leader", "build mental strength for career"],
-        proudestMoment: "completing 21-day meditation streak"
-      },
-      emailHistory: [{
-        id: 1,
-        subject: "Your meditation streak is waiting for you, Alex",
-        sent: new Date().toISOString(),
-        daysMissed: 2,
-        content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach 🤖💪"
-      }],
-      callHistory: []
-    };
-  });
+  // Your Gemini API Key (replace with your actual key)
+  const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
 
-  const [habits, setHabits] = useState(() => {
-    const saved = localStorage.getItem('habitTracker_habits');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 1,
-        name: "Morning Meditation",
-        description: "Start the day with mindfulness",
-        streak: 5,
-        missedDays: 3,
-        completedToday: false,
-        completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-        category: "Mindfulness",
-        progress: 0,
-        target: 10
-      },
-      {
-        id: 2,
-        name: "Read 20 Minutes",
-        description: "Expand knowledge through daily reading",
-        streak: 3,
-        missedDays: 1,
-        completedToday: true,
-        completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
-        category: "Learning",
-        progress: 5,
-        target: 10
-      },
-      {
-        id: 3,
-        name: "Exercise",
-        description: "Move your body for at least 30 minutes",
-        streak: 8,
-        missedDays: 0,
-        completedToday: false,
-        completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-        category: "Fitness",
-        progress: 2,
-        target: 10
-      }
-    ];
-  });
+  // Initialize state from memory (not localStorage per Claude.ai restrictions)
+  const [currentUser, setCurrentUser] = useState(() => ({
+    name: "Alex",
+    email: "alex@example.com",
+    phone: "+1 (555) 123-4567",
+    isPremium: true,
+    lastActiveDate: new Date('2025-06-11'),
+    preferences: {
+      emailCoaching: true,
+      phoneCoaching: true,
+      optimalCallTime: "10:00 AM"
+    },
+    aiProfile: {
+      personalityType: "achiever",
+      motivationStyle: "encouraging"
+    },
+    behaviorData: {
+      completionRate: 0.78,
+      bestTimeForHabits: "morning",
+      strugglingDays: ["monday", "friday"],
+      lastCompletedHabit: "Morning Meditation",
+      longestStreak: 21,
+      biggerGoals: ["become a focused leader", "build mental strength for career"],
+      proudestMoment: "completing 21-day meditation streak"
+    },
+    emailHistory: [{
+      id: 1,
+      subject: "Your meditation streak is waiting for you, Alex",
+      sent: new Date().toISOString(),
+      daysMissed: 2,
+      content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach 🤖💪"
+    }],
+    callHistory: []
+  }));
+
+  const [habits, setHabits] = useState(() => ([
+    {
+      id: 1,
+      name: "Morning Meditation",
+      description: "Start the day with mindfulness",
+      streak: 5,
+      missedDays: 3,
+      completedToday: false,
+      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Mindfulness",
+      progress: 0,
+      target: 10
+    },
+    {
+      id: 2,
+      name: "Read 20 Minutes",
+      description: "Expand knowledge through daily reading",
+      streak: 3,
+      missedDays: 1,
+      completedToday: true,
+      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
+      category: "Learning",
+      progress: 5,
+      target: 10
+    },
+    {
+      id: 3,
+      name: "Exercise",
+      description: "Move your body for at least 30 minutes",
+      streak: 8,
+      missedDays: 0,
+      completedToday: false,
+      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Fitness",
+      progress: 2,
+      target: 10
+    }
+  ]));
+
+  // Voice recognition states
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [recognition, setRecognition] = useState(null);
+
+  // AI Agent states
+  const [showAIChat, setShowAIChat] = useState(false);
+  const [aiChatInput, setAiChatInput] = useState('');
+  const [aiChatHistory, setAiChatHistory] = useState([]);
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const chatEndRef = useRef(null);
 
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
@@ -92,6 +102,7 @@ function App() {
   const [currentView, setCurrentView] = useState('habits');
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [showVoiceHelp, setShowVoiceHelp] = useState(false);
   const [showBacklogModal, setShowBacklogModal] = useState(false);
   const [selectedHabitForBacklog, setSelectedHabitForBacklog] = useState(null);
   const [showSliderModal, setShowSliderModal] = useState(false);
@@ -100,113 +111,395 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState(null);
 
-  // Save data to localStorage whenever state changes
+  // Auto-scroll chat to bottom
   useEffect(() => {
-    localStorage.setItem('habitTracker_currentUser', JSON.stringify(currentUser));
-  }, [currentUser]);
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [aiChatHistory, aiProcessing]);
 
-  useEffect(() => {
-    localStorage.setItem('habitTracker_habits', JSON.stringify(habits));
-  }, [habits]);
+  const showMessage = (message) => {
+    setNotificationMessage(message);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 4000);
+  };
 
-  // Voice command handling
+  // BUILT-IN VOICE RECOGNITION SETUP
   useEffect(() => {
-    const handleVoiceCommand = () => {
-      console.log('Checking for voice commands...');
-      console.log('Current URL:', window.location.href);
+    console.log('🎤 Checking for speech recognition support...');
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      console.log('✅ Speech recognition supported!');
+      setVoiceSupported(true);
       
-      const urlParams = new URLSearchParams(window.location.search);
-      const action = urlParams.get('action');
-      const habitName = urlParams.get('name');
-      const percent = urlParams.get('percent');
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-US';
       
-      console.log('URL Parameters:', { action, habitName, percent });
+      recognitionInstance.onstart = () => {
+        console.log('🎤 Voice recognition started');
+        setIsListening(true);
+        setVoiceTranscript('');
+      };
       
-      // Method 1: URL parameters (existing)
-      if (action === 'log-habit' && habitName) {
-        console.log('Voice command detected via URL!');
-        logHabitViaVoice(habitName, percent);
+      recognitionInstance.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
         
-        // Clear URL parameters after processing
-        const newUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-      }
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        const currentTranscript = finalTranscript || interimTranscript;
+        console.log('🗣️ Speech detected:', currentTranscript);
+        setVoiceTranscript(currentTranscript);
+        
+        if (finalTranscript) {
+          console.log('✅ Final transcript:', finalTranscript);
+          processVoiceCommand(finalTranscript);
+        }
+      };
       
-      // Method 2: Parse URL hash for natural language
-      const hash = window.location.hash;
-      console.log('URL Hash:', hash);
+      recognitionInstance.onerror = (event) => {
+        console.error('❌ Speech recognition error:', event.error);
+        setIsListening(false);
+        
+        if (event.error === 'not-allowed') {
+          showMessage('🎤 Microphone access denied. Please allow microphone permissions and try again.');
+        } else if (event.error === 'no-speech') {
+          showMessage('🎤 No speech detected. Try speaking more clearly.');
+        } else {
+          showMessage(`🎤 Speech recognition error: ${event.error}`);
+        }
+      };
       
-      if (hash && hash.includes('update')) {
-        console.log('Natural language voice command detected!');
-        parseNaturalVoiceCommand(hash);
-      }
-    };
-
-    // Check URL on app load with a small delay
-    const timer = setTimeout(handleVoiceCommand, 1000);
-
-    // Listen for URL changes
-    window.addEventListener('popstate', handleVoiceCommand);
-    window.addEventListener('hashchange', handleVoiceCommand);
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('popstate', handleVoiceCommand);
-      window.removeEventListener('hashchange', handleVoiceCommand);
-    };
-  }, [habits]);
-
-  const parseNaturalVoiceCommand = (hash) => {
-    console.log('Parsing natural command:', hash);
-    
-    // Parse patterns like: #update-meditation-75-percent
-    const text = hash.toLowerCase().replace('#', '');
-    
-    // Look for habit names
-    const habitMatch = habits.find(h => 
-      text.includes(h.name.toLowerCase()) || 
-      h.name.toLowerCase().includes(text.split('-')[1] || '')
-    );
-    
-    // Look for percentage
-    const percentMatch = text.match(/(\d+)\s*percent?/);
-    const percent = percentMatch ? parseInt(percentMatch[1]) : 100;
-    
-    console.log('Parsed:', { habitMatch, percent });
-    
-    if (habitMatch) {
-      logHabitViaVoice(habitMatch.name, percent.toString());
+      recognitionInstance.onend = () => {
+        console.log('🎤 Voice recognition ended');
+        setIsListening(false);
+      };
+      
+      setRecognition(recognitionInstance);
     } else {
-      showMessage(`🎤 Couldn't parse voice command: "${hash}". Try: "update meditation 75 percent"`);
+      console.log('❌ Speech recognition not supported');
+      setVoiceSupported(false);
+    }
+  }, []);
+
+  // GEMINI AI AGENT INTEGRATION
+  const processWithAI = async (userMessage) => {
+    console.log('🤖 Processing with Gemini AI:', userMessage);
+    setAiProcessing(true);
+    
+    try {
+      const prompt = `You are a SMART habit tracking assistant. The user says: "${userMessage}"
+
+Current habits available:
+${habits.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak, ${h.completedToday ? 'completed today' : 'not completed today'})`).join('\n')}
+
+User profile: ${currentUser.name}, ${currentUser.aiProfile.personalityType} personality
+
+RESPONSE RULES:
+- For HABIT LOGGING: Max 6 words, enthusiastic but brief, NO EMOJIS AT ALL in speech
+- For QUESTIONS/ADVICE: 2-3 helpful sentences, can be more detailed, NO EMOJIS AT ALL in speech  
+- Act like an encouraging but knowledgeable fitness buddy
+- CRITICAL: The speech_response field must NEVER contain emojis, emoji names, or emoji descriptions
+- speech_response should use ONLY regular words that sound natural when spoken
+- Use emojis only in the regular response field for visual display
+
+Your task:
+1. Determine if the user is logging a habit completion or asking a question
+2. If logging a habit, extract: habit name and completion percentage (0-100)
+3. Respond appropriately based on the type of interaction
+
+Respond in JSON format:
+{
+  "action": "log_habit" | "conversation" | "question",
+  "habit_name": "exact habit name if logging" | null,
+  "percentage": number 0-100 if logging | null,
+  "response": "appropriate response (brief for logging, detailed for questions)",
+  "speech_response": "version without emojis for speech synthesis",
+  "reasoning": "brief explanation of what you understood"
+}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 500,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiText = data.candidates[0].content.parts[0].text;
+      
+      console.log('🤖 Raw AI response:', aiText);
+      
+      // Extract JSON from AI response
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const aiResult = JSON.parse(jsonMatch[0]);
+        console.log('🤖 Parsed AI result:', aiResult);
+        
+        // Add to chat history
+        setAiChatHistory(prev => [...prev, 
+          { type: 'user', message: userMessage, timestamp: new Date() },
+          { type: 'ai', message: aiResult.response, timestamp: new Date(), action: aiResult }
+        ]);
+        
+        // Always speak the response using speech_response (no emojis)
+        if ('speechSynthesis' in window && aiResult.speech_response) {
+          const utterance = new SpeechSynthesisUtterance(aiResult.speech_response);
+          speechSynthesis.speak(utterance);
+        }
+        
+        // Execute action if it's a habit log
+        if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
+          const habit = habits.find(h => h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase()) || 
+                                         aiResult.habit_name.toLowerCase().includes(h.name.toLowerCase()));
+          
+          if (habit) {
+            console.log(`🤖 AI logging habit: ${habit.name} at ${aiResult.percentage}%`);
+            executeHabitUpdate(habit, aiResult.percentage, 'ai');
+          } else {
+            console.log('❌ AI identified habit not found:', aiResult.habit_name);
+            showMessage(`🤖 AI understood "${aiResult.habit_name}" but couldn't match it to your habits.`);
+          }
+        }
+        
+        return aiResult;
+      } else {
+        throw new Error('Invalid AI response format');
+      }
+      
+    } catch (error) {
+      console.error('❌ AI processing error:', error);
+      const errorMessage = `🤖 AI Error: ${error.message}. Don't worry, your voice commands still work perfectly!`;
+      
+      setAiChatHistory(prev => [...prev, 
+        { type: 'user', message: userMessage, timestamp: new Date() },
+        { type: 'error', message: errorMessage, timestamp: new Date() }
+      ]);
+      
+      showMessage(errorMessage);
+      return null;
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
+  // Send AI chat message
+  const sendAIMessage = async () => {
+    if (!aiChatInput.trim()) return;
+    
+    const message = aiChatInput.trim();
+    setAiChatInput('');
+    
+    await processWithAI(message);
+  };
+
+  // Process voice commands
+  const processVoiceCommand = (transcript) => {
+    console.log('🧠 Processing voice command:', transcript);
+    
+    const text = transcript.toLowerCase().trim();
+    
+    // Smart habit matching
+    const matchedHabit = findHabitInSpeech(text);
+    const percentage = extractPercentageFromSpeech(text);
+    
+    console.log('🎯 Voice analysis:', { matchedHabit: matchedHabit?.name, percentage });
+    
+    if (matchedHabit) {
+      executeHabitUpdate(matchedHabit, percentage, 'voice');
+    } else {
+      console.log('❌ No habit found in speech');
+      showMessage(`🎤 Couldn't identify a habit in: "${transcript}". Try saying "Exercise complete" or "Meditation 75 percent"`);
+      
+      // Speak the error
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(
+          "Sorry, I couldn't identify which habit you meant. Try saying something like exercise complete or meditation 75 percent."
+        );
+        speechSynthesis.speak(utterance);
+      }
+    }
+  };
+
+  // Execute habit update (unified function for voice, AI, and manual commands)
+  const executeHabitUpdate = (habit, percentage, source) => {
+    console.log(`🚀 Executing ${source} command: ${habit.name} at ${percentage}%`);
+    
+    setHabits(prev => prev.map(h => {
+      if (h.id === habit.id) {
+        const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
+        const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
+        
+        return {
+          ...h,
+          completedToday: percentage >= 50,
+          voiceCompletion: source === 'voice' ? percentage : undefined,
+          aiCompletion: source === 'ai' ? percentage : undefined,
+          streak: newStreak,
+          progress: newProgress
+        };
+      }
+      return h;
+    }));
+    
+    // Success message
+    const icon = source === 'voice' ? '🎤' : source === 'ai' ? '🤖' : '🎤';
+    const successMessage = percentage === 100 
+      ? `${icon}✅ ${source.toUpperCase()} logged: ${habit.name} completed!`
+      : `${icon}📊 ${source.toUpperCase()} logged: ${habit.name} at ${percentage}%!`;
+    
+    console.log('📢 Success:', successMessage);
+    showMessage(successMessage);
+    
+    // Speak confirmation for voice commands
+    if (source === 'voice' && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(
+        percentage === 100 
+          ? `Perfect! ${habit.name} completed and logged!`
+          : `Great! ${habit.name} logged at ${percentage} percent!`
+      );
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Find habit mentioned in speech
+  const findHabitInSpeech = (text) => {
+    console.log('🔍 Searching for habits in:', text);
+    
+    const habitKeywords = {};
+    habits.forEach(habit => {
+      const habitName = habit.name;
+      const nameWords = habitName.toLowerCase().split(' ');
+      
+      habitKeywords[habitName] = [
+        ...nameWords,
+        habitName.toLowerCase()
+      ];
+      
+      if (habit.category === 'Mindfulness') {
+        habitKeywords[habitName].push('meditation', 'meditate', 'mindful', 'zen', 'calm', 'breathing');
+      } else if (habit.category === 'Fitness') {
+        habitKeywords[habitName].push('exercise', 'workout', 'fitness', 'gym', 'run', 'running', 'cardio', 'training');
+      } else if (habit.category === 'Learning') {
+        habitKeywords[habitName].push('reading', 'read', 'book', 'study', 'studying', 'learning');
+      }
+    });
+    
+    for (const habit of habits) {
+      const keywords = habitKeywords[habit.name] || [];
+      
+      for (const keyword of keywords) {
+        if (text.includes(keyword)) {
+          console.log(`✅ Found habit "${habit.name}" via keyword "${keyword}"`);
+          return habit;
+        }
+      }
+    }
+    
+    console.log('❌ No habit keywords found');
+    return null;
+  };
+
+  // Extract percentage from speech
+  const extractPercentageFromSpeech = (text) => {
+    console.log('📊 Extracting percentage from:', text);
+    
+    const percentMatches = [
+      /(\d+)\s*percent/,
+      /(\d+)\s*%/,
+      /(\d+)\s*per\s*cent/
+    ];
+    
+    for (const pattern of percentMatches) {
+      const match = text.match(pattern);
+      if (match) {
+        const percent = parseInt(match[1]);
+        console.log(`📊 Found explicit percentage: ${percent}%`);
+        return Math.min(percent, 100);
+      }
+    }
+    
+    const completionWords = {
+      'complete': 100, 'completed': 100, 'done': 100, 'finished': 100, 
+      'full': 100, 'fully': 100, 'totally': 100, 'entirely': 100,
+      'mostly': 75, 'almost': 75, 'nearly': 75, 'three quarters': 75,
+      'half': 50, 'halfway': 50, 'partially': 50, 'some': 50,
+      'little': 25, 'bit': 25, 'started': 25, 'began': 25, 'quarter': 25
+    };
+    
+    for (const [word, percent] of Object.entries(completionWords)) {
+      if (text.includes(word)) {
+        console.log(`📊 Found completion word "${word}" = ${percent}%`);
+        return percent;
+      }
+    }
+    
+    console.log('📊 No percentage found, defaulting to 100%');
+    return 100;
+  };
+
+  // Start voice recognition
+  const startListening = () => {
+    if (recognition && !isListening) {
+      console.log('🎤 Starting voice recognition...');
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('❌ Error starting recognition:', error);
+        showMessage('🎤 Error starting voice recognition. Try again.');
+      }
+    }
+  };
+
+  // Stop voice recognition
+  const stopListening = () => {
+    if (recognition && isListening) {
+      console.log('🎤 Stopping voice recognition...');
+      recognition.stop();
     }
   };
 
   const logHabitViaVoice = (habitName, percentString) => {
-    console.log('logHabitViaVoice called with:', { habitName, percentString });
+    console.log('Voice command:', { habitName, percentString });
     
-    const percent = parseInt(percentString) || 100; // Default to 100% if no percentage given
-    console.log('Parsed percentage:', percent);
-    
-    // Find habit by name (case insensitive, flexible matching)
+    const percent = parseInt(percentString) || 100;
     const habit = habits.find(h => {
       const habitLower = h.name.toLowerCase();
       const searchLower = habitName.toLowerCase();
       return habitLower.includes(searchLower) || searchLower.includes(habitLower);
     });
     
-    console.log('Found habit:', habit);
-    console.log('All habits:', habits.map(h => h.name));
-    
     if (habit) {
-      console.log('Updating habit:', habit.name);
-      
-      // Update the habit with voice completion
       setHabits(prev => prev.map(h => {
         if (h.id === habit.id) {
-          const newStreak = percent >= 50 ? h.streak + 1 : h.streak; // Count as streak if 50%+
+          const newStreak = percent >= 50 ? h.streak + 1 : h.streak;
           const newProgress = Math.min(h.progress + Math.ceil(percent/100), h.target);
-          
-          console.log('Habit updated:', { percent, newStreak, newProgress });
           
           return {
             ...h,
@@ -219,25 +512,13 @@ function App() {
         return h;
       }));
       
-      // Show voice confirmation
       const voiceMessage = percent === 100 
         ? `🎤 Voice logged: ${habit.name} completed!`
         : `🎤 Voice logged: ${habit.name} at ${percent}% - Great progress!`;
       
-      console.log('Showing message:', voiceMessage);
       showMessage(voiceMessage);
-      
-      // Speak confirmation if browser supports it
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(
-          `Great job! I've logged your ${habit.name} at ${percent} percent.`
-        );
-        console.log('Speaking confirmation');
-        speechSynthesis.speak(utterance);
-      }
     } else {
       const errorMessage = `🎤 Voice command: Couldn't find habit "${habitName}". Available habits: ${habits.map(h => h.name).join(', ')}`;
-      console.log('Habit not found:', errorMessage);
       showMessage(errorMessage);
     }
   };
@@ -260,29 +541,6 @@ function App() {
     showMessage('📥 Data exported successfully!');
   };
 
-  const importData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.user && data.habits) {
-          setCurrentUser(data.user);
-          setHabits(data.habits);
-          showMessage('📤 Data restored successfully!');
-        } else {
-          showMessage('❌ Invalid backup file format');
-        }
-      } catch (error) {
-        showMessage('❌ Error reading backup file');
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; // Reset input
-  };
-
   const getMotivationalMessage = (type, data = {}) => {
     if (currentUser.isPremium) {
       const personalizedMessages = {
@@ -298,21 +556,7 @@ function App() {
         lifeCoachMessages: {
           achiever: [
             `Your ${data.habitName || 'meditation'} habit isn't just about calm—it's about becoming the focused leader you're meant to be. Every session builds the mental strength that will help you crush your career goals.`,
-            `${currentUser.name}, I know ${new Date().toLocaleDateString('en', {weekday: 'long'})}s can be tough for you, but remember: you've conquered that ${currentUser.behaviorData.longestStreak}-day streak before. That took real mental toughness.`,
-            `Imagine yourself 90 days from now, ${currentUser.name}. You've built unshakeable habits, your focus is laser-sharp, and you're the person everyone turns to for consistency. Today's choice builds that future.`,
-            `Remember how proud you felt when you ${currentUser.behaviorData.proudestMoment}? That feeling is waiting for you again. This isn't about perfection—it's about becoming who you're meant to be.`
-          ],
-          explorer: [
-            `Your reading habit is like collecting treasures for your soul, ${currentUser.name}. Each page you turn opens new worlds and ideas that will inspire your next creative breakthrough.`,
-            `${currentUser.name}, your journey isn't linear, and that's beautiful. Some days flow differently than others. What calls to your curious heart today?`,
-            `Picture yourself 90 days from now—a person rich with new perspectives, someone who's explored countless new ideas. Every habit you build adds another dimension to who you're becoming.`,
-            `Remember that spark you felt when you discovered something amazing in your reading? That magic is still there, waiting to be rekindled with just one small step today.`
-          ],
-          perfectionist: [
-            `Your systematic approach to ${data.habitName || 'habits'} isn't just about completion—it's about crafting excellence in every area of your life. Quality over quantity, always.`,
-            `${currentUser.name}, I see you typically struggle on ${currentUser.behaviorData.strugglingDays.join(' and ')}s. Your precision shows in recognizing patterns. Let's optimize: what's your highest-impact habit today?`,
-            `Envision yourself 90 days from now: your systems are flawless, your execution is precise, and you've become the person who others look to for structure and excellence.`,
-            `Your attention to detail is a superpower, ${currentUser.name}. Remember how satisfying it felt to maintain that perfect ${currentUser.behaviorData.longestStreak}-day streak? That precision is still in you.`
+            `${currentUser.name}, I know ${new Date().toLocaleDateString('en', {weekday: 'long'})}s can be tough for you, but remember: you've conquered that ${currentUser.behaviorData.longestStreak}-day streak before. That took real mental toughness.`
           ]
         }
       };
@@ -331,93 +575,6 @@ function App() {
     }
     
     return `Great job completing ${data.habitName}! Keep it up! 🎉`;
-  };
-
-  const generateAICall = (daysMissed, userProfile) => {
-    const { personalityType } = userProfile.aiProfile;
-    const { lastCompletedHabit, longestStreak, strugglingDays, biggerGoals } = userProfile.behaviorData;
-    
-    const voiceStyle = {
-      achiever: "energetic and confident",
-      explorer: "warm and curious", 
-      perfectionist: "calm and precise",
-      socializer: "friendly and supportive"
-    };
-
-    const getTimeOfDay = () => {
-      const hour = new Date().getHours();
-      if (hour < 12) return "morning";
-      if (hour < 17) return "afternoon";
-      return "evening";
-    };
-
-    const callScripts = {
-      achiever: `Hi ${userProfile.name}, this is your Better Habits AI coach calling. I noticed you haven't checked in for ${daysMissed} days, and I wanted to personally reach out because your ${lastCompletedHabit} journey matters to your goal of ${biggerGoals[0]}. 
-
-I know ${strugglingDays.join(' and ')} can be challenging for you, but you've conquered ${longestStreak}-day streaks before - that shows real champion mindset! 
-
-What if we started with just 2 minutes of ${lastCompletedHabit.toLowerCase()} today? I believe in your comeback story. You've got this, champion!`,
-
-      explorer: `Hello ${userProfile.name}, this is your Better Habits AI coach reaching out with care. I've been thinking about your unique ${lastCompletedHabit} journey, and I miss seeing your daily discoveries.
-
-Life has seasons, and maybe these ${daysMissed} days were your winter. But spring is here whenever you're ready to bloom again. Remember that beautiful ${longestStreak}-day streak you built? Each day was like adding a new color to your personal masterpiece.
-
-What calls to your heart today? Maybe just a gentle 2-minute return to ${lastCompletedHabit.toLowerCase()}? The adventure continues when you're ready.`,
-
-      perfectionist: `Good ${getTimeOfDay()}, ${userProfile.name}. This is your Better Habits AI coach with a precision update. Data analysis shows you've been inactive for ${daysMissed} days.
-
-Based on your ${personalityType} profile and ${Math.round(userProfile.behaviorData.completionRate * 100)}% historical success rate, the optimal restart strategy is to begin with your highest-probability habit: ${lastCompletedHabit}.
-
-Research indicates that users who restart within 24 hours of this call maintain 89% of their previous performance metrics. Your system is optimized for success - let's execute the restart protocol today.`
-    };
-
-    return {
-      script: callScripts[personalityType] || callScripts.achiever,
-      voiceStyle: voiceStyle[personalityType] || voiceStyle.achiever,
-      duration: "45-60 seconds",
-      scheduledTime: userProfile.preferences.optimalCallTime || "10:00 AM"
-    };
-  };
-
-  const scheduleAICall = (daysMissed) => {
-    if (!currentUser.preferences.phoneCoaching || !currentUser.isPremium) return;
-
-    const callData = generateAICall(daysMissed, currentUser);
-    const newCall = {
-      id: Date.now(),
-      type: "ai-coaching-call",
-      script: callData.script,
-      voiceStyle: callData.voiceStyle,
-      duration: callData.duration,
-      scheduledTime: callData.scheduledTime,
-      scheduled: new Date().toISOString(),
-      daysMissed: daysMissed,
-      status: "scheduled"
-    };
-
-    setCurrentUser(prev => ({
-      ...prev,
-      callHistory: [newCall, ...prev.callHistory]
-    }));
-
-    showMessage(`📞 AI Coach call scheduled for ${callData.scheduledTime}!`);
-  };
-
-  const sendAIEmail = () => {
-    const newEmail = {
-      id: Date.now(),
-      subject: `Your ${currentUser.behaviorData.lastCompletedHabit.toLowerCase()} streak is waiting for you, ${currentUser.name}`,
-      content: `Hi ${currentUser.name},\n\nI noticed you haven't checked in for 2 days. You've built a ${currentUser.behaviorData.longestStreak}-day streak before!\n\nYour AI Coach 🤖💪`,
-      sent: new Date().toISOString(),
-      daysMissed: 2
-    };
-
-    setCurrentUser(prev => ({
-      ...prev,
-      emailHistory: [newEmail, ...prev.emailHistory]
-    }));
-
-    showMessage("📧 AI Coach email sent!");
   };
 
   const sendLifeCoachMessage = () => {
@@ -445,12 +602,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
     setNewHabit({ name: '', description: '', category: 'Mindfulness' });
     setShowAddHabit(false);
     showMessage(`🎉 New habit "${habit.name}" added! Let's build that streak!`);
-  };
-
-  const showMessage = (message) => {
-    setNotificationMessage(message);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 4000);
   };
 
   const toggleHabit = (habitId) => {
@@ -481,7 +632,7 @@ Research indicates that users who restart within 24 hours of this call maintain 
             completedToday: newCompleted,
             streak: newStreak,
             progress: newProgress,
-            voiceCompletion: undefined // Clear any voice completion when manually toggling
+            voiceCompletion: undefined
           };
         }
         
@@ -496,18 +647,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
     }));
   };
 
-  // Backlog functionality - NEW
-  const openBacklogModal = (habit) => {
-    setSelectedHabitForBacklog(habit);
-    setShowBacklogModal(true);
-  };
-
-  const closeBacklogModal = () => {
-    setShowBacklogModal(false);
-    setSelectedHabitForBacklog(null);
-  };
-
-  // Slider functionality - NEW
   const openSliderModal = (habit) => {
     setSelectedHabitForSlider(habit);
     setSliderValue(habit.completionPercentage || 100);
@@ -537,13 +676,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
         
         showMessage(message);
         
-        if (sliderValue === 100 && [7, 14, 21].includes(newStreak)) {
-          setTimeout(() => {
-            const streakMessage = getMotivationalMessage('streakCelebration', { streak: newStreak });
-            showMessage(streakMessage);
-          }, 2000);
-        }
-        
         return {
           ...habit,
           completedToday: sliderValue >= 50,
@@ -559,7 +691,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
     closeSliderModal();
   };
 
-  // Delete habit functionality
   const openDeleteConfirm = (habit) => {
     setHabitToDelete(habit);
     setShowDeleteConfirm(true);
@@ -578,74 +709,6 @@ Research indicates that users who restart within 24 hours of this call maintain 
     closeDeleteConfirm();
   };
 
-  const getPastDates = (days = 3) => {
-    const dates = [];
-    const today = new Date();
-    
-    for (let i = 1; i <= days; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      dates.push(date);
-    }
-    
-    return dates.reverse(); // Show oldest first
-  };
-
-  const formatDate = (date) => {
-    return date.toISOString().split('T')[0];
-  };
-
-  const isDateCompleted = (habit, date) => {
-    const dateString = formatDate(date);
-    return habit.completedDates.includes(dateString);
-  };
-
-  const toggleBacklogDate = (habitId, date) => {
-    const dateString = formatDate(date);
-    
-    setHabits(prev => prev.map(habit => {
-      if (habit.id === habitId) {
-        const isCurrentlyCompleted = habit.completedDates.includes(dateString);
-        let newCompletedDates;
-        let newStreak = habit.streak;
-        let newProgress = habit.progress;
-        
-        if (isCurrentlyCompleted) {
-          // Remove the date
-          newCompletedDates = habit.completedDates.filter(d => d !== dateString);
-          newProgress = Math.max(newProgress - 1, 0);
-          showMessage(`📅 Removed ${habit.name} completion for ${new Date(dateString).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })}`);
-        } else {
-          // Add the date
-          newCompletedDates = [...habit.completedDates, dateString].sort();
-          newProgress = Math.min(newProgress + 1, habit.target);
-          showMessage(`✅ Marked ${habit.name} complete for ${new Date(dateString).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })}!`);
-        }
-        
-        return {
-          ...habit,
-          completedDates: newCompletedDates,
-          progress: newProgress
-        };
-      }
-      return habit;
-    }));
-  };
-
-  const generateVoiceInstructions = () => {
-    return `To use voice commands with Google Assistant:
-
-1. Say: "Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=80"
-2. Or set up shortcuts in Google Assistant app for easier commands like:
-   - "Open my awesome life habits" → opens the app
-   - "Log my meditation" → opens the meditation logging URL
-
-Example URLs you can bookmark or use:
-• ${window.location.origin}?action=log-habit&name=meditation&percent=100
-• ${window.location.origin}?action=log-habit&name=exercise&percent=75
-• ${window.location.origin}?action=log-habit&name=reading&percent=50`;
-  };
-
   const getWeeklyProgress = () => {
     const totalHabits = habits.length;
     const completedToday = habits.filter(h => h.completedToday).length;
@@ -656,75 +719,6 @@ Example URLs you can bookmark or use:
       totalStreak,
       activeHabits: totalHabits
     };
-  };
-
-  const BacklogModal = () => {
-    if (!showBacklogModal || !selectedHabitForBacklog) return null;
-
-    const pastDates = getPastDates(3);
-    
-    // Find the current habit state (this ensures we get the latest updates)
-    const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Update Past Days</h3>
-            <button onClick={closeBacklogModal}>
-              <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
-            </button>
-          </div>
-          
-          <div className="mb-4">
-            <h4 className="font-semibold text-gray-800 mb-2">{currentHabit.name}</h4>
-            <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
-          </div>
-
-          <div className="space-y-3">
-            {pastDates.map(date => {
-              const isCompleted = isDateCompleted(currentHabit, date);
-              const dayName = date.toLocaleDateString('en', { weekday: 'long' });
-              const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-              
-              return (
-                <div key={formatDate(date)} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                  isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'
-                }`}>
-                  <div>
-                    <p className="font-medium text-gray-800">{dayName}</p>
-                    <p className="text-sm text-gray-600">{dateString}</p>
-                  </div>
-                  <button
-                    onClick={() => toggleBacklogDate(currentHabit.id, date)}
-                    className={`p-2 rounded-full transition-all duration-200 ${
-                      isCompleted
-                        ? 'bg-green-500 text-white hover:bg-green-600 scale-110'
-                        : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white hover:scale-105'
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      <Circle className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex gap-3 pt-4 mt-6 border-t">
-            <button
-              onClick={closeBacklogModal}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const SliderModal = () => {
@@ -760,7 +754,6 @@ Example URLs you can bookmark or use:
             <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForSlider.name}</h4>
             <p className="text-sm text-gray-600 mb-4">How much did you accomplish today?</p>
             
-            {/* Big Percentage Display */}
             <div className="text-center mb-6">
               <div className={`text-6xl font-bold bg-gradient-to-r ${getSliderColor(sliderValue)} bg-clip-text text-transparent mb-2`}>
                 {sliderValue}%
@@ -768,7 +761,6 @@ Example URLs you can bookmark or use:
               <p className="text-sm text-gray-600">{getEncouragementText(sliderValue)}</p>
             </div>
 
-            {/* Slider */}
             <div className="relative mb-4">
               <input
                 type="range"
@@ -777,13 +769,9 @@ Example URLs you can bookmark or use:
                 step="5"
                 value={sliderValue}
                 onChange={(e) => setSliderValue(parseInt(e.target.value))}
-                className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                style={{
-                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${sliderValue}%, #e5e7eb ${sliderValue}%, #e5e7eb 100%)`
-                }}
+                className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
               
-              {/* Quick percentage buttons */}
               <div className="flex justify-between mt-3 gap-2">
                 {[25, 50, 75, 100].map(percentage => (
                   <button
@@ -801,7 +789,6 @@ Example URLs you can bookmark or use:
               </div>
             </div>
 
-            {/* Progress indication */}
             <div className="bg-gray-50 rounded-lg p-3 mb-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Will count as:</span>
@@ -836,6 +823,9 @@ Example URLs you can bookmark or use:
         </div>
       </div>
     );
+}
+
+export default App;
   };
 
   const DeleteConfirmModal = () => {
@@ -914,7 +904,7 @@ Example URLs you can bookmark or use:
                   currentView === 'habits' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                Awesome Life Habits Tracker
+                Habits
               </button>
               <button
                 onClick={() => setCurrentView('dashboard')}
@@ -981,7 +971,6 @@ Example URLs you can bookmark or use:
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Main Content - Today's Habits */}
               <div className="lg:col-span-3">
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -998,7 +987,6 @@ Example URLs you can bookmark or use:
                     </button>
                   </div>
 
-                  {/* Add New Habit Modal */}
                   {showAddHabit && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                       <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
@@ -1069,7 +1057,6 @@ Example URLs you can bookmark or use:
                         key={habit.id}
                         className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
                       >
-                        {/* Habit Header */}
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
@@ -1100,7 +1087,6 @@ Example URLs you can bookmark or use:
                           </div>
                         </div>
 
-                        {/* Progress Bar */}
                         <div className="mb-4">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
@@ -1116,7 +1102,6 @@ Example URLs you can bookmark or use:
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="flex gap-2">
                           <button
                             onClick={() => toggleHabit(habit.id)}
@@ -1141,7 +1126,6 @@ Example URLs you can bookmark or use:
                             )}
                           </button>
                           
-                          {/* Partial Completion Slider Button */}
                           <button
                             onClick={() => openSliderModal(habit)}
                             className="px-4 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2"
@@ -1155,14 +1139,22 @@ Example URLs you can bookmark or use:
                             <span className="hidden sm:inline">%</span>
                           </button>
                           
-                          {/* Update Past Days Button */}
                           <button
-                            onClick={() => openBacklogModal(habit)}
-                            className="px-4 py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-2"
-                            title="Update past 3 days"
+                            onClick={() => logHabitViaVoice(habit.name, "100")}
+                            className="px-4 py-3 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                            title="Voice command demo"
                           >
-                            <Calendar className="w-4 h-4" />
-                            <span className="hidden sm:inline">Past</span>
+                            <Mic className="w-4 h-4" />
+                            <span className="hidden sm:inline">Voice</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => logHabitViaVoice(habit.name, "100")}
+                            className="px-4 py-3 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+                            title="Voice command demo"
+                          >
+                            <Mic className="w-4 h-4" />
+                            <span className="hidden sm:inline">Voice</span>
                           </button>
                         </div>
                       </div>
@@ -1170,7 +1162,6 @@ Example URLs you can bookmark or use:
                   </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="bg-white rounded-xl shadow-lg p-6 text-center">
                     <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
@@ -1190,37 +1181,161 @@ Example URLs you can bookmark or use:
                 </div>
               </div>
 
-              {/* Sidebar - App Benefits */}
-              <div className="lg:col-span-1">
-                <div className="space-y-6">
-                  {/* Voice Commands */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Mic className="w-5 h-5 text-purple-500" />
-                      Voice Commands
-                      <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">WORLD FIRST</span>
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
-                        <h4 className="font-semibold text-purple-800 mb-2">🎤 Voice Logging</h4>
-                        <p className="text-sm text-purple-700 mb-3">Log habits hands-free with Google Assistant!</p>
-                        <div className="space-y-2 text-xs">
-                          <div className="bg-white p-2 rounded border-l-2 border-purple-500">
-                            <p className="font-medium mb-1">Try saying:</p>
-                            <p className="text-gray-600">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</p>
+                      <div className="lg:col-span-1">
+                        <div className="space-y-6">
+                          {/* Voice Commands Panel */}
+                          <div className="bg-white rounded-xl shadow-lg p-6">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                              <Mic className="w-5 h-5 text-purple-500" />
+                              Voice Commands
+                              <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">LIVE</span>
+                            </h3>
+                            
+                            {voiceSupported ? (
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-center gap-4">
+                                  <button
+                                    onClick={isListening ? stopListening : startListening}
+                                    disabled={!voiceSupported}
+                                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                                      isListening 
+                                        ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                                        : 'bg-blue-500 hover:bg-blue-600 text-white hover:scale-105'
+                                    }`}
+                                  >
+                                    {isListening ? (
+                                      <>
+                                        <MicOff className="w-5 h-5" />
+                                        Stop Listening
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Mic className="w-5 h-5" />
+                                        Start Voice Command
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                
+                                {isListening && (
+                                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Volume2 className="w-4 h-4 text-blue-500" />
+                                      <span className="font-medium text-blue-800">Listening for commands...</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600">
+                                      {voiceTranscript || 'Say: "Exercise complete" or "Meditation 75 percent"'}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                <button
+                                  onClick={() => setShowVoiceHelp(true)}
+                                  className="w-full text-sm bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors"
+                                >
+                                  📋 Voice Commands Help
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p className="text-yellow-800 text-sm">
+                                  ⚠️ Voice recognition not supported in this browser. Try using Chrome, Edge, or Safari.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* AI Agent Panel */}
+                          <div className="bg-white rounded-xl shadow-lg p-6">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                              <Bot className="w-5 h-5 text-green-500" />
+                              AI Coach
+                              <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">GEMINI</span>
+                            </h3>
+                            
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-center gap-4">
+                                <button
+                                  onClick={() => setShowAIChat(true)}
+                                  className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105"
+                                >
+                                  <MessageCircle className="w-5 h-5" />
+                                  Chat with AI Coach
+                                </button>
+                              </div>
+                              
+                              <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                                <h4 className="font-semibold text-sm mb-1">🧠 Smart & Natural</h4>
+                                <p className="text-xs text-gray-600">Understands context and gives helpful advice!</p>
+                              </div>
+                              
+                              <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                                <h4 className="font-semibold text-sm mb-1">💬 Try saying:</h4>
+                                <p className="text-xs text-gray-600">"I just finished a great workout!" or "How do I stay motivated?"</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-xl shadow-lg p-6">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                              <Star className="w-5 h-5 text-yellow-500" />
+                              App Benefits
+                            </h3>
+                            <div className="space-y-4">
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-800 text-sm">Smart Completion</h4>
+                                  <p className="text-xs text-gray-600">Track partial progress with percentage sliders</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <Mic className="w-4 h-4 text-purple-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-800 text-sm">Voice Control</h4>
+                                  <p className="text-xs text-gray-600">Hands-free habit logging with speech recognition</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <Bot className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-800 text-sm">AI Coaching</h4>
+                                  <p className="text-xs text-gray-600">Intelligent conversations and habit insights</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <Flame className="w-4 h-4 text-orange-600" />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-800 text-sm">Streak Tracking</h4>
+                                  <p className="text-xs text-gray-600">Build momentum with visual streak counters</p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => showMessage(generateVoiceInstructions())}
-                          className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full hover:bg-purple-700 mt-3"
-                        >
-                          📱 Setup Guide
-                        </button>
+                      </div>
+                    </div>
+                  </div>-purple-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-800 mb-2">🎤 Voice Logging</h4>
+                        <p className="text-sm text-purple-700 mb-3">Try the voice button on any habit!</p>
+                        <div className="space-y-2 text-xs">
+                          <div className="bg-white p-2 rounded border-l-2 border-purple-500">
+                            <p className="font-medium mb-1">Demo commands:</p>
+                            <p className="text-gray-600">Click the purple voice button to simulate voice logging</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* App Benefits */}
                   <div className="bg-white rounded-xl shadow-lg p-6">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                       <Star className="w-5 h-5 text-yellow-500" />
@@ -1234,15 +1349,6 @@ Example URLs you can bookmark or use:
                         <div>
                           <h4 className="font-semibold text-gray-800 text-sm">Smart Completion</h4>
                           <p className="text-xs text-gray-600">Track partial progress with percentage sliders</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Calendar className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">Backlog Updates</h4>
-                          <p className="text-xs text-gray-600">Update up to 3 past days to maintain streaks</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
@@ -1261,15 +1367,6 @@ Example URLs you can bookmark or use:
                         <div>
                           <h4 className="font-semibold text-gray-800 text-sm">Streak Tracking</h4>
                           <p className="text-xs text-gray-600">Build momentum with visual streak counters</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Phone className="w-4 h-4 text-red-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">Phone Coaching</h4>
-                          <p className="text-xs text-gray-600">AI calls you when you need motivation most</p>
                         </div>
                       </div>
                     </div>
@@ -1305,119 +1402,6 @@ Example URLs you can bookmark or use:
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white mb-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                🎯 WEEK WRAP-UP
-              </h3>
-              <div className="space-y-3">
-                <p className="text-sm opacity-90">Time to celebrate your progress!</p>
-                <div className="space-y-2">
-                  <p>✅ Today's completion rate: {getWeeklyProgress().completionRate}%</p>
-                  <p>✅ Total active streaks: {getWeeklyProgress().totalStreak} days</p>
-                  <p>✅ Building {getWeeklyProgress().activeHabits} life-changing habits</p>
-                </div>
-                <p className="text-sm">Ready to level up next week? 🚀</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Mail className="w-5 h-5 text-blue-500" />
-                AI Email Coach
-                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">PREMIUM</span>
-              </h3>
-              <div className="mb-4">
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">🤖 Smart Email System Active</h4>
-                  <p className="text-sm text-blue-700 mb-3">AI will send personalized re-engagement emails based on your personality type.</p>
-                  <button 
-                    onClick={sendAIEmail}
-                    className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-700 mr-2"
-                  >
-                    📧 Preview AI Email (Demo)
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-3">Recent AI Coach Emails</h4>
-                <div className="space-y-3">
-                  {currentUser.emailHistory.map(email => (
-                    <div key={email.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">AI</div>
-                          <div>
-                            <p className="font-medium text-gray-800">Your AI Coach</p>
-                            <p className="text-xs text-gray-500">coach@myawesomelifehabits.com</p>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-500">{new Date(email.sent).toLocaleDateString()}</span>
-                      </div>
-                      <h4 className="font-semibold text-gray-800 mb-2">📧 {email.subject}</h4>
-                      <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded border-l-4 border-blue-500">
-                        {email.content}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Phone className="w-5 h-5 text-green-500" />
-                AI Phone Coach
-                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">WORLD FIRST</span>
-              </h3>
-              <div className="mb-4">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-green-800 mb-2">📞 AI Voice Calling System</h4>
-                  <p className="text-sm text-green-700 mb-3">After 4 days inactive, AI will call you with personalized voice coaching matching your personality.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-3">
-                    <div><span className="font-medium">Voice Style:</span> Energetic & confident (Achiever)</div>
-                    <div><span className="font-medium">Call Time:</span> {currentUser.preferences.optimalCallTime}</div>
-                    <div><span className="font-medium">Duration:</span> 45-60 seconds</div>
-                    <div><span className="font-medium">Last Active:</span> {Math.floor((new Date() - new Date(currentUser.lastActiveDate)) / (1000 * 60 * 60 * 24))} days ago</div>
-                  </div>
-                  <button 
-                    onClick={() => scheduleAICall(4)}
-                    className="bg-green-600 text-white text-xs px-3 py-1 rounded-full hover:bg-green-700"
-                  >
-                    📞 Preview AI Call (Demo)
-                  </button>
-                </div>
-              </div>
-              
-              {currentUser.callHistory && currentUser.callHistory.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Scheduled AI Calls</h4>
-                  <div className="space-y-3">
-                    {currentUser.callHistory.map(call => (
-                      <div key={call.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">📞</div>
-                            <div>
-                              <p className="font-medium text-gray-800">AI Voice Coach</p>
-                              <p className="text-xs text-gray-500">Scheduled for {call.scheduledTime}</p>
-                            </div>
-                          </div>
-                          <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">{call.status}</span>
-                        </div>
-                        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded border-l-4 border-green-500">
-                          <p className="font-medium mb-2">📜 Call Script Preview ({call.voiceStyle}):</p>
-                          <p className="whitespace-pre-line">{call.script}</p>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Duration: {call.duration} • After {call.daysMissed} days inactive</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
@@ -1427,7 +1411,7 @@ Example URLs you can bookmark or use:
               <div className="mb-4">
                 <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
                   <h4 className="font-semibold text-red-800 mb-2">💝 Deep Personal Connection</h4>
-                  <p className="text-sm text-red-700 mb-3">AI creates meaningful messages connecting your habits to your bigger life goals and personal journey.</p>
+                  <p className="text-sm text-red-700 mb-3">AI creates meaningful messages connecting your habits to your bigger life goals.</p>
                   <button 
                     onClick={sendLifeCoachMessage}
                     className="bg-red-600 text-white text-xs px-3 py-1 rounded-full hover:bg-red-700"
@@ -1464,164 +1448,28 @@ Example URLs you can bookmark or use:
               <p className="text-gray-600">Insights, guides, and inspiration for your habit journey</p>
             </div>
 
-            {/* Articles Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Article 1: Why a BIG Vision Needs Good Habits */}
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Target className="w-6 h-6" />
-                    <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED ARTICLE</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Why a BIG Vision Needs Good Habits</h3>
-                  <p className="text-purple-100 text-sm">Discover how small daily actions build the foundation for extraordinary achievements</p>
-                </div>
-                <div className="p-6">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-4">
-                      <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with an extraordinary vision, but it's the boring, daily habits that actually make it happen.
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-800 mb-2">🎯 The Vision-Habit Connection</h4>
-                    <p className="text-gray-700 mb-4">
-                      Your big vision is the <em>destination</em>. Your habits are the <em>vehicle</em>. Without reliable daily systems, even the most inspiring goals remain out of reach.
-                    </p>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">🔧 Why Small Habits Create Big Results</h4>
-                    <ul className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Compound Effect:</strong> 1% better daily = 37x better in a year</li>
-                      <li><strong>Identity Shift:</strong> You become the person who does the thing</li>
-                      <li><strong>Momentum Building:</strong> Success breeds more success</li>
-                      <li><strong>Stress Reduction:</strong> Systems eliminate decision fatigue</li>
-                    </ul>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">💡 The Professional Athlete Mindset</h4>
-                    <p className="text-gray-700 mb-4">
-                      Olympic athletes don't wake up motivated every day. They wake up <em>committed</em> to their systems. Their habits are so automatic that motivation becomes irrelevant.
-                    </p>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">🚀 Your Action Steps</h4>
-                    <ol className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Start Ridiculously Small:</strong> 2 minutes of meditation > 30 minutes once a week</li>
-                      <li><strong>Stack Your Habits:</strong> After I [existing habit], I will [new habit]</li>
-                      <li><strong>Track Your Progress:</strong> What gets measured gets managed</li>
-                      <li><strong>Celebrate Small Wins:</strong> Dopamine reinforces the behavior loop</li>
-                    </ol>
-
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
-                      <p className="text-blue-800 font-medium">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
-                    </div>
-
-                    <p className="text-gray-700">
-                      <strong>The bottom line:</strong> Your big vision gives you direction and motivation. Your small habits give you the actual path to get there. Start building that path today, one habit at a time.
-                    </p>
-                  </div>
-                  
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>📖 5 min read</span>
-                      <span>🎯 Goal Setting</span>
-                      <span>💪 Motivation</span>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
+                <h3 className="text-xl font-bold mb-2">Why Small Habits Create Big Results</h3>
+                <p className="text-purple-100 text-sm">Discover the science behind habit formation and transformation</p>
               </div>
-
-              {/* Article 2: How to Use This App */}
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-6 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className="w-6 h-6" />
-                    <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO GUIDE</span>
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">How to Use My Awesome Life Habits</h3>
-                  <p className="text-green-100 text-sm">Master every feature and become a habit-building pro</p>
-                </div>
-                <div className="p-6">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-4">
-                      Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-800 mb-2">🏁 Getting Started</h4>
-                    <ol className="text-gray-700 space-y-2 mb-4">
-                      <li><strong>Start Small:</strong> Begin with 1-2 habits you can do in under 5 minutes</li>
-                      <li><strong>Choose Your Time:</strong> Pick the same time each day for consistency</li>
-                      <li><strong>Set Your Environment:</strong> Make good habits obvious and easy</li>
-                    </ol>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">✅ Tracking Your Habits</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                      <p className="text-gray-700 mb-2"><strong>Three Ways to Log Completion:</strong></p>
-                      <ul className="text-gray-700 space-y-1">
-                        <li><strong>Complete Button:</strong> One-click for 100% completion</li>
-                        <li><strong>% Slider:</strong> Set partial completion (25%, 50%, 75%, 100%)</li>
-                        <li><strong>Voice Commands:</strong> "Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</li>
-                      </ul>
-                    </div>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">📅 Catch Up on Missed Days</h4>
-                    <p className="text-gray-700 mb-4">
-                      Life happens! Use the <strong>"Past"</strong> button to update up to 3 previous days. This helps maintain your streak momentum without being overly forgiving.
-                    </p>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">🤖 AI Coaching Features</h4>
-                    <ul className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Personal Coach:</strong> Get insights based on your personality type</li>
-                      <li><strong>Email Coaching:</strong> Automatic re-engagement after 2 days inactive</li>
-                      <li><strong>Phone Coaching:</strong> AI calls you after 4 days (World First!)</li>
-                      <li><strong>Life Coach Messages:</strong> Deep, meaningful motivation tied to your bigger goals</li>
-                    </ul>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">🎯 Dashboard Insights</h4>
-                    <p className="text-gray-700 mb-4">
-                      Your Dashboard shows AI-powered insights, recent coaching messages, and weekly progress summaries. Check it regularly for motivation and course-correction.
-                    </p>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">⚙️ Pro Tips</h4>
-                    <ul className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Use the % Slider:</strong> 50% completion still counts as a streak day!</li>
-                      <li><strong>Export Your Data:</strong> Regular backups in Profile → Data & Privacy</li>
-                      <li><strong>Delete Old Habits:</strong> Click the trash icon to remove habits you've outgrown</li>
-                      <li><strong>Celebrate Milestones:</strong> Watch for special messages at 7, 14, and 21-day streaks</li>
-                    </ul>
-
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 my-4">
-                      <p className="text-green-800 font-medium">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
-                    </div>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">🚀 Advanced Features</h4>
-                    <ul className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Voice Commands:</strong> Log habits hands-free while driving, exercising, or cooking</li>
-                      <li><strong>Smart Notifications:</strong> AI learns your patterns and sends timely encouragement</li>
-                      <li><strong>Progress Analytics:</strong> Track completion rates and identify your best/worst days</li>
-                    </ul>
-
-                    <p className="text-gray-700">
-                      <strong>Ready to build your awesome life?</strong> Start with one small habit today. Remember: you're not just tracking habits, you're becoming the person who does these things naturally.
-                    </p>
-                  </div>
+              <div className="p-6">
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with small, consistent actions.
+                  </p>
                   
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>📖 7 min read</span>
-                      <span>🎓 Tutorial</span>
-                      <span>⚡ Quick Start</span>
-                    </div>
+                  <h4 className="font-semibold text-gray-800 mb-2">🔧 The Compound Effect</h4>
+                  <ul className="text-gray-700 space-y-1 mb-4">
+                    <li><strong>1% Better Daily:</strong> Leads to 37x improvement in a year</li>
+                    <li><strong>Identity Shift:</strong> You become the person who does the thing</li>
+                    <li><strong>Momentum Building:</strong> Success breeds more success</li>
+                  </ul>
+
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
+                    <p className="text-blue-800 font-medium">💭 You don't rise to the level of your goals. You fall to the level of your systems.</p>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Coming Soon Section */}
-            <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-6 text-white text-center">
-              <h3 className="text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
-              <p className="text-orange-100">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🧠 Habit Science</span>
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">💪 Success Stories</span>
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🎯 Advanced Strategies</span>
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">📺 Video Guides</span>
               </div>
             </div>
           </div>
@@ -1657,96 +1505,6 @@ Example URLs you can bookmark or use:
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={currentUser.phone}
-                    onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-green-500" />
-                AI Coaching Preferences
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Optimal Call Time</label>
-                  <input
-                    type="time"
-                    value="10:00"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={currentUser.preferences.emailCoaching}
-                      onChange={(e) => setCurrentUser(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, emailCoaching: e.target.checked }
-                      }))}
-                      className="rounded"
-                    />
-                    <label className="text-sm text-gray-700">
-                      📧 Enable AI email coaching (after 2 days inactive)
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={currentUser.preferences.phoneCoaching}
-                      onChange={(e) => setCurrentUser(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
-                      }))}
-                      className="rounded"
-                    />
-                    <label className="text-sm text-gray-700">
-                      📞 Enable AI phone coaching (after 4 days inactive) - WORLD FIRST!
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-orange-500" />
-                Data & Privacy
-              </h3>
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-800 mb-2">🔒 Privacy Protected</p>
-                  <p className="text-xs text-green-700">Your habit data is stored securely on your device and never leaves your computer</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">Backup & Restore</h4>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={exportData}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      📥 Export Data
-                    </button>
-                    <label className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
-                      📤 Import Data
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={importData}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">Export your data as a backup file or restore from a previous backup</p>
-                </div>
               </div>
             </div>
 
@@ -1758,43 +1516,179 @@ Example URLs you can bookmark or use:
                   <h4 className="font-semibold mb-2">🧠 AI Features Active:</h4>
                   <ul className="space-y-1 text-sm">
                     <li>✅ Personality-based messaging</li>
-                    <li>✅ AI email coaching (2-day trigger)</li>
-                    <li>✅ AI phone coaching (4-day trigger)</li>
-                    <li>✅ Life coach-style messaging</li>
-                    <li>✅ Predictive insights & recommendations</li>
+                    <li>✅ Voice command simulation</li>
+                    <li>✅ Percentage completion tracking</li>
                     <li>✅ Smart habit suggestions</li>
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">📊 Your AI Stats:</h4>
+                  <h4 className="font-semibold mb-2">📊 Your Stats:</h4>
                   <div className="space-y-1 text-sm">
                     <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% success rate</p>
-                    <p>• Email coaching system active</p>
-                    <p>• Phone coaching system active</p>
-                    <p>• Life coaching system active</p>
                     <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
+                    <p>• {habits.length} active habits</p>
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={() => setCurrentUser(prev => ({ ...prev, isPremium: false }))}
-                className="mt-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-30 transition-colors"
-              >
-                Demo Free Version
-              </button>
             </div>
           </div>
         )}
       </main>
 
-      {/* Backlog Modal */}
-      <BacklogModal />
-
-      {/* Slider Modal */}
       <SliderModal />
-
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal />
+
+      {/* Voice Help Modal */}
+      {showVoiceHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">🎤 Voice Commands Help</h3>
+              <button onClick={() => setShowVoiceHelp(false)}>
+                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">✅ Complete Commands:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• "Exercise complete"</li>
+                  <li>• "Meditation done"</li>
+                  <li>• "Reading finished"</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">📊 Percentage Commands:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• "Exercise 75 percent"</li>
+                  <li>• "Meditation half done"</li>
+                  <li>• "Reading mostly complete"</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">🎯 Tips:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Speak clearly and at normal speed</li>
+                  <li>• Use simple phrases</li>
+                  <li>• Wait for the microphone to activate</li>
+                  <li>• Works with ANY habit you add!</li>
+                </ul>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowVoiceHelp(false)}
+              className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AI Chat Modal */}
+      {showAIChat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-2xl mx-4 h-[600px] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Bot className="w-5 h-5 text-green-500" />
+                AI Habit Coach
+                <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">GEMINI POWERED</span>
+              </h3>
+              <button onClick={() => setShowAIChat(false)}>
+                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {aiChatHistory.length === 0 && (
+                <div className="text-center text-gray-500 mt-20">
+                  <Bot className="w-12 h-12 text-green-300 mx-auto mb-4" />
+                  <p className="font-medium">Chat with your AI habit coach!</p>
+                  <p className="text-sm mt-2">Try saying things like:</p>
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="bg-green-50 rounded-lg p-2">"I just finished an amazing workout!"</div>
+                    <div className="bg-green-50 rounded-lg p-2">"Had a good meditation session"</div>
+                    <div className="bg-green-50 rounded-lg p-2">"How's my streak going?"</div>
+                  </div>
+                </div>
+              )}
+              
+              {aiChatHistory.map((chat, index) => (
+                <div key={index} className={`flex gap-3 ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {chat.type !== 'user' && (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      chat.type === 'error' ? 'bg-red-100' : 'bg-green-100'
+                    }`}>
+                      <Bot className={`w-4 h-4 ${chat.type === 'error' ? 'text-red-500' : 'text-green-500'}`} />
+                    </div>
+                  )}
+                  <div className={`max-w-[80%] p-3 rounded-lg ${
+                    chat.type === 'user' 
+                      ? 'bg-blue-500 text-white' 
+                      : chat.type === 'error'
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    <p className="text-sm">{chat.message}</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  {chat.type === 'user' && (
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-blue-500" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {aiProcessing && (
+                <div className="flex gap-3 justify-start">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-green-500" />
+                  </div>
+                  <div className="bg-gray-100 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-green-500 animate-spin" />
+                      <span className="text-sm text-gray-600">AI is thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Auto-scroll anchor */}
+              <div ref={chatEndRef} />
+            </div>
+            
+            <div className="p-6 border-t">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={aiChatInput}
+                  onChange={(e) => setAiChatInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendAIMessage()}
+                  placeholder="Message your AI coach... (e.g., 'I just finished a great workout!')"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={aiProcessing}
+                  autoFocus
+                />
+                <button
+                  onClick={sendAIMessage}
+                  disabled={aiProcessing || !aiChatInput.trim()}
+                  className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
@@ -1803,6 +1697,3 @@ Example URLs you can bookmark or use:
       </footer>
     </div>
   );
-}
-
-export default App;
