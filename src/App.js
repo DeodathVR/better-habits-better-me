@@ -109,48 +109,67 @@ function App() {
     localStorage.setItem('habitTracker_habits', JSON.stringify(habits));
   }, [habits]);
 
-  // SIMPLE VOICE COMMANDS - New and Improved!
+  // PATH-BASED VOICE COMMANDS - The Ultimate Solution!
   useEffect(() => {
-    const handleSimpleVoiceCommand = () => {
-      console.log('🎤 SIMPLE VOICE COMMAND DETECTOR ACTIVATED!');
+    const handlePathBasedVoiceCommand = () => {
+      console.log('🎯 PATH-BASED VOICE COMMAND DETECTOR ACTIVATED!');
       console.log('📍 Current URL:', window.location.href);
+      console.log('🛤️ Current Path:', window.location.pathname);
       
-      const urlParams = new URLSearchParams(window.location.search);
-      console.log('📋 URL Parameters found:');
+      const path = window.location.pathname;
       
-      // Look for simple habit commands
-      const habitCommands = [];
-      for (let [key, value] of urlParams) {
-        console.log(`  - ${key}: "${value}"`);
-        habitCommands.push({ habit: key, action: value });
+      // Skip if we're just on the home page
+      if (path === '/' || path === '') {
+        console.log('🏠 Home page - no voice command to process');
+        return;
       }
       
-      console.log('🏃 Available habits for matching:');
-      habits.forEach((habit, index) => {
-        console.log(`  ${index + 1}. "${habit.name}" (id: ${habit.id})`);
-      });
-
-      // Process each habit command
-      habitCommands.forEach(command => {
-        console.log(`🎯 Processing command: ${command.habit}=${command.action}`);
+      console.log('🔍 Analyzing path for voice commands...');
+      
+      // Remove leading slash and split by dashes
+      const pathParts = path.substring(1).split('-');
+      console.log('📋 Path parts:', pathParts);
+      
+      if (pathParts.length >= 2) {
+        const habitKeyword = pathParts[0];
+        const action = pathParts.slice(1).join('-'); // rejoin in case action has dashes
         
-        const matchedHabit = findHabitByKeyword(command.habit);
+        console.log(`🎯 Extracted: habit="${habitKeyword}", action="${action}"`);
+        
+        console.log('🏃 Available habits for matching:');
+        habits.forEach((habit, index) => {
+          console.log(`  ${index + 1}. "${habit.name}" (id: ${habit.id})`);
+        });
+        
+        const matchedHabit = findHabitByKeyword(habitKeyword);
         if (matchedHabit) {
-          const percentage = parseActionToPercentage(command.action);
-          console.log(`✅ MATCH FOUND: ${matchedHabit.name} → ${percentage}%`);
+          const percentage = parseActionToPercentage(action);
+          console.log(`✅ PATH MATCH FOUND: ${matchedHabit.name} → ${percentage}%`);
           
           executeVoiceCommand(matchedHabit, percentage);
+          
+          // Redirect to home page after processing to clean URL
+          setTimeout(() => {
+            window.history.replaceState({}, document.title, '/');
+            console.log('🧹 Redirected to home page');
+          }, 2000);
         } else {
-          console.log(`❌ No habit found for keyword: "${command.habit}"`);
-          showMessage(`🎤 Voice command failed: No habit found for "${command.habit}"`);
+          console.log(`❌ No habit found for keyword: "${habitKeyword}"`);
+          showMessage(`🎤 Voice command failed: No habit found for "${habitKeyword}"`);
+          
+          // Still redirect to home
+          setTimeout(() => {
+            window.history.replaceState({}, document.title, '/');
+          }, 3000);
         }
-      });
-
-      // Clear URL after processing to avoid repeat executions
-      if (habitCommands.length > 0) {
-        const newUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-        console.log('🧹 URL cleaned:', newUrl);
+      } else {
+        console.log('❌ Invalid path format. Expected: /habit-action');
+        showMessage(`🎤 Invalid voice command format in URL: "${path}"`);
+        
+        // Redirect to home
+        setTimeout(() => {
+          window.history.replaceState({}, document.title, '/');
+        }, 3000);
       }
     };
 
@@ -161,10 +180,9 @@ function App() {
       
       // Direct keyword mapping for reliability
       const keywordMap = {
-        'meditation': ['meditation', 'meditate', 'mindful', 'zen'],
+        'meditation': ['meditation', 'meditate', 'mindful', 'zen', 'morning'],
         'exercise': ['exercise', 'workout', 'fitness', 'gym', 'run'],
         'reading': ['reading', 'read', 'book', 'study'],
-        'morning': ['morning'], // for "Morning Meditation"
       };
       
       // First, try exact habit name matching
@@ -214,7 +232,10 @@ function App() {
         'some': 50,
         'little': 25,
         'bit': 25,
-        'started': 25
+        'started': 25,
+        'quarter': 25,
+        'three-quarters': 75,
+        'threequarters': 75
       };
       
       const percentage = actionMap[actionLower] || 100; // Default to 100%
@@ -256,8 +277,8 @@ function App() {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(
           percentage === 100 
-            ? `Great job! ${habit.name} completed successfully!`
-            : `Nice work! ${habit.name} logged at ${percentage} percent!`
+            ? `Awesome! ${habit.name} completed successfully!`
+            : `Great work! ${habit.name} logged at ${percentage} percent!`
         );
         console.log('🔊 Speaking confirmation');
         speechSynthesis.speak(utterance);
@@ -265,20 +286,18 @@ function App() {
     };
 
     // Check for voice commands on page load
-    console.log('🚀 Setting up simple voice command listener...');
+    console.log('🚀 Setting up path-based voice command listener...');
     const timer = setTimeout(() => {
-      console.log('⏰ Checking for simple voice commands...');
-      handleSimpleVoiceCommand();
+      console.log('⏰ Checking for path-based voice commands...');
+      handlePathBasedVoiceCommand();
     }, 500);
 
     // Listen for URL changes
-    window.addEventListener('popstate', handleSimpleVoiceCommand);
-    window.addEventListener('hashchange', handleSimpleVoiceCommand);
+    window.addEventListener('popstate', handlePathBasedVoiceCommand);
     
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('popstate', handleSimpleVoiceCommand);
-      window.removeEventListener('hashchange', handleSimpleVoiceCommand);
+      window.removeEventListener('popstate', handlePathBasedVoiceCommand);
     };
   }, [habits]);
 
@@ -319,26 +338,29 @@ function App() {
   };
 
   const generateVoiceExamples = () => {
-    return `🎤 WORKING VOICE COMMANDS:
+    return `🎤 NEW PATH-BASED VOICE COMMANDS:
 
 Try saying these to Google Assistant:
 
-✅ "Hey Google, open myawesomelifehabits.com?exercise=complete"
-✅ "Hey Google, open myawesomelifehabits.com?meditation=done" 
-✅ "Hey Google, open myawesomelifehabits.com?reading=75"
-✅ "Hey Google, open myawesomelifehabits.com?meditation=half"
-✅ "Hey Google, open myawesomelifehabits.com?exercise=50"
+✅ "Hey Google, open myawesomelifehabits.com/exercise-complete"
+✅ "Hey Google, open myawesomelifehabits.com/meditation-done" 
+✅ "Hey Google, open myawesomelifehabits.com/reading-75"
+✅ "Hey Google, open myawesomelifehabits.com/meditation-half"
+✅ "Hey Google, open myawesomelifehabits.com/exercise-50"
 
 📊 Percentage words that work:
 • complete/done/finished = 100%
 • half/partial/some = 50% 
-• little/bit/started = 25%
+• little/bit/started/quarter = 25%
+• three-quarters = 75%
 • Any number (25, 75, 90, etc.)
 
 🎯 Habit keywords that work:
 • meditation, meditate, mindful → Morning Meditation
 • exercise, workout, fitness, gym → Exercise  
-• reading, read, book, study → Read 20 Minutes`;
+• reading, read, book, study → Read 20 Minutes
+
+🔥 These are MUCH easier for Google to handle!`;
   };
 
   return (
@@ -373,36 +395,39 @@ Try saying these to Google Assistant:
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="text-center py-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">🎤 Voice Commands Active!</h1>
-            <p className="text-lg text-gray-600 mb-4">Simple, natural voice logging - no more Google acting!</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">🛤️ Path-Based Voice Commands!</h1>
+            <p className="text-lg text-gray-600 mb-4">Simple URLs that Google can actually handle!</p>
           </div>
 
           {/* Voice Command Examples */}
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-green-800 mb-3">🎯 Try These Commands Now!</h2>
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
+            <h2 className="text-xl font-bold text-purple-800 mb-3">🎯 New & Improved Voice Commands!</h2>
+            <p className="text-sm text-purple-700 mb-4">
+              These use simple paths instead of complex parameters - much easier for Google to understand!
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
-                <h3 className="font-semibold mb-2">✅ Complete a Habit:</h3>
-                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?exercise=complete"</p>
+                <h3 className="font-semibold mb-2">✅ Complete Your Exercise:</h3>
+                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/exercise-complete</p>
               </div>
               <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
-                <h3 className="font-semibold mb-2">📊 Partial Progress:</h3>
-                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?meditation=75"</p>
+                <h3 className="font-semibold mb-2">📊 Partial Meditation:</h3>
+                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/meditation-75</p>
               </div>
               <div className="bg-white p-4 rounded-lg border-l-4 border-yellow-500">
-                <h3 className="font-semibold mb-2">🌓 Half Done:</h3>
-                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?reading=half"</p>
+                <h3 className="font-semibold mb-2">🌓 Half Reading:</h3>
+                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/reading-half</p>
               </div>
               <div className="bg-white p-4 rounded-lg border-l-4 border-purple-500">
-                <h3 className="font-semibold mb-2">🌱 Quick Start:</h3>
-                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?meditation=started"</p>
+                <h3 className="font-semibold mb-2">🌱 Started Meditation:</h3>
+                <p className="text-sm text-gray-600 font-mono">myawesomelifehabits.com/meditation-started</p>
               </div>
             </div>
             <button 
               onClick={() => showMessage(generateVoiceExamples())}
-              className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
             >
-              📋 Show All Voice Commands
+              📋 Show All New Commands
             </button>
           </div>
 
@@ -475,14 +500,15 @@ Try saying these to Google Assistant:
           </div>
 
           {/* Test Instructions */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-yellow-800 mb-2">🧪 Test Your Exercise!</h3>
-            <p className="text-sm text-yellow-700 mb-4">
-              Since you just finished your workout, try logging it with voice! Open your phone and say:
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-green-800 mb-2">🧪 Test Time - Log Your Workout!</h3>
+            <p className="text-sm text-green-700 mb-4">
+              Perfect timing! You just finished exercising. Let's test the new path-based commands:
             </p>
-            <div className="bg-white p-4 rounded-lg border-l-4 border-yellow-500">
-              <p className="font-medium mb-2">🎤 "Hey Google, open myawesomelifehabits.com?exercise=complete"</p>
-              <p className="text-xs text-gray-600">This should finally work without any Oscar-worthy acting from Google! 🎭</p>
+            <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
+              <p className="font-medium mb-2">🎤 Say this to Google:</p>
+              <p className="text-lg font-bold text-green-800">"Hey Google, open myawesomelifehabits.com/exercise-complete"</p>
+              <p className="text-xs text-gray-600 mt-2">This should FINALLY work! No more complex parameters for Google to mess up! 🎯</p>
             </div>
           </div>
         </div>
@@ -490,7 +516,7 @@ Try saying these to Google Assistant:
 
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
-          <p className="text-sm">🎤 Voice commands: Simple, Natural, Working! No more lies! ✨</p>
+          <p className="text-sm">🛤️ Path-based commands: The solution to Google's URL confusion! ✨</p>
         </div>
       </footer>
     </div>
