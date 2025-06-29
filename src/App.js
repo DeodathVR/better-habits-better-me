@@ -193,32 +193,41 @@ function App() {
     setAiProcessing(true);
     
     try {
-      const prompt = `You are an intelligent habit tracking assistant. The user says: "${userMessage}"
+      const prompt = `You are a CONCISE habit tracking assistant. The user says: "${userMessage}"
 
 Current habits available:
 ${habits.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak, ${h.completedToday ? 'completed today' : 'not completed today'})`).join('\n')}
 
-User profile: ${currentUser.name}, ${currentUser.aiProfile.personalityType} personality, goals: ${currentUser.behaviorData.biggerGoals.join(', ')}
+User profile: ${currentUser.name}, ${currentUser.aiProfile.personalityType} personality
+
+CRITICAL RULES:
+- For habit logging: respond with MAX 8 words, be enthusiastic but brief
+- For questions: you can be more detailed but still concise
+- NO follow-up questions unless specifically asked
+- NO lectures about career goals or life philosophy
+- Act like an encouraging gym buddy, not a life coach
 
 Your task:
 1. Determine if the user is logging a habit completion or asking a question
 2. If logging a habit, extract: habit name and completion percentage (0-100)
-3. Respond in an encouraging, coaching tone matching their ${currentUser.aiProfile.personalityType} personality
+3. Respond briefly and encouragingly
 
 Respond in JSON format:
 {
   "action": "log_habit" | "conversation" | "question",
   "habit_name": "exact habit name if logging" | null,
   "percentage": number 0-100 if logging | null,
-  "response": "encouraging message to user",
+  "response": "brief encouraging message (MAX 8 words for habit logging)",
   "reasoning": "brief explanation of what you understood"
 }
 
 Examples:
-- "I just finished an amazing workout!" → log_habit, Exercise, 100
-- "Had a good meditation session, about 15 minutes" → log_habit, Morning Meditation, 100  
-- "Started reading but only got through a few pages" → log_habit, Read 20 Minutes, 25
-- "How's my meditation streak going?" → question, null, null`;
+- "I just finished an amazing workout!" → log_habit, Exercise, 100, "Awesome workout! 💪 8-day streak going strong!"
+- "Had a good meditation session" → log_habit, Morning Meditation, 100, "Great meditation! 🧘‍♂️ Streak building nicely!"  
+- "Started reading but only got through a few pages" → log_habit, Read 20 Minutes, 25, "Nice start! 📚 Every page counts!"
+- "How's my meditation streak going?" → question, null, null, "Your meditation streak is at 5 days! You're building great momentum. Keep it up!"
+
+REMEMBER: For habit logging, keep it SHORT and SWEET!`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
@@ -649,6 +658,7 @@ Examples:
                 placeholder="Message your AI coach... (e.g., 'I just finished a great workout!')"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 disabled={aiProcessing}
+                autoFocus
               />
               <button
                 onClick={sendAIMessage}
