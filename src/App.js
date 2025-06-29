@@ -193,41 +193,51 @@ function App() {
     setAiProcessing(true);
     
     try {
-      const prompt = `You are a CONCISE habit tracking assistant. The user says: "${userMessage}"
+      const prompt = `You are a SMART habit tracking assistant. The user says: "${userMessage}"
 
 Current habits available:
 ${habits.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak, ${h.completedToday ? 'completed today' : 'not completed today'})`).join('\n')}
 
 User profile: ${currentUser.name}, ${currentUser.aiProfile.personalityType} personality
 
-CRITICAL RULES:
-- For habit logging: respond with MAX 8 words, be enthusiastic but brief
-- For questions: you can be more detailed but still concise
-- NO follow-up questions unless specifically asked
-- NO lectures about career goals or life philosophy
-- Act like an encouraging gym buddy, not a life coach
+RESPONSE RULES:
+- For HABIT LOGGING: Max 6 words, enthusiastic but brief, NO EMOJIS AT ALL in speech
+- For QUESTIONS/ADVICE: 2-3 helpful sentences, can be more detailed, NO EMOJIS AT ALL in speech  
+- Act like an encouraging but knowledgeable fitness buddy
+- CRITICAL: The speech_response field must NEVER contain emojis, emoji names, or emoji descriptions
+- speech_response should use ONLY regular words that sound natural when spoken
+- Use emojis only in the regular response field for visual display
+
+EMOJI RULES FOR SPEECH:
+- NEVER say "muscle emoji" - just don't include it
+- NEVER say "thumbs up emoji" - just say "great job"  
+- NEVER say "meditation emoji" - just say "nice meditation"
+- Use ONLY words that sound natural when spoken aloud
 
 Your task:
 1. Determine if the user is logging a habit completion or asking a question
 2. If logging a habit, extract: habit name and completion percentage (0-100)
-3. Respond briefly and encouragingly
+3. Respond appropriately based on the type of interaction
 
 Respond in JSON format:
 {
   "action": "log_habit" | "conversation" | "question",
   "habit_name": "exact habit name if logging" | null,
   "percentage": number 0-100 if logging | null,
-  "response": "brief encouraging message (MAX 8 words for habit logging)",
+  "response": "appropriate response (brief for logging, detailed for questions)",
+  "speech_response": "version without emojis for speech synthesis",
   "reasoning": "brief explanation of what you understood"
 }
 
 Examples:
-- "I just finished an amazing workout!" → log_habit, Exercise, 100, "Awesome workout! 💪 8-day streak going strong!"
-- "Had a good meditation session" → log_habit, Morning Meditation, 100, "Great meditation! 🧘‍♂️ Streak building nicely!"  
-- "Started reading but only got through a few pages" → log_habit, Read 20 Minutes, 25, "Nice start! 📚 Every page counts!"
-- "How's my meditation streak going?" → question, null, null, "Your meditation streak is at 5 days! You're building great momentum. Keep it up!"
+- "I just finished an amazing workout!" → log_habit, Exercise, 100, "Awesome workout! 💪", "Awesome workout, great job", "..."
+- "Had a good meditation session" → log_habit, Morning Meditation, 100, "Great meditation! 🧘‍♂️", "Great meditation session", "..."
+- "How do I increase my meditation time?" → question, null, null, "Start by adding 2-3 minutes weekly. Consistency beats duration. Set a timer and focus on your breath.", "Start by adding 2 to 3 minutes weekly. Consistency beats duration. Set a timer and focus on your breath.", "..."
 
-REMEMBER: For habit logging, keep it SHORT and SWEET!`;
+REMEMBER: 
+- Habit logging = SHORT responses
+- Questions = HELPFUL detailed responses  
+- speech_response = PLAIN ENGLISH ONLY, no emoji words or descriptions!`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
@@ -268,6 +278,12 @@ REMEMBER: For habit logging, keep it SHORT and SWEET!`;
           { type: 'ai', message: aiResult.response, timestamp: new Date(), action: aiResult }
         ]);
         
+        // Always speak the response using speech_response (no emojis)
+        if ('speechSynthesis' in window && aiResult.speech_response) {
+          const utterance = new SpeechSynthesisUtterance(aiResult.speech_response);
+          speechSynthesis.speak(utterance);
+        }
+        
         // Execute action if it's a habit log
         if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
           const habit = habits.find(h => h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase()) || 
@@ -276,12 +292,6 @@ REMEMBER: For habit logging, keep it SHORT and SWEET!`;
           if (habit) {
             console.log(`🤖 AI logging habit: ${habit.name} at ${aiResult.percentage}%`);
             executeHabitUpdate(habit, aiResult.percentage, 'ai');
-            
-            // Speak the AI response
-            if ('speechSynthesis' in window) {
-              const utterance = new SpeechSynthesisUtterance(aiResult.response);
-              speechSynthesis.speak(utterance);
-            }
           } else {
             console.log('❌ AI identified habit not found:', aiResult.habit_name);
             showMessage(`🤖 AI understood "${aiResult.habit_name}" but couldn't match it to your habits.`);
@@ -388,22 +398,37 @@ REMEMBER: For habit logging, keep it SHORT and SWEET!`;
     }
   };
 
-  // Find habit mentioned in speech (keep our proven logic)
+  // Find habit mentioned in speech (enhanced for any habit!)
   const findHabitInSpeech = (text) => {
     console.log('🔍 Searching for habits in:', text);
     
-    const habitKeywords = {
-      'Morning Meditation': ['meditation', 'meditate', 'mindful', 'mindfulness', 'zen', 'calm', 'breathing'],
-      'Exercise': ['exercise', 'workout', 'fitness', 'gym', 'run', 'running', 'cardio', 'training'],
-      'Read 20 Minutes': ['reading', 'read', 'book', 'study', 'studying', 'learning']
-    };
+    // Auto-generate keywords from all current habits
+    const habitKeywords = {};
+    habits.forEach(habit => {
+      const habitName = habit.name;
+      const nameWords = habitName.toLowerCase().split(' ');
+      
+      // Create keyword arrays for each habit
+      habitKeywords[habitName] = [
+        ...nameWords, // Split the habit name into words
+        habitName.toLowerCase() // Full name
+      ];
+      
+      // Add common synonyms based on category
+      if (habit.category === 'Mindfulness') {
+        habitKeywords[habitName].push('meditation', 'meditate', 'mindful', 'zen', 'calm', 'breathing');
+      } else if (habit.category === 'Fitness') {
+        habitKeywords[habitName].push('exercise', 'workout', 'fitness', 'gym', 'run', 'running', 'cardio', 'training');
+      } else if (habit.category === 'Learning') {
+        habitKeywords[habitName].push('reading', 'read', 'book', 'study', 'studying', 'learning');
+      }
+    });
     
+    // Check each habit for keyword matches
     for (const habit of habits) {
       const keywords = habitKeywords[habit.name] || [];
-      const nameWords = habit.name.toLowerCase().split(' ');
-      const allKeywords = [...keywords, ...nameWords];
       
-      for (const keyword of allKeywords) {
+      for (const keyword of keywords) {
         if (text.includes(keyword)) {
           console.log(`✅ Found habit "${habit.name}" via keyword "${keyword}"`);
           return habit;
