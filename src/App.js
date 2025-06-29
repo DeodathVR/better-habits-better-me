@@ -109,290 +109,134 @@ function App() {
     localStorage.setItem('habitTracker_habits', JSON.stringify(habits));
   }, [habits]);
 
-  // Voice command handling - DEBUG VERSION
+  // SIMPLE VOICE COMMANDS - New and Improved!
   useEffect(() => {
-    const handleVoiceCommand = () => {
-      // DETECTIVE MODE: Log everything!
-      console.log('🕵️ VOICE COMMAND DETECTIVE MODE ACTIVATED!');
+    const handleSimpleVoiceCommand = () => {
+      console.log('🎤 SIMPLE VOICE COMMAND DETECTOR ACTIVATED!');
       console.log('📍 Current URL:', window.location.href);
-      console.log('🔍 Full URL breakdown:');
-      console.log('  - Origin:', window.location.origin);
-      console.log('  - Pathname:', window.location.pathname);
-      console.log('  - Search:', window.location.search);
-      console.log('  - Hash:', window.location.hash);
       
-      // Check ALL possible parameter sources
       const urlParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-      
       console.log('📋 URL Parameters found:');
-      if (urlParams.toString()) {
-        for (let [key, value] of urlParams) {
-          console.log(`  - ${key}: "${value}"`);
-        }
-      } else {
-        console.log('  - (no URL parameters found)');
+      
+      // Look for simple habit commands
+      const habitCommands = [];
+      for (let [key, value] of urlParams) {
+        console.log(`  - ${key}: "${value}"`);
+        habitCommands.push({ habit: key, action: value });
       }
       
-      console.log('📋 Hash Parameters found:');
-      if (hashParams.toString()) {
-        for (let [key, value] of hashParams) {
-          console.log(`  - ${key}: "${value}"`);
-        }
-      } else {
-        console.log('  - (no hash parameters found)');
-      }
-      
-      // Show what we're looking for vs what we got
-      const action = urlParams.get('action') || hashParams.get('action');
-      const habitName = urlParams.get('name') || urlParams.get('habit') || hashParams.get('name') || hashParams.get('habit');
-      const percent = urlParams.get('percent') || urlParams.get('percentage') || hashParams.get('percent') || hashParams.get('percentage');
-      
-      console.log('🎯 Extracted values:');
-      console.log(`  - Action: "${action}"`);
-      console.log(`  - Habit Name: "${habitName}"`);
-      console.log(`  - Percentage: "${percent}"`);
-      
-      // Try to match habits more flexibly
       console.log('🏃 Available habits for matching:');
       habits.forEach((habit, index) => {
         console.log(`  ${index + 1}. "${habit.name}" (id: ${habit.id})`);
       });
-      
-      // Enhanced habit matching function
-      const findHabitFlexibly = (searchName) => {
-        if (!searchName) return null;
-        
-        const searchLower = searchName.toLowerCase();
-        console.log(`🔍 Searching for habit with: "${searchLower}"`);
-        
-        // Try exact match first
-        let match = habits.find(h => h.name.toLowerCase() === searchLower);
-        if (match) {
-          console.log(`✅ Exact match found: "${match.name}"`);
-          return match;
-        }
-        
-        // Try partial match
-        match = habits.find(h => {
-          const habitLower = h.name.toLowerCase();
-          return habitLower.includes(searchLower) || searchLower.includes(habitLower);
-        });
-        if (match) {
-          console.log(`✅ Partial match found: "${match.name}"`);
-          return match;
-        }
-        
-        // Try keyword matching
-        const keywords = {
-          'meditation': ['meditat', 'mindful', 'zen', 'calm'],
-          'exercise': ['exercise', 'workout', 'gym', 'fitness', 'run'],
-          'reading': ['read', 'book', 'study']
-        };
-        
-        for (const [habitType, keywordList] of Object.entries(keywords)) {
-          if (keywordList.some(keyword => searchLower.includes(keyword))) {
-            match = habits.find(h => h.name.toLowerCase().includes(habitType));
-            if (match) {
-              console.log(`✅ Keyword match found: "${match.name}" (via keyword: ${habitType})`);
-              return match;
-            }
-          }
-        }
-        
-        console.log(`❌ No match found for: "${searchLower}"`);
-        return null;
-      };
-      
-      if (habitName) {
-        const matchedHabit = findHabitFlexibly(habitName);
-        console.log(`🎯 Habit matching result: ${matchedHabit ? `Found "${matchedHabit.name}"` : 'No match found'}`);
-      }
-      
-      // Check if this looks like a valid voice command
-      if (action === 'log-habit' && habitName) {
-        console.log('✅ VALID VOICE COMMAND DETECTED!');
-        console.log('🚀 Attempting to log habit...');
-        
-        // Add a visual indicator that we received the command
-        showMessage(`🎤 Google said: Update ${habitName} to ${percent || 100}% - Processing...`);
-        
-        // Enhanced logHabitViaVoice with better debugging
-        const enhancedLogHabitViaVoice = (habitName, percentString) => {
-          console.log('🎯 enhancedLogHabitViaVoice called with:', { habitName, percentString });
-          
-          const percent = parseInt(percentString) || 100;
-          console.log('📊 Parsed percentage:', percent);
-          
-          const habit = findHabitFlexibly(habitName);
-          
-          if (habit) {
-            console.log('✅ SUCCESS: Updating habit:', habit.name);
-            console.log('📈 Current state:', {
-              streak: habit.streak,
-              progress: habit.progress,
-              completedToday: habit.completedToday
-            });
-            
-            // Your existing habit update logic
-            setHabits(prev => prev.map(h => {
-              if (h.id === habit.id) {
-                const newStreak = percent >= 50 ? h.streak + 1 : h.streak;
-                const newProgress = Math.min(h.progress + Math.ceil(percent/100), h.target);
-                
-                console.log('📈 New state will be:', {
-                  streak: newStreak,
-                  progress: newProgress,
-                  completedToday: percent >= 50,
-                  voiceCompletion: percent
-                });
-                
-                return {
-                  ...h,
-                  completedToday: percent >= 50,
-                  voiceCompletion: percent,
-                  streak: newStreak,
-                  progress: newProgress
-                };
-              }
-              return h;
-            }));
-            
-            // Enhanced success message
-            const successMessage = percent === 100 
-              ? `🎤✅ GOOGLE COMMAND SUCCESS: ${habit.name} completed!`
-              : `🎤📊 GOOGLE COMMAND SUCCESS: ${habit.name} logged at ${percent}%!`;
-            
-            console.log('📢 Success message:', successMessage);
-            showMessage(successMessage);
-            
-            // Speak confirmation
-            if ('speechSynthesis' in window) {
-              const utterance = new SpeechSynthesisUtterance(
-                `Actually updated! ${habit.name} at ${percent} percent. Google wasn't lying this time!`
-              );
-              console.log('🔊 Speaking confirmation');
-              speechSynthesis.speak(utterance);
-            }
-          } else {
-            const errorMessage = `❌ GOOGLE COMMAND FAILED: Couldn't find habit "${habitName}". Available: ${habits.map(h => h.name).join(', ')}`;
-            console.log('📢 Error message:', errorMessage);
-            showMessage(errorMessage);
-          }
-        };
 
-        enhancedLogHabitViaVoice(habitName, percent || '100');
+      // Process each habit command
+      habitCommands.forEach(command => {
+        console.log(`🎯 Processing command: ${command.habit}=${command.action}`);
         
-        // Clear URL parameters after processing
+        const matchedHabit = findHabitByKeyword(command.habit);
+        if (matchedHabit) {
+          const percentage = parseActionToPercentage(command.action);
+          console.log(`✅ MATCH FOUND: ${matchedHabit.name} → ${percentage}%`);
+          
+          executeVoiceCommand(matchedHabit, percentage);
+        } else {
+          console.log(`❌ No habit found for keyword: "${command.habit}"`);
+          showMessage(`🎤 Voice command failed: No habit found for "${command.habit}"`);
+        }
+      });
+
+      // Clear URL after processing to avoid repeat executions
+      if (habitCommands.length > 0) {
         const newUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
         console.log('🧹 URL cleaned:', newUrl);
-      } else {
-        console.log('❌ Not a valid voice command');
-        console.log('Expected: action=log-habit AND name=[habit name]');
-        console.log(`Got: action="${action}", name="${habitName}"`);
-        
-        // Show what Google actually sent us
-        if (window.location.search || window.location.hash) {
-          showMessage(`🔍 Debug: Google sent "${window.location.search}${window.location.hash}" - Check console for details`);
+      }
+    };
+
+    // Smart habit matching by keyword
+    const findHabitByKeyword = (keyword) => {
+      const searchTerm = keyword.toLowerCase();
+      console.log(`🔍 Searching for habit with keyword: "${searchTerm}"`);
+      
+      // Direct keyword mapping for reliability
+      const keywordMap = {
+        'meditation': ['meditation', 'meditate', 'mindful', 'zen'],
+        'exercise': ['exercise', 'workout', 'fitness', 'gym', 'run'],
+        'reading': ['reading', 'read', 'book', 'study'],
+        'morning': ['morning'], // for "Morning Meditation"
+      };
+      
+      // First, try exact habit name matching
+      let match = habits.find(h => h.name.toLowerCase().includes(searchTerm));
+      if (match) {
+        console.log(`✅ Direct name match: "${match.name}"`);
+        return match;
+      }
+      
+      // Then try keyword mapping
+      for (const [habitType, keywords] of Object.entries(keywordMap)) {
+        if (keywords.includes(searchTerm)) {
+          match = habits.find(h => h.name.toLowerCase().includes(habitType));
+          if (match) {
+            console.log(`✅ Keyword match: "${match.name}" via "${habitType}"`);
+            return match;
+          }
         }
       }
       
-      // Method 2: Parse URL hash for natural language (your existing code)
-      const hash = window.location.hash;
-      console.log('🔗 URL Hash analysis:', hash);
+      console.log(`❌ No match found for: "${searchTerm}"`);
+      return null;
+    };
+
+    // Convert action words to percentages
+    const parseActionToPercentage = (action) => {
+      const actionLower = action.toLowerCase();
+      console.log(`📊 Parsing action: "${actionLower}"`);
       
-      if (hash && hash.includes('update')) {
-        console.log('🗣️ Natural language voice command detected in hash!');
-        parseNaturalVoiceCommand(hash);
+      // Check if it's already a number
+      const numericMatch = actionLower.match(/(\d+)/);
+      if (numericMatch) {
+        const percent = parseInt(numericMatch[1]);
+        console.log(`📊 Numeric percentage found: ${percent}%`);
+        return Math.min(percent, 100); // Cap at 100%
       }
       
-      // Log completion
-      console.log('🏁 Voice command analysis complete!');
-      console.log('📊 Summary: URL processed, check above for any matches');
-    };
-
-    // Check URL on app load with debugging
-    console.log('🚀 Setting up voice command listener...');
-    const timer = setTimeout(() => {
-      console.log('⏰ Timer triggered: Checking for voice commands...');
-      handleVoiceCommand();
-    }, 1000);
-
-    // Listen for URL changes
-    window.addEventListener('popstate', (e) => {
-      console.log('🔄 popstate event triggered');
-      handleVoiceCommand();
-    });
-    
-    window.addEventListener('hashchange', (e) => {
-      console.log('🔄 hashchange event triggered');
-      handleVoiceCommand();
-    });
-    
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('popstate', handleVoiceCommand);
-      window.removeEventListener('hashchange', handleVoiceCommand);
-    };
-  }, [habits]);
-
-  const parseNaturalVoiceCommand = (hash) => {
-    console.log('Parsing natural command:', hash);
-    
-    // Parse patterns like: #update-meditation-75-percent
-    const text = hash.toLowerCase().replace('#', '');
-    
-    // Look for habit names
-    const habitMatch = habits.find(h => 
-      text.includes(h.name.toLowerCase()) || 
-      h.name.toLowerCase().includes(text.split('-')[1] || '')
-    );
-    
-    // Look for percentage
-    const percentMatch = text.match(/(\d+)\s*percent?/);
-    const percent = percentMatch ? parseInt(percentMatch[1]) : 100;
-    
-    console.log('Parsed:', { habitMatch, percent });
-    
-    if (habitMatch) {
-      logHabitViaVoice(habitMatch.name, percent.toString());
-    } else {
-      showMessage(`🎤 Couldn't parse voice command: "${hash}". Try: "update meditation 75 percent"`);
-    }
-  };
-
-  const logHabitViaVoice = (habitName, percentString) => {
-    console.log('logHabitViaVoice called with:', { habitName, percentString });
-    
-    const percent = parseInt(percentString) || 100; // Default to 100% if no percentage given
-    console.log('Parsed percentage:', percent);
-    
-    // Find habit by name (case insensitive, flexible matching)
-    const habit = habits.find(h => {
-      const habitLower = h.name.toLowerCase();
-      const searchLower = habitName.toLowerCase();
-      return habitLower.includes(searchLower) || searchLower.includes(habitLower);
-    });
-    
-    console.log('Found habit:', habit);
-    console.log('All habits:', habits.map(h => h.name));
-    
-    if (habit) {
-      console.log('Updating habit:', habit.name);
+      // Word-based actions
+      const actionMap = {
+        'complete': 100,
+        'completed': 100,
+        'done': 100,
+        'finished': 100,
+        'full': 100,
+        'half': 50,
+        'partial': 50,
+        'some': 50,
+        'little': 25,
+        'bit': 25,
+        'started': 25
+      };
       
-      // Update the habit with voice completion
+      const percentage = actionMap[actionLower] || 100; // Default to 100%
+      console.log(`📊 Action "${actionLower}" → ${percentage}%`);
+      return percentage;
+    };
+
+    // Execute the voice command
+    const executeVoiceCommand = (habit, percentage) => {
+      console.log(`🚀 Executing: ${habit.name} at ${percentage}%`);
+      
       setHabits(prev => prev.map(h => {
         if (h.id === habit.id) {
-          const newStreak = percent >= 50 ? h.streak + 1 : h.streak; // Count as streak if 50%+
-          const newProgress = Math.min(h.progress + Math.ceil(percent/100), h.target);
+          const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
+          const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
           
-          console.log('Habit updated:', { percent, newStreak, newProgress });
+          console.log(`📈 Updated: streak=${newStreak}, progress=${newProgress}`);
           
           return {
             ...h,
-            completedToday: percent >= 50,
-            voiceCompletion: percent,
+            completedToday: percentage >= 50,
+            voiceCompletion: percentage,
             streak: newStreak,
             progress: newProgress
           };
@@ -400,33 +244,48 @@ function App() {
         return h;
       }));
       
-      // Show voice confirmation
-      const voiceMessage = percent === 100 
-        ? `🎤 Voice logged: ${habit.name} completed!`
-        : `🎤 Voice logged: ${habit.name} at ${percent}% - Great progress!`;
+      // Success message and confirmation
+      const successMessage = percentage === 100 
+        ? `🎤✅ VOICE SUCCESS: ${habit.name} completed!`
+        : `🎤📊 VOICE SUCCESS: ${habit.name} logged at ${percentage}%!`;
       
-      console.log('Showing message:', voiceMessage);
-      showMessage(voiceMessage);
+      console.log('📢 Success:', successMessage);
+      showMessage(successMessage);
       
-      // Speak confirmation if browser supports it
+      // Speak confirmation
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(
-          `Great job! I've logged your ${habit.name} at ${percent} percent.`
+          percentage === 100 
+            ? `Great job! ${habit.name} completed successfully!`
+            : `Nice work! ${habit.name} logged at ${percentage} percent!`
         );
-        console.log('Speaking confirmation');
+        console.log('🔊 Speaking confirmation');
         speechSynthesis.speak(utterance);
       }
-    } else {
-      const errorMessage = `🎤 Voice command: Couldn't find habit "${habitName}". Available habits: ${habits.map(h => h.name).join(', ')}`;
-      console.log('Habit not found:', errorMessage);
-      showMessage(errorMessage);
-    }
-  };
+    };
+
+    // Check for voice commands on page load
+    console.log('🚀 Setting up simple voice command listener...');
+    const timer = setTimeout(() => {
+      console.log('⏰ Checking for simple voice commands...');
+      handleSimpleVoiceCommand();
+    }, 500);
+
+    // Listen for URL changes
+    window.addEventListener('popstate', handleSimpleVoiceCommand);
+    window.addEventListener('hashchange', handleSimpleVoiceCommand);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('popstate', handleSimpleVoiceCommand);
+      window.removeEventListener('hashchange', handleSimpleVoiceCommand);
+    };
+  }, [habits]);
 
   const showMessage = (message) => {
     setNotificationMessage(message);
     setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 4000);
+    setTimeout(() => setShowNotification(false), 5000);
   };
 
   const toggleHabit = (habitId) => {
@@ -444,7 +303,7 @@ function App() {
             completedToday: newCompleted,
             streak: newStreak,
             progress: newProgress,
-            voiceCompletion: undefined // Clear any voice completion when manually toggling
+            voiceCompletion: undefined // Clear voice completion when manually toggling
           };
         }
         
@@ -457,6 +316,29 @@ function App() {
       }
       return habit;
     }));
+  };
+
+  const generateVoiceExamples = () => {
+    return `🎤 WORKING VOICE COMMANDS:
+
+Try saying these to Google Assistant:
+
+✅ "Hey Google, open myawesomelifehabits.com?exercise=complete"
+✅ "Hey Google, open myawesomelifehabits.com?meditation=done" 
+✅ "Hey Google, open myawesomelifehabits.com?reading=75"
+✅ "Hey Google, open myawesomelifehabits.com?meditation=half"
+✅ "Hey Google, open myawesomelifehabits.com?exercise=50"
+
+📊 Percentage words that work:
+• complete/done/finished = 100%
+• half/partial/some = 50% 
+• little/bit/started = 25%
+• Any number (25, 75, 90, etc.)
+
+🎯 Habit keywords that work:
+• meditation, meditate, mindful → Morning Meditation
+• exercise, workout, fitness, gym → Exercise  
+• reading, read, book, study → Read 20 Minutes`;
   };
 
   return (
@@ -491,8 +373,37 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="text-center py-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">🕵️ Debug Mode Active</h1>
-            <p className="text-lg text-gray-600 mb-4">Check your browser console for voice command detective work!</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">🎤 Voice Commands Active!</h1>
+            <p className="text-lg text-gray-600 mb-4">Simple, natural voice logging - no more Google acting!</p>
+          </div>
+
+          {/* Voice Command Examples */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
+            <h2 className="text-xl font-bold text-green-800 mb-3">🎯 Try These Commands Now!</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
+                <h3 className="font-semibold mb-2">✅ Complete a Habit:</h3>
+                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?exercise=complete"</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
+                <h3 className="font-semibold mb-2">📊 Partial Progress:</h3>
+                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?meditation=75"</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border-l-4 border-yellow-500">
+                <h3 className="font-semibold mb-2">🌓 Half Done:</h3>
+                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?reading=half"</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border-l-4 border-purple-500">
+                <h3 className="font-semibold mb-2">🌱 Quick Start:</h3>
+                <p className="text-sm text-gray-600">"Hey Google, open myawesomelifehabits.com?meditation=started"</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => showMessage(generateVoiceExamples())}
+              className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            >
+              📋 Show All Voice Commands
+            </button>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6">
@@ -549,7 +460,7 @@ function App() {
                     {habit.completedToday ? (
                       <span className="flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-5 h-5" />
-                        {habit.voiceCompletion ? `Voice: ${habit.voiceCompletion}%` : 'Completed!'}
+                        {habit.voiceCompletion ? `🎤 Voice: ${habit.voiceCompletion}%` : 'Completed!'}
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-2">
@@ -563,14 +474,15 @@ function App() {
             </div>
           </div>
 
+          {/* Test Instructions */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-yellow-800 mb-2">🎤 Voice Command Testing</h3>
+            <h3 className="text-lg font-bold text-yellow-800 mb-2">🧪 Test Your Exercise!</h3>
             <p className="text-sm text-yellow-700 mb-4">
-              Try your Google Assistant command now, then check the browser console (F12 → Console) for detailed logs!
+              Since you just finished your workout, try logging it with voice! Open your phone and say:
             </p>
             <div className="bg-white p-4 rounded-lg border-l-4 border-yellow-500">
-              <p className="font-medium mb-2">Example command to test:</p>
-              <p className="text-gray-600 text-sm">"Hey Google, open myawesomelifehabits.com?action=log-habit&name=meditation&percent=75"</p>
+              <p className="font-medium mb-2">🎤 "Hey Google, open myawesomelifehabits.com?exercise=complete"</p>
+              <p className="text-xs text-gray-600">This should finally work without any Oscar-worthy acting from Google! 🎭</p>
             </div>
           </div>
         </div>
@@ -578,7 +490,7 @@ function App() {
 
       <footer className="bg-white border-t mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
-          <p className="text-sm">🕵️ Detective Mode: Catching Google Assistant red-handed! 🎭</p>
+          <p className="text-sm">🎤 Voice commands: Simple, Natural, Working! No more lies! ✨</p>
         </div>
       </footer>
     </div>
