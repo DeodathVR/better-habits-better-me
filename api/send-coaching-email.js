@@ -1,18 +1,12 @@
-const sgMail = require('@sendgrid/mail');
-
 export default async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Set up SendGrid
   const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
   if (!SENDGRID_API_KEY) {
     return res.status(500).json({ error: 'SendGrid API key not configured' });
   }
-  
-  sgMail.setApiKey(SENDGRID_API_KEY);
 
   try {
     const { userEmail, userName, inactiveDays, habits, longestStreak } = req.body;
@@ -88,24 +82,48 @@ export default async function handler(req, res) {
     </html>
     `;
 
-    // Send email
-    const msg = {
-      to: userEmail,
+    // Send email using SendGrid Web API
+    const emailData = {
+      personalizations: [
+        {
+          to: [{ email: userEmail }],
+          subject: `${userName}, your habits are waiting for you! 🌟`
+        }
+      ],
       from: {
         email: 'coach@myawesomelifehabits.com',
         name: 'Your Habit Coach'
       },
-      subject: `${userName}, your habits are waiting for you! 🌟`,
-      html: htmlContent,
-      text: `Hi ${userName}, I noticed you haven't checked in for ${inactiveDays} days. Your ${longestStreak}-day streak shows real dedication! Visit https://www.myawesomelifehabits.com to continue your journey.`
+      content: [
+        {
+          type: 'text/html',
+          value: htmlContent
+        },
+        {
+          type: 'text/plain',
+          value: `Hi ${userName}, I noticed you haven't checked in for ${inactiveDays} days. Your ${longestStreak}-day streak shows real dedication! Visit https://www.myawesomelifehabits.com to continue your journey.`
+        }
+      ]
     };
 
-    await sgMail.send(msg);
-    
-    res.status(200).json({ 
-      success: true, 
-      message: `Coaching email sent to ${userEmail}` 
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailData)
     });
+
+    if (response.ok) {
+      res.status(200).json({ 
+        success: true, 
+        message: `Coaching email sent to ${userEmail}` 
+      });
+    } else {
+      const errorText = await response.text();
+      throw new Error(`SendGrid API error: ${response.status} - ${errorText}`);
+    }
 
   } catch (error) {
     console.error('Email sending error:', error);
