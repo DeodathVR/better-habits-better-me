@@ -82,7 +82,7 @@ export default async function handler(req, res) {
     </html>
     `;
 
-    // Send email using SendGrid Web API
+    // Simplified email data - HTML only
     const emailData = {
       personalizations: [
         {
@@ -95,10 +95,6 @@ export default async function handler(req, res) {
         name: 'Your Habit Coach'
       },
       content: [
-        {
-          type: 'text/plain',
-          value: `Hi ${userName}, I noticed you haven't checked in for ${inactiveDays} days. Your ${longestStreak}-day streak shows real dedication! Visit https://www.myawesomelifehabits.com to continue your journey.`
-        },
         {
           type: 'text/html',
           value: htmlContent
