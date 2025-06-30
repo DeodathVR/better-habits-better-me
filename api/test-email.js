@@ -4,9 +4,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Import and call the email function directly
-    const sendEmail = require('./send-coaching-email').default;
-    
+    // Test data
     const testData = {
       userEmail: 'sparksofmotivation1001@gmail.com',
       userName: 'Alex',
@@ -19,25 +17,27 @@ export default async function handler(req, res) {
       ]
     };
 
-    // Create mock request object
-    const mockReq = {
+    // Call your email function using the same domain
+    const baseUrl = `https://${req.headers.host}`;
+    const response = await fetch(`${baseUrl}/api/send-coaching-email`, {
       method: 'POST',
-      body: testData
-    };
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testData)
+    });
 
-    const mockRes = {
-      status: (code) => ({
-        json: (data) => {
-          if (code === 200) {
-            res.status(200).json({ success: true, message: 'Test email sent! Check sparksofmotivation1001@gmail.com! 📧✨' });
-          } else {
-            res.status(500).json({ error: 'Email failed', details: data });
-          }
-        }
-      })
-    };
-
-    await sendEmail(mockReq, mockRes);
+    const result = await response.json();
+    
+    if (response.ok) {
+      res.status(200).json({ 
+        success: true, 
+        message: 'Test email sent! Check sparksofmotivation1001@gmail.com! 📧✨',
+        details: result
+      });
+    } else {
+      res.status(500).json({ error: 'Email failed', details: result });
+    }
 
   } catch (error) {
     res.status(500).json({ error: error.message });
