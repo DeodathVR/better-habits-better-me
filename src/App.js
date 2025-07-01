@@ -43,11 +43,7 @@ function App() {
     if (habitData.description.length > 100) return false;
     
        
-    // Check for duplicate names
-    const existingNames = habits.map(h => h.name.toLowerCase());
-    if (existingNames.includes(habitData.name.toLowerCase())) {
-      return false;
-    }
+    
     
     return true;
   };
@@ -359,7 +355,18 @@ Respond in JSON format:
             }]);
           }
         }
-     
+     }
+    } catch (error) {
+      const errorMessage = `AI Error: ${error.message}`;
+      setAiChatHistory(prev => [...prev, 
+        { type: 'user', message: userMessage, timestamp: new Date() },
+        { type: 'error', message: errorMessage, timestamp: new Date() }
+      ]);
+      showMessage(errorMessage);
+    } finally {
+      setAiProcessing(false);
+    }
+  };
        { type: 'user', message: userMessage, timestamp: new Date() },
         { type: 'error', message: errorMessage, timestamp: new Date() }
       ]);
@@ -378,12 +385,7 @@ Respond in JSON format:
     await processWithAI(message);
   };
   
-  if (matchedHabit) {
-    executeHabitUpdate(matchedHabit, percentage, 'voice');
-  } else {
-    showMessage(`Couldn't identify a habit in: "${transcript}"`);
-  }
-};
+  
     
   const executeHabitUpdate = (habit, percentage, source) => {
     setHabits(prev => prev.map(h => {
