@@ -310,7 +310,7 @@ Respond in JSON format:
           const newHabitData = aiResult.new_habit;
           
           // Validate AI input (safety first!)
-          if (validateAIHabitInput(newHabitData)) {
+          if (newHabitData && newHabitData.name && newHabitData.description) {
             const newHabit = {
               id: Date.now(),
               name: newHabitData.name.substring(0, 30), // Limit length
