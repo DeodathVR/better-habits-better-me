@@ -367,12 +367,7 @@ Respond in JSON format:
       setAiProcessing(false);
     }
   };
-       { type: 'user', message: userMessage, timestamp: new Date() },
-        { type: 'error', message: errorMessage, timestamp: new Date() }
-      ]);
-        { type: 'error', message: errorMessage, timestamp: new Date() }
-      ]);
-      showMessage(errorMessage);
+    
     } finally {
       setAiProcessing(false);
     }
