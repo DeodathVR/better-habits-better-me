@@ -392,7 +392,7 @@ if (matchedHabit) {
     } else {
       showMessage(`Couldn't identify a habit in: "${transcript}"`);
     }
-  };
+  }
 
   const executeHabitUpdate = (habit, percentage, source) => {
     setHabits(prev => prev.map(h => {
