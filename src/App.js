@@ -458,9 +458,7 @@ Respond in JSON format:
   for (const habit of habits) {
     const keywords = habitKeywords[habit.name] || [];
     for (const keyword of keywords) {
-      console.log(`Checking "${keyword.toLowerCase()}" against "${text}"`);
-if (text.includes(keyword.toLowerCase())) {
-  console.log(`MATCH FOUND: ${keyword} for habit ${habit.name}`);
+      if (text.includes(keyword.toLowerCase())) {
         return habit;
       }
     }
