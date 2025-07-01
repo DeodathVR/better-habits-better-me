@@ -51,7 +51,25 @@ function App() {
     
     return true;
   };
+// 💾 LocalStorage Functions - ADD THIS RIGHT HERE
+const saveToLocalStorage = (key, data) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+    showMessage('⚠️ Could not save data locally');
+  }
+};
 
+const loadFromLocalStorage = (key, defaultValue) => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : defaultValue;
+  } catch (error) {
+    console.error('Error loading from localStorage:', error);
+    return defaultValue;
+  }
+};
     const messageArray = messages[type] || messages.encouragement;
     return messageArray[Math.floor(Math.random() * messageArray.length)];
   };
@@ -92,7 +110,46 @@ function App() {
     callHistory: []
   });
 
-  const [habits, setHabits] = useState([
+  const [habits, setHabits] = useState(() => {
+  return loadFromLocalStorage('userHabits', [
+    {
+      id: 1,
+      name: "Morning Meditation",
+      description: "Start the day with mindfulness",
+      streak: 5,
+      missedDays: 3,
+      completedToday: false,
+      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Mindfulness",
+      progress: 0,
+      target: 10
+    },
+    {
+      id: 2,
+      name: "Read 20 Minutes",
+      description: "Expand knowledge through daily reading",
+      streak: 3,
+      missedDays: 1,
+      completedToday: true,
+      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
+      category: "Learning",
+      progress: 5,
+      target: 10
+    },
+    {
+      id: 3,
+      name: "Exercise",
+      description: "Move your body for at least 30 minutes",
+      streak: 8,
+      missedDays: 0,
+      completedToday: false,
+      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Fitness",
+      progress: 2,
+      target: 10
+    }
+  ]);
+});
     {
       id: 1,
       name: "Morning Meditation",
@@ -161,53 +218,77 @@ function App() {
   const [aiVoiceEnabled, setAiVoiceEnabled] = useState(true);
 
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [aiChatHistory, aiProcessing]);
+  if (chatEndRef.current) {
+    chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }
+}, [aiChatHistory, aiProcessing]);
 
-  const showMessage = (message) => {
-    setNotificationMessage(message);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 4000);
-  };
+const showMessage = (message) => {
+  setNotificationMessage(message);
+  setShowNotification(true);
+  setTimeout(() => setShowNotification(false), 4000);
+};
 
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+// 💾 Auto-save hooks - ADD THESE RIGHT HERE
+useEffect(() => {
+  saveToLocalStorage('userHabits', habits);
+}, [habits]);
+
+useEffect(() => {
+  saveToLocalStorage('currentUser', currentUser);
+}, [currentUser]);
+
+useEffect(() => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  if (SpeechRecognition) {
+    setVoiceSupported(true);
     
-    if (SpeechRecognition) {
-      setVoiceSupported(true);
-      
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = false;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'en-US';
-      
-      recognitionInstance.onstart = () => {
-        setIsListening(true);
-        setVoiceTranscript('');
-      };
-      
-      recognitionInstance.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-        
-        const currentTranscript = finalTranscript || interimTranscript;
-        setVoiceTranscript(currentTranscript);
-        
-        if (finalTranscript) {
-          processVoiceCommand(finalTranscript);
-        }
-      };
+    const recognitionInstance = new SpeechRecognition();
+    recognitionInstance.continuous = false;
+    recognitionInstance.interimResults = true;
+    recognitionInstance.lang = 'en-US';
+    
+recognitionInstance.onstart = () => {
+  setIsListening(true);
+  setVoiceTranscript('');
+};
+
+recognitionInstance.onresult = (event) => {
+  let finalTranscript = '';
+  let interimTranscript = '';
+  
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    const transcript = event.results[i][0].transcript;
+    if (event.results[i].isFinal) {
+      finalTranscript += transcript;
+    } else {
+      interimTranscript += transcript;
+    }
+  }
+  
+  const currentTranscript = finalTranscript || interimTranscript;
+  setVoiceTranscript(currentTranscript);
+  
+  if (finalTranscript) {
+    processVoiceCommand(finalTranscript);
+  }
+};
+
+recognitionInstance.onerror = (event) => {
+  setIsListening(false);
+  if (event.error === 'not-allowed') {
+    showMessage('Microphone access denied. Please allow microphone permissions.');
+  } else {
+    showMessage(`Speech recognition error: ${event.error}`);
+  }
+};
+
+recognitionInstance.onend = () => {
+  setIsListening(false);
+};
+
+setRecognition(recognitionInstance);
       
       recognitionInstance.onerror = (event) => {
         setIsListening(false);
@@ -513,6 +594,31 @@ Respond in JSON format:
   };
 
   const addNewHabit = () => {
+  if (newHabit.name.trim() === '') return;
+  
+  const habit = {
+    id: Date.now(),
+    name: newHabit.name,
+    description: newHabit.description || `Build a consistent ${newHabit.name.toLowerCase()} routine`,
+    streak: 0,
+    missedDays: 0,
+    completedToday: false,
+    completedDates: [],
+    category: newHabit.category,
+    progress: 0,
+    target: 10
+  };
+  
+  setHabits(prev => {
+    const newHabits = [...prev, habit];
+    saveToLocalStorage('userHabits', newHabits);
+    return newHabits;
+  });
+  
+  setNewHabit({ name: '', description: '', category: 'Mindfulness' });
+  setShowAddHabit(false);
+  showMessage(`New habit "${habit.name}" added! 💾 Saved`);
+};
     if (newHabit.name.trim() === '') return;
     
     const habit = {
