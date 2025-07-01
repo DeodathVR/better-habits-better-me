@@ -369,6 +369,23 @@ Respond in JSON format:
   };
 
   const processVoiceCommand = (transcript) => {
+  console.log('🎤 Voice command received:', transcript);
+  const text = transcript.toLowerCase().trim();
+  console.log('🔍 Processed text:', text);
+  console.log('📋 Available habits:', habits.map(h => h.name));
+  
+  const matchedHabit = findHabitInSpeech(text);
+  console.log('✅ Matched habit:', matchedHabit ? matchedHabit.name : 'NONE');
+  
+  const percentage = extractPercentageFromSpeech(text);
+  console.log('📊 Extracted percentage:', percentage);
+  
+  if (matchedHabit) {
+    executeHabitUpdate(matchedHabit, percentage, 'voice');
+  } else {
+    showMessage(`Couldn't identify a habit in: "${transcript}"`);
+  }
+};
     const text = transcript.toLowerCase().trim();
     const matchedHabit = findHabitInSpeech(text);
     const percentage = extractPercentageFromSpeech(text);
