@@ -373,7 +373,9 @@ Respond in JSON format:
     const matchedHabit = findHabitInSpeech(text);
     const percentage = extractPercentageFromSpeech(text);
     
-    if (matchedHabit) {
+    console.log('All current habits:', habits.map(h => h.name));
+console.log('Looking for habit in text:', text);
+if (matchedHabit) {
       executeHabitUpdate(matchedHabit, percentage, 'voice');
     } else {
       showMessage(`Couldn't identify a habit in: "${transcript}"`);
