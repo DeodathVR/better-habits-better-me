@@ -1305,14 +1305,58 @@ Respond in JSON format:
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <button
-                  onClick={() => { showMessage('📧 Sending test email...'); setTimeout(() => showMessage('✅ Test email sent!'), 1500); }}
+                  onClick={async () => {
+  try {
+    showMessage('📧 Sending test email...');
+    const response = await fetch('/api/send-coaching-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userEmail: currentUser.email,
+        userName: currentUser.name,
+        inactiveDays: 0,
+        habits: habits,
+        longestStreak: Math.max(...habits.map(h => h.streak))
+      })
+    });
+    if (response.ok) {
+      showMessage('✅ Real test email sent!');
+    } else {
+      showMessage('❌ Email failed to send');
+    }
+  } catch (error) {
+    showMessage('❌ Email error: ' + error.message);
+  }
+}}
                   className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                   <span className="font-medium text-sm md:text-base">Test Email Coaching</span>
                 </button>
                 <button
-                  onClick={() => { showMessage('📱 Sending test SMS...'); setTimeout(() => showMessage('✅ Test SMS sent!'), 1500); }}
+                  onClick={async () => {
+  try {
+    showMessage('📱 Sending test SMS...');
+    const response = await fetch('/api/send-coaching-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userPhone: currentUser.phone,
+        userName: currentUser.name,
+        inactiveDays: 0,
+        habits: habits,
+        longestStreak: Math.max(...habits.map(h => h.streak))
+      })
+    });
+    if (response.ok) {
+      showMessage('✅ Real test SMS sent!');
+    } else {
+      showMessage('❌ SMS failed to send');
+    }
+  } catch (error) {
+    showMessage('❌ SMS error: ' + error.message);
+  }
+}}
                   className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <Phone className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
