@@ -58,7 +58,7 @@ function App() {
 
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
-    email: "sparksofmotivation1001@gmail.com",
+    email: "deodathramkumar@yahoo.com",
     phone: "+1 (555) 123-4567",
     isPremium: true,
     lastActiveDate: new Date('2025-06-11'),
