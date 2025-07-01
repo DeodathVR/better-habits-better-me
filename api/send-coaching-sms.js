@@ -1,33 +1,23 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed, matey!' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Get Twilio credentials from the treasure chest
+  // Get Twilio credentials
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
 
-  if (!accountSid || !authToken || !messagingServiceSid) {
-    return res.status(500).json({ error: 'Twilio credentials not configured, Captain!' });
+  if (!accountSid || !authToken) {
+    return res.status(500).json({ error: 'Twilio credentials not configured' });
   }
 
   try {
-    const { userPhone, userName, inactiveDays, habits, longestStreak } = req.body;
+    const { userPhone, userName } = req.body;
 
-    // Create voice message URL (we'll build this next!)
-    const voiceMessageId = `voice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const voiceUrl = `https://www.myawesomelifehabits.com/voice/${voiceMessageId}`;
+    // Ultra basic message - no emojis, no special chars
+    const smsBody = `Hi ${userName}! Message from your habit coach.`;
 
-    // Create SHORT SMS content for international delivery
-    const smsBody = `Hi ${userName}! Your habit coach has a voice message for you 🎤
-
-Listen: ${voiceUrl}
-
-Keep building those habits! 💪
-- Your Coach`;
-
-    // Send SMS using Twilio
+    // Send SMS using direct phone number
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
       method: 'POST',
       headers: {
@@ -35,17 +25,17 @@ Keep building those habits! 💪
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
-  To: userPhone,
-  From: '+13254405735',
-  Body: smsBody
-})
+        To: userPhone,
+        From: '+13254405735',
+        Body: smsBody
+      })
     });
 
     if (response.ok) {
       const result = await response.json();
       res.status(200).json({ 
         success: true, 
-        message: `Short coaching SMS sent to ${userPhone}`,
+        message: `Ultra basic SMS sent to ${userPhone}`,
         twilioSid: result.sid,
         messageLength: smsBody.length
       });
@@ -57,7 +47,7 @@ Keep building those habits! 💪
   } catch (error) {
     console.error('SMS sending error:', error);
     res.status(500).json({ 
-      error: 'Failed to send coaching SMS',
+      error: 'Failed to send SMS',
       details: error.message 
     });
   }
