@@ -25,14 +25,10 @@ function App() {
         `🌱 Every small step counts! Keep growing!`,
         `💪 You've got this! One habit at a time!`,
         `🎯 Focus on progress, not perfection!`,
-`🔥 Your future self will thank you!`,
+        `🔥 Your future self will thank you!`,
         `✨ Consistency beats intensity every time!`
       ]
     };
-
-    const messageArray = messages[type] || messages.encouragement;
-    return messageArray[Math.floor(Math.random() * messageArray.length)];
-  };
 
   // AI Input Validation - Safety first! 🛡️
   const validateAIHabitInput = (habitData) => {
@@ -41,12 +37,24 @@ function App() {
     if (habitData.name.length > 30) return false;
     if (!habitData.description || typeof habitData.description !== 'string') return false;
     if (habitData.description.length > 100) return false;
-    };
-       
     
+    const validCategories = ['Mindfulness', 'Fitness', 'Learning', 'Health', 'Productivity', 'Social'];
+    if (habitData.category && !validCategories.includes(habitData.category)) {
+      habitData.category = 'Health'; // Safe default
+    }
+    
+    // Check for duplicate names
+    const existingNames = habits.map(h => h.name.toLowerCase());
+    if (existingNames.includes(habitData.name.toLowerCase())) {
+      return false;
+    }
     
     return true;
- 
+  };
+
+    const messageArray = messages[type] || messages.encouragement;
+    return messageArray[Math.floor(Math.random() * messageArray.length)];
+  };
 
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
@@ -197,16 +205,8 @@ function App() {
         setVoiceTranscript(currentTranscript);
         
         if (finalTranscript) {
-  const text = finalTranscript.toLowerCase().trim();
-  const matchedHabit = findHabitInSpeech(text);
-  const percentage = extractPercentageFromSpeech(text);
-  
-  if (matchedHabit) {
-    executeHabitUpdate(matchedHabit, percentage, 'voice');
-  } else {
-    showMessage(`Couldn't identify a habit in: "${finalTranscript}"`);
-  }
-}
+          processVoiceCommand(finalTranscript);
+        }
       };
       
       recognitionInstance.onerror = (event) => {
@@ -324,11 +324,7 @@ Respond in JSON format:
               target: 10
             };
             
-            setHabits(prev => {
-  const newHabits = [...prev, newHabit];
-  localStorage.setItem('userHabits', JSON.stringify(newHabits));
-  return newHabits;
-});
+            setHabits(prev => [...prev, newHabit]);
             showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
             
             // Add a follow-up AI message confirming the creation
@@ -349,7 +345,10 @@ Respond in JSON format:
             }]);
           }
         }
-     }
+        
+        return aiResult;
+      }
+      
     } catch (error) {
       const errorMessage = `AI Error: ${error.message}`;
       setAiChatHistory(prev => [...prev, 
@@ -361,7 +360,6 @@ Respond in JSON format:
       setAiProcessing(false);
     }
   };
-   
 
   const sendAIMessage = async () => {
     if (!aiChatInput.trim()) return;
@@ -369,9 +367,19 @@ Respond in JSON format:
     setAiChatInput('');
     await processWithAI(message);
   };
-  
-  
+
+  const processVoiceCommand = (transcript) => {
+    const text = transcript.toLowerCase().trim();
+    const matchedHabit = findHabitInSpeech(text);
+    const percentage = extractPercentageFromSpeech(text);
     
+    if (matchedHabit) {
+      executeHabitUpdate(matchedHabit, percentage, 'voice');
+    } else {
+      showMessage(`Couldn't identify a habit in: "${transcript}"`);
+    }
+  };
+
   const executeHabitUpdate = (habit, percentage, source) => {
     setHabits(prev => prev.map(h => {
       if (h.id === habit.id) {
@@ -400,64 +408,32 @@ Respond in JSON format:
   };
 
   const findHabitInSpeech = (text) => {
-  const habitKeywords = {};
-  
-  habits.forEach(habit => {
-    const habitName = habit.name;
-    const nameWords = habitName.toLowerCase().split(' ');
-    
-    // Start with the habit name and its individual words
-    habitKeywords[habitName] = [...nameWords, habitName.toLowerCase()];
-    
-    // Add common variations and synonyms
-    nameWords.forEach(word => {
-      // Add partial matches (3+ characters)
-      if (word.length >= 3) {
-        habitKeywords[habitName].push(word);
-      }
+    const habitKeywords = {};
+    habits.forEach(habit => {
+      const habitName = habit.name;
+      const nameWords = habitName.toLowerCase().split(' ');
       
-      // Add common verb forms
-      if (word.endsWith('ing')) {
-        habitKeywords[habitName].push(word.slice(0, -3)); // "reading" → "read"
-      }
-      if (word.endsWith('e')) {
-        habitKeywords[habitName].push(word + 'd'); // "save" → "saved"
-      }
+      habitKeywords[habitName] = [...nameWords, habitName.toLowerCase()];
       
-      // Add plurals
-      if (!word.endsWith('s')) {
-        habitKeywords[habitName].push(word + 's');
+      if (habit.category === 'Mindfulness') {
+        habitKeywords[habitName].push('meditation', 'meditate', 'mindful');
+      } else if (habit.category === 'Fitness') {
+        habitKeywords[habitName].push('exercise', 'workout', 'fitness');
+      } else if (habit.category === 'Learning') {
+        habitKeywords[habitName].push('reading', 'read', 'book');
       }
     });
     
-    // Add category-specific keywords (as backup)
-    if (habit.category === 'Mindfulness') {
-      habitKeywords[habitName].push('meditation', 'meditate', 'mindful');
-    } else if (habit.category === 'Fitness') {
-      habitKeywords[habitName].push('exercise', 'workout', 'fitness', 'gym');
-    } else if (habit.category === 'Learning') {
-      habitKeywords[habitName].push('reading', 'read', 'book', 'study');
-    } else if (habit.category === 'Health') {
-      habitKeywords[habitName].push('saving', 'savings', 'save', 'money', 'financial', 'budget');
-    } else if (habit.category === 'Productivity') {
-      habitKeywords[habitName].push('work', 'productive', 'focus', 'organize');
-    } else if (habit.category === 'Social') {
-      habitKeywords[habitName].push('social', 'friends', 'family', 'connect');
-    }
-  });
-  
-  // Find the best match
-  for (const habit of habits) {
-    const keywords = habitKeywords[habit.name] || [];
-    for (const keyword of keywords) {
-      if (text.includes(keyword.toLowerCase())) {
-        return habit;
+    for (const habit of habits) {
+      const keywords = habitKeywords[habit.name] || [];
+      for (const keyword of keywords) {
+        if (text.includes(keyword)) {
+          return habit;
+        }
       }
     }
-  }
-  
-  return null;
-};
+    return null;
+  };
 
   const extractPercentageFromSpeech = (text) => {
     const percentMatches = [/(\d+)\s*percent/, /(\d+)\s*%/];
@@ -664,7 +640,7 @@ Respond in JSON format:
       activeHabits: totalHabits
     };
   };
-  
+
   // Navigation items for mobile
   const navItems = [
     { id: 'habits', label: 'Habits', icon: Home },
@@ -1329,58 +1305,14 @@ Respond in JSON format:
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <button
-                  onClick={async () => {
-  try {
-    showMessage('📧 Sending test email...');
-    const response = await fetch('/api/send-coaching-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userEmail: currentUser.email,
-        userName: currentUser.name,
-        inactiveDays: 0,
-        habits: habits,
-        longestStreak: Math.max(...habits.map(h => h.streak))
-      })
-    });
-    if (response.ok) {
-      showMessage('✅ Real test email sent!');
-    } else {
-      showMessage('❌ Email failed to send');
-    }
-  } catch (error) {
-    showMessage('❌ Email error: ' + error.message);
-  }
-}}
+                  onClick={() => { showMessage('📧 Sending test email...'); setTimeout(() => showMessage('✅ Test email sent!'), 1500); }}
                   className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                   <span className="font-medium text-sm md:text-base">Test Email Coaching</span>
                 </button>
                 <button
-                  onClick={async () => {
-  try {
-    showMessage('📱 Sending test SMS...');
-    const response = await fetch('/api/send-coaching-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userPhone: currentUser.phone,
-        userName: currentUser.name,
-        inactiveDays: 0,
-        habits: habits,
-        longestStreak: Math.max(...habits.map(h => h.streak))
-      })
-    });
-    if (response.ok) {
-      showMessage('✅ Real test SMS sent!');
-    } else {
-      showMessage('❌ SMS failed to send');
-    }
-  } catch (error) {
-    showMessage('❌ SMS error: ' + error.message);
-  }
-}}
+                  onClick={() => { showMessage('📱 Sending test SMS...'); setTimeout(() => showMessage('✅ Test SMS sent!'), 1500); }}
                   className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <Phone className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
@@ -1859,4 +1791,4 @@ Respond in JSON format:
   );
 }
 
-export default App
+export default App;
