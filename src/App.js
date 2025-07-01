@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 function App() {
-  
+  const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
 
   // Add the missing getMotivationalMessage function
   const getMotivationalMessage = (type, context = {}) => {
@@ -222,15 +222,23 @@ Respond in JSON format:
   "speech_response": "version without emojis for speech"
 }`;
 
-const response = await fetch('/api/gemini', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    prompt: prompt
-  })
-});
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 500,
+          }
+        })
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -311,6 +319,9 @@ const response = await fetch('/api/gemini', {
       }
       return h;
     }));
+    
+    // Update last active date when user logs habits
+    updateLastActiveDate();
     
     const successMessage = `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%!`;
     showMessage(successMessage);
@@ -398,6 +409,9 @@ const response = await fetch('/api/gemini', {
         if (newCompleted) {
           newStreak = habit.streak + 1;
           const newProgress = Math.min(habit.progress + 1, habit.target);
+          
+          // Update last active date when user completes habits
+          updateLastActiveDate();
           
           const message = getMotivationalMessage('habitCompleted', {
             habitName: habit.name,
@@ -542,6 +556,91 @@ const response = await fetch('/api/gemini', {
       return habit;
     }));
   };
+
+  // AUTOMATED COACHING SYSTEM - Check for inactive users and send coaching
+  const checkInactiveUsers = async () => {
+    const today = new Date();
+    const daysSinceLastActive = Math.floor((today - currentUser.lastActiveDate) / (1000 * 60 * 60 * 24));
+    
+    // SMS coaching after 4 days (premium feature)
+    if (daysSinceLastActive >= 4 && currentUser.isPremium) {
+      await sendCoachingSMS();
+    }
+    
+    // Email coaching after 2 days  
+    if (daysSinceLastActive >= 2) {
+      await sendCoachingEmail();
+    }
+  };
+
+  const sendCoachingSMS = async () => {
+    try {
+      const response = await fetch('/api/send-coaching-sms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userPhone: currentUser.phone,
+          userName: currentUser.name,
+          inactiveDays: Math.floor((new Date() - currentUser.lastActiveDate) / (1000 * 60 * 60 * 24)),
+          habits: habits,
+          longestStreak: Math.max(...habits.map(h => h.streak))
+        })
+      });
+      
+      if (response.ok) {
+        console.log('SMS coaching sent successfully!');
+        showMessage('📱 SMS coaching message sent!');
+      }
+    } catch (error) {
+      console.error('SMS coaching failed:', error);
+    }
+  };
+
+  const sendCoachingEmail = async () => {
+    try {
+      const response = await fetch('/api/send-coaching-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: currentUser.email,
+          userName: currentUser.name,
+          inactiveDays: Math.floor((new Date() - currentUser.lastActiveDate) / (1000 * 60 * 60 * 24)),
+          habits: habits,
+          longestStreak: Math.max(...habits.map(h => h.streak))
+        })
+      });
+      
+      if (response.ok) {
+        console.log('Email coaching sent successfully!');
+        showMessage('📧 Email coaching sent!');
+      }
+    } catch (error) {
+      console.error('Email coaching failed:', error);
+    }
+  };
+
+  // Update last active date when habits are completed
+  const updateLastActiveDate = () => {
+    setCurrentUser(prev => ({
+      ...prev,
+      lastActiveDate: new Date()
+    }));
+  };
+
+  // AUTO-CHECK FOR INACTIVE USERS (runs daily)
+  useEffect(() => {
+    // Check immediately on app load
+    checkInactiveUsers();
+    
+    // Set up daily check (every 24 hours)
+    const dailyCheck = setInterval(checkInactiveUsers, 24 * 60 * 60 * 1000);
+    
+    return () => clearInterval(dailyCheck);
+  }, [currentUser.lastActiveDate, habits]);
 
   const getWeeklyProgress = () => {
     const totalHabits = habits.length;
@@ -1004,6 +1103,30 @@ const response = await fetch('/api/gemini', {
                   <span className="font-medium">View Profile</span>
                 </button>
               </div>
+            </div>
+
+            {/* Coaching System Testing (Development) */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-lg font-bold mb-4">🧪 Coaching System Testing</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={sendCoachingEmail}
+                  className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <Mail className="w-5 h-5 text-blue-500" />
+                  <span className="font-medium">Test Email Coaching</span>
+                </button>
+                <button
+                  onClick={sendCoachingSMS}
+                  className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <Phone className="w-5 h-5 text-green-500" />
+                  <span className="font-medium">Test SMS Coaching</span>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                📧 Email coaching triggers after 2 days inactive • 📱 SMS coaching triggers after 4 days inactive (Premium users)
+              </p>
             </div>
           </div>
         )}
