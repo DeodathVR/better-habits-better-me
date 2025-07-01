@@ -714,12 +714,6 @@ Respond in JSON format:
 
   return (
     
-    return {
-      completionRate: totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0,
-      totalStreak,
-      activeHabits: totalHabits
-    };
-  
     <div className="min-h-screen bg-gray-50">
       {/* Mobile-optimized notification */}
       {showNotification && (
