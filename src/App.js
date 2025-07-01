@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2, Menu, Home, BarChart3, BookOpen, Settings } from 'lucide-react';
 
 function App() {
   const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
@@ -29,6 +29,28 @@ function App() {
         `✨ Consistency beats intensity every time!`
       ]
     };
+
+  // AI Input Validation - Safety first! 🛡️
+  const validateAIHabitInput = (habitData) => {
+    if (!habitData || typeof habitData !== 'object') return false;
+    if (!habitData.name || typeof habitData.name !== 'string' || habitData.name.trim().length === 0) return false;
+    if (habitData.name.length > 30) return false;
+    if (!habitData.description || typeof habitData.description !== 'string') return false;
+    if (habitData.description.length > 100) return false;
+    
+    const validCategories = ['Mindfulness', 'Fitness', 'Learning', 'Health', 'Productivity', 'Social'];
+    if (habitData.category && !validCategories.includes(habitData.category)) {
+      habitData.category = 'Health'; // Safe default
+    }
+    
+    // Check for duplicate names
+    const existingNames = habits.map(h => h.name.toLowerCase());
+    if (existingNames.includes(habitData.name.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
+  };
 
     const messageArray = messages[type] || messages.encouragement;
     return messageArray[Math.floor(Math.random() * messageArray.length)];
@@ -135,6 +157,7 @@ function App() {
   const [selectedHabitForBacklog, setSelectedHabitForBacklog] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -213,12 +236,24 @@ function App() {
 Current habits:
 ${habits.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak)`).join('\n')}
 
+RULES:
+- Only suggest creating NEW habits if user explicitly asks to add/create a habit
+- For logging existing habits, use "log_habit" action  
+- For new habit creation, use "create_habit" action
+- Be specific about what you're actually doing
+- Don't claim you've done something you haven't
+
 Respond in JSON format:
 {
-  "action": "log_habit" | "conversation",
-  "habit_name": "habit name if logging" | null,
+  "action": "log_habit" | "conversation" | "create_habit",
+  "habit_name": "exact habit name if logging existing" | null,
   "percentage": number 0-100 if logging | null,
-  "response": "your response",
+  "new_habit": {
+    "name": "habit name (max 30 chars)",
+    "description": "habit description (max 100 chars)",
+    "category": "Mindfulness|Fitness|Learning|Health|Productivity|Social"
+  } | null,
+  "response": "your honest response explaining what you actually did",
   "speech_response": "version without emojis for speech"
 }`;
 
@@ -261,10 +296,52 @@ Respond in JSON format:
           speechSynthesis.speak(utterance);
         }
         
+        // Handle habit logging
         if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
           const habit = habits.find(h => h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase()));
           if (habit) {
             executeHabitUpdate(habit, aiResult.percentage, 'ai');
+          }
+        }
+        
+        // Handle NEW habit creation - Making AI actually functional! 🎉
+        if (aiResult.action === 'create_habit' && aiResult.new_habit) {
+          const newHabitData = aiResult.new_habit;
+          
+          // Validate AI input (safety first!)
+          if (validateAIHabitInput(newHabitData)) {
+            const newHabit = {
+              id: Date.now(),
+              name: newHabitData.name.substring(0, 30), // Limit length
+              description: newHabitData.description.substring(0, 100), // Limit length
+              streak: 0,
+              missedDays: 0,
+              completedToday: false,
+              completedDates: [],
+              category: newHabitData.category || 'Health',
+              progress: 0,
+              target: 10
+            };
+            
+            setHabits(prev => [...prev, newHabit]);
+            showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
+            
+            // Add a follow-up AI message confirming the creation
+            setTimeout(() => {
+              setAiChatHistory(prev => [...prev, {
+                type: 'ai',
+                message: `✅ Perfect! I've successfully added "${newHabit.name}" to your habits list. You can see it above and start tracking it right away!`,
+                timestamp: new Date()
+              }]);
+            }, 1000);
+            
+          } else {
+            showMessage(`❌ AI tried to create invalid habit. Please try again with different details.`);
+            setAiChatHistory(prev => [...prev, {
+              type: 'ai',
+              message: `Sorry, I couldn't create that habit due to invalid data. Please try describing the habit differently.`,
+              timestamp: new Date()
+            }]);
           }
         }
         
@@ -319,9 +396,6 @@ Respond in JSON format:
       }
       return h;
     }));
-    
-    // Update last active date when user logs habits
-    updateLastActiveDate();
     
     const successMessage = `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%!`;
     showMessage(successMessage);
@@ -409,9 +483,6 @@ Respond in JSON format:
         if (newCompleted) {
           newStreak = habit.streak + 1;
           const newProgress = Math.min(habit.progress + 1, habit.target);
-          
-          // Update last active date when user completes habits
-          updateLastActiveDate();
           
           const message = getMotivationalMessage('habitCompleted', {
             habitName: habit.name,
@@ -557,91 +628,6 @@ Respond in JSON format:
     }));
   };
 
-  // AUTOMATED COACHING SYSTEM - Check for inactive users and send coaching
-  const checkInactiveUsers = async () => {
-    const today = new Date();
-    const daysSinceLastActive = Math.floor((today - currentUser.lastActiveDate) / (1000 * 60 * 60 * 24));
-    
-    // SMS coaching after 4 days (premium feature)
-    if (daysSinceLastActive >= 4 && currentUser.isPremium) {
-      await sendCoachingSMS();
-    }
-    
-    // Email coaching after 2 days  
-    if (daysSinceLastActive >= 2) {
-      await sendCoachingEmail();
-    }
-  };
-
-  const sendCoachingSMS = async () => {
-    try {
-      const response = await fetch('/api/send-coaching-sms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userPhone: currentUser.phone,
-          userName: currentUser.name,
-          inactiveDays: Math.floor((new Date() - currentUser.lastActiveDate) / (1000 * 60 * 60 * 24)),
-          habits: habits,
-          longestStreak: Math.max(...habits.map(h => h.streak))
-        })
-      });
-      
-      if (response.ok) {
-        console.log('SMS coaching sent successfully!');
-        showMessage('📱 SMS coaching message sent!');
-      }
-    } catch (error) {
-      console.error('SMS coaching failed:', error);
-    }
-  };
-
-  const sendCoachingEmail = async () => {
-    try {
-      const response = await fetch('/api/send-coaching-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userEmail: currentUser.email,
-          userName: currentUser.name,
-          inactiveDays: Math.floor((new Date() - currentUser.lastActiveDate) / (1000 * 60 * 60 * 24)),
-          habits: habits,
-          longestStreak: Math.max(...habits.map(h => h.streak))
-        })
-      });
-      
-      if (response.ok) {
-        console.log('Email coaching sent successfully!');
-        showMessage('📧 Email coaching sent!');
-      }
-    } catch (error) {
-      console.error('Email coaching failed:', error);
-    }
-  };
-
-  // Update last active date when habits are completed
-  const updateLastActiveDate = () => {
-    setCurrentUser(prev => ({
-      ...prev,
-      lastActiveDate: new Date()
-    }));
-  };
-
-  // AUTO-CHECK FOR INACTIVE USERS (runs daily)
-  useEffect(() => {
-    // Check immediately on app load
-    checkInactiveUsers();
-    
-    // Set up daily check (every 24 hours)
-    const dailyCheck = setInterval(checkInactiveUsers, 24 * 60 * 60 * 1000);
-    
-    return () => clearInterval(dailyCheck);
-  }, [currentUser.lastActiveDate, habits]);
-
   const getWeeklyProgress = () => {
     const totalHabits = habits.length;
     const completedToday = habits.filter(h => h.completedToday).length;
@@ -654,71 +640,134 @@ Respond in JSON format:
     };
   };
 
+  // Navigation items for mobile
+  const navItems = [
+    { id: 'habits', label: 'Habits', icon: Home },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'learn', label: 'Learn', icon: BookOpen },
+    { id: 'profile', label: 'Profile', icon: Settings }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Mobile-optimized notification */}
       {showNotification && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-sm">
-          <p className="text-sm font-medium">{notificationMessage}</p>
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg z-50">
+          <p className="text-sm font-medium text-center md:text-left">{notificationMessage}</p>
         </div>
       )}
       
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
+      {/* Mobile-first Navigation */}
+      <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="px-4">
+          <div className="flex justify-between items-center h-14">
+            {/* Mobile Logo - Shorter */}
             <div className="flex items-center gap-2">
-              <Star className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-xl text-gray-800">My Awesome Life Habits</span>
+              <Star className="w-5 h-5 text-blue-500" />
+              <span className="font-bold text-lg text-gray-800 md:text-xl">My Habits</span>
             </div>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setCurrentView('habits')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'habits' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Habits
-              </button>
-              <button
-                onClick={() => setCurrentView('dashboard')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'dashboard' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => setCurrentView('learn')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'learn' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Learn
-              </button>
-              <button
-                onClick={() => setCurrentView('profile')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentView === 'profile' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Profile
-              </button>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex gap-1">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentView === item.id ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+            >
+              <Menu className="w-5 h-5 text-gray-600" />
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {showMobileMenu && (
+          <div className="md:hidden bg-white border-t border-gray-200">
+            <div className="px-4 py-2 space-y-1">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setCurrentView(item.id);
+                    setShowMobileMenu(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors ${
+                    currentView === item.id ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      {/* Mobile-optimized main content */}
+      <main className="px-3 py-4 md:px-6 md:py-8 max-w-7xl mx-auto">
         {currentView === 'habits' && (
-          <div className="space-y-6">
-            <div className="text-center py-6">
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">Awesome Life Habits Tracker</h1>
-              <p className="text-lg text-gray-600">Transform your daily habits, transform your life.</p>
+          <div className="space-y-4 md:space-y-6">
+            {/* Mobile Header - Compact */}
+            <div className="text-center py-3 md:py-6">
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-4">Life Habits Tracker</h1>
+              <p className="text-sm md:text-lg text-gray-600">Transform your daily habits, transform your life.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Voice Commands and AI Chat - Top Section */}
-              <div className="lg:col-span-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Mobile-first Quick Actions Bar */}
+            <div className="flex gap-2 md:hidden">
+              <button
+                onClick={() => setShowAIChat(true)}
+                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                <Bot className="w-4 h-4" />
+                <span className="text-sm">AI Coach</span>
+              </button>
+              
+              {voiceSupported && (
+                <button
+                  onClick={isListening ? stopListening : startListening}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    isListening 
+                      ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      : 'bg-purple-500 hover:bg-purple-600 text-white'
+                  }`}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              )}
+            </div>
+
+            {/* Voice listening indicator for mobile */}
+            {isListening && (
+              <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500 md:hidden">
+                <div className="flex items-center gap-2 mb-1">
+                  <Volume2 className="w-4 h-4 text-blue-500" />
+                  <span className="font-medium text-blue-800 text-sm">Listening...</span>
+                </div>
+                <p className="text-xs text-gray-600">
+                  {voiceTranscript || 'Say: "Exercise complete" or "Reading 50 percent"'}
+                </p>
+              </div>
+            )}
+
+            {/* Mobile-first layout */}
+            <div className="space-y-4">
+              {/* Desktop Voice/AI Section */}
+              <div className="hidden md:block">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                   {/* Voice Commands Panel */}
                   <div className="bg-white rounded-xl shadow-lg p-6">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -800,189 +849,139 @@ Respond in JSON format:
                 </div>
               </div>
 
-              {/* Main Content - Today's Habits */}
-              <div className="lg:col-span-3">
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-blue-500" />
-                      Today's Habits
-                    </h2>
-                    <button
-                      onClick={() => setShowAddHabit(true)}
-                      className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add New Habit
-                    </button>
-                  </div>
+              {/* Main Habits Section - Mobile First */}
+              <div className="space-y-4">
+                {/* Mobile header with add button */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                    Today's Habits
+                  </h2>
+                  <button
+                    onClick={() => setShowAddHabit(true)}
+                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors"
+                  >
+                    <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">Add New</span>
+                    <span className="sm:hidden">Add</span>
+                  </button>
+                </div>
 
-                  <div className="space-y-4">
-                    {habits.map(habit => (
-                      <div key={habit.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-bold text-gray-800">{habit.name}</h3>
-                              <button
-                                onClick={() => openDeleteConfirm(habit)}
-                                className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">{habit.description}</p>
-                            <div className="flex items-center gap-4 text-sm">
-                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                                {habit.category}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <Flame className="w-4 h-4 text-orange-500" />
-                                <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
-                              </div>
-                            </div>
+                {/* Habits List - Mobile Optimized */}
+                <div className="space-y-3 md:space-y-4">
+                  {habits.map(habit => (
+                    <div key={habit.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                      {/* Habit Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-base md:text-lg font-bold text-gray-800 truncate">{habit.name}</h3>
+                            <button
+                              onClick={() => openDeleteConfirm(habit)}
+                              className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors flex-shrink-0"
+                            >
+                              <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                            </button>
                           </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
-                            <span className="text-sm font-medium text-gray-700">
-                              {Math.round((habit.progress / habit.target) * 100)}% complete
+                          <p className="text-xs md:text-sm text-gray-600 mb-2 line-clamp-2">{habit.description}</p>
+                          <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm flex-wrap">
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium text-xs">
+                              {habit.category}
                             </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                              style={{width: `${(habit.progress / habit.target) * 100}%`}}
-                            ></div>
+                            <div className="flex items-center gap-1">
+                              <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
+                              <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
+                            </div>
                           </div>
                         </div>
+                      </div>
 
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => toggleHabit(habit.id)}
-                            className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                              habit.completedToday
-                                ? 'bg-green-500 hover:bg-green-600 text-white'
-                                : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
-                            }`}
-                          >
-                            {habit.completedToday ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <CheckCircle2 className="w-5 h-5" />
+                      {/* Progress Bar */}
+                      <div className="mb-3 md:mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs md:text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
+                          <span className="text-xs md:text-sm font-medium text-gray-700">
+                            {Math.round((habit.progress / habit.target) * 100)}% complete
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                            style={{width: `${(habit.progress / habit.target) * 100}%`}}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons - Mobile Optimized */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleHabit(habit.id)}
+                          className={`flex-1 py-2 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
+                            habit.completedToday
+                              ? 'bg-green-500 hover:bg-green-600 text-white'
+                              : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
+                          }`}
+                        >
+                          {habit.completedToday ? (
+                            <span className="flex items-center justify-center gap-1 md:gap-2">
+                              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                              <span className="hidden sm:inline">
                                 {habit.voiceCompletion ? `Voice: ${habit.voiceCompletion}%` : 
                                  habit.aiCompletion ? `AI: ${habit.aiCompletion}%` : 'Completed!'}
                               </span>
-                            ) : (
-                              <span className="flex items-center justify-center gap-2">
-                                <Circle className="w-5 h-5" />
-                                Complete
-                              </span>
-                            )}
-                          </button>
-                          
-                          <button
-                            onClick={() => openSliderModal(habit)}
-                            className="px-4 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-2"
-                            title="Set partial completion"
-                          >
-                            <div className="flex items-center gap-1">
-                              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                              <div className="w-3 h-3 bg-blue-300 rounded-full"></div>
-                            </div>
-                            <span className="text-sm font-bold">%</span>
-                          </button>
-                          
-                          {habit.missedDays > 0 && habit.missedDays <= 3 && (
-                            <button
-                              onClick={() => openBacklogModal(habit)}
-                              className="px-4 py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-2"
-                              title="Update past 3 days"
-                            >
-                              <Calendar className="w-4 h-4" />
-                              <span className="hidden sm:inline text-sm">Past</span>
-                            </button>
+                              <span className="sm:hidden">✓</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center justify-center gap-1 md:gap-2">
+                              <Circle className="w-4 h-4 md:w-5 md:h-5" />
+                              <span>Complete</span>
+                            </span>
                           )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                    <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
-                    <p className="text-gray-600">Today's Progress</p>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                    <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                    <h3 className="font-bold text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
-                    <p className="text-gray-600">Total Streak Days</p>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                    <Award className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                    <h3 className="font-bold text-2xl text-gray-800">{habits.length}</h3>
-                    <p className="text-gray-600">Active Habits</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-1">
-                <div className="space-y-6">
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-500" />
-                      App Benefits
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">Smart Completion</h4>
-                          <p className="text-xs text-gray-600">Track partial progress with percentage sliders</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Mic className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">Voice Control</h4>
-                          <p className="text-xs text-gray-600">Hands-free habit logging with speech recognition</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">AI Coaching</h4>
-                          <p className="text-xs text-gray-600">Intelligent conversations and habit insights</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Flame className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">Streak Tracking</h4>
-                          <p className="text-xs text-gray-600">Build momentum with visual streak counters</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Calendar className="w-4 h-4 text-yellow-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800 text-sm">Backlog Updates</h4>
-                          <p className="text-xs text-gray-600">Update up to 3 past days to maintain streaks</p>
-                        </div>
+                        </button>
+                        
+                        <button
+                          onClick={() => openSliderModal(habit)}
+                          className="px-3 md:px-4 py-2 md:py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
+                          title="Set partial completion"
+                        >
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-500 rounded-full"></div>
+                            <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-300 rounded-full"></div>
+                          </div>
+                          <span className="text-xs md:text-sm font-bold">%</span>
+                        </button>
+                        
+                        {habit.missedDays > 0 && habit.missedDays <= 3 && (
+                          <button
+                            onClick={() => openBacklogModal(habit)}
+                            className="px-3 md:px-4 py-2 md:py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
+                            title="Update past 3 days"
+                          >
+                            <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                            <span className="hidden md:inline text-sm">Past</span>
+                          </button>
+                        )}
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Stats Cards - Mobile Optimized */}
+                <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                    <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                    <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                    <Award className="w-5 h-5 md:w-8 md:h-8 text-purple-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{habits.length}</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Active Habits</p>
                   </div>
                 </div>
               </div>
@@ -991,85 +990,85 @@ Respond in JSON format:
         )}
 
         {currentView === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="text-center py-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Dashboard</h2>
-              <p className="text-gray-600">Your habit journey at a glance</p>
+          <div className="space-y-4 md:space-y-6">
+            <div className="text-center py-3 md:py-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Dashboard</h2>
+              <p className="text-sm md:text-base text-gray-600">Your habit journey at a glance</p>
             </div>
 
-            {/* Dashboard Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-                <div className="flex items-center justify-between">
+            {/* Dashboard Overview Cards - Mobile First */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 md:p-6 text-white">
+                <div className="text-center md:flex md:items-center md:justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm">Today's Progress</p>
-                    <p className="text-3xl font-bold">{getWeeklyProgress().completionRate}%</p>
+                    <p className="text-blue-100 text-xs md:text-sm">Today's Progress</p>
+                    <p className="text-2xl md:text-3xl font-bold">{getWeeklyProgress().completionRate}%</p>
                   </div>
-                  <TrendingUp className="w-8 h-8 text-blue-200" />
+                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-blue-200 mx-auto mt-2 md:mt-0 md:mx-0" />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
-                <div className="flex items-center justify-between">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-4 md:p-6 text-white">
+                <div className="text-center md:flex md:items-center md:justify-between">
                   <div>
-                    <p className="text-orange-100 text-sm">Total Streaks</p>
-                    <p className="text-3xl font-bold">{getWeeklyProgress().totalStreak}</p>
+                    <p className="text-orange-100 text-xs md:text-sm">Total Streaks</p>
+                    <p className="text-2xl md:text-3xl font-bold">{getWeeklyProgress().totalStreak}</p>
                   </div>
-                  <Flame className="w-8 h-8 text-orange-200" />
+                  <Flame className="w-6 h-6 md:w-8 md:h-8 text-orange-200 mx-auto mt-2 md:mt-0 md:mx-0" />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
-                <div className="flex items-center justify-between">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 md:p-6 text-white">
+                <div className="text-center md:flex md:items-center md:justify-between">
                   <div>
-                    <p className="text-green-100 text-sm">Active Habits</p>
-                    <p className="text-3xl font-bold">{habits.length}</p>
+                    <p className="text-green-100 text-xs md:text-sm">Active Habits</p>
+                    <p className="text-2xl md:text-3xl font-bold">{habits.length}</p>
                   </div>
-                  <Target className="w-8 h-8 text-green-200" />
+                  <Target className="w-6 h-6 md:w-8 md:h-8 text-green-200 mx-auto mt-2 md:mt-0 md:mx-0" />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
-                <div className="flex items-center justify-between">
+              <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-4 md:p-6 text-white">
+                <div className="text-center md:flex md:items-center md:justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm">Best Streak</p>
-                    <p className="text-3xl font-bold">{Math.max(...habits.map(h => h.streak), 0)}</p>
+                    <p className="text-purple-100 text-xs md:text-sm">Best Streak</p>
+                    <p className="text-2xl md:text-3xl font-bold">{Math.max(...habits.map(h => h.streak), 0)}</p>
                   </div>
-                  <Award className="w-8 h-8 text-purple-200" />
+                  <Award className="w-6 h-6 md:w-8 md:h-8 text-purple-200 mx-auto mt-2 md:mt-0 md:mx-0" />
                 </div>
               </div>
             </div>
 
-            {/* Habit Progress Chart */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4">Habit Progress Overview</h3>
-              <div className="space-y-4">
+            {/* Habit Progress Overview - Mobile Optimized */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4">Habit Progress Overview</h3>
+              <div className="space-y-3 md:space-y-4">
                 {habits.map(habit => (
-                  <div key={habit.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={habit.id} className="border border-gray-200 rounded-lg p-3 md:p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-gray-800">{habit.name}</h4>
-                      <div className="flex items-center gap-2">
-                        <Flame className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm font-medium text-orange-600">{habit.streak} days</span>
+                      <h4 className="font-semibold text-gray-800 text-sm md:text-base truncate flex-1">{habit.name}</h4>
+                      <div className="flex items-center gap-1 md:gap-2 flex-shrink-0 ml-2">
+                        <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
+                        <span className="text-xs md:text-sm font-medium text-orange-600">{habit.streak} days</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4">
                       <div className="flex-1">
-                        <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-1">
                           <span>Progress</span>
                           <span>{habit.progress}/{habit.target}</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div className="w-full bg-gray-200 rounded-full h-2 md:h-3">
                           <div 
-                            className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
+                            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 md:h-3 rounded-full transition-all duration-300"
                             style={{width: `${Math.min((habit.progress / habit.target) * 100, 100)}%`}}
                           ></div>
                         </div>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <div className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                         habit.completedToday ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {habit.completedToday ? 'Done Today' : 'Pending'}
+                        {habit.completedToday ? 'Done' : 'Pending'}
                       </div>
                     </div>
                   </div>
@@ -1077,109 +1076,73 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Quick Actions - Mobile Optimized */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 gap-3">
                 <button
                   onClick={() => setShowAddHabit(true)}
-                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Plus className="w-5 h-5 text-blue-500" />
-                  <span className="font-medium">Add New Habit</span>
+                  <Plus className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  <span className="font-medium text-sm md:text-base">Add New Habit</span>
                 </button>
                 <button
                   onClick={() => setShowAIChat(true)}
-                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Bot className="w-5 h-5 text-green-500" />
-                  <span className="font-medium">Chat with AI Coach</span>
+                  <Bot className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                  <span className="font-medium text-sm md:text-base">Chat with AI Coach</span>
                 </button>
                 <button
                   onClick={() => setCurrentView('profile')}
-                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <User className="w-5 h-5 text-purple-500" />
-                  <span className="font-medium">View Profile</span>
+                  <User className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+                  <span className="font-medium text-sm md:text-base">View Profile</span>
                 </button>
               </div>
-            </div>
-
-            {/* Coaching System Testing (Development) */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4">🧪 Coaching System Testing</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={sendCoachingEmail}
-                  className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Mail className="w-5 h-5 text-blue-500" />
-                  <span className="font-medium">Test Email Coaching</span>
-                </button>
-                <button
-                  onClick={sendCoachingSMS}
-                  className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <Phone className="w-5 h-5 text-green-500" />
-                  <span className="font-medium">Test SMS Coaching</span>
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                📧 Email coaching triggers after 2 days inactive • 📱 SMS coaching triggers after 4 days inactive (Premium users)
-              </p>
             </div>
           </div>
         )}
 
         {currentView === 'learn' && (
-          <div className="space-y-6">
-            <div className="text-center py-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Learn & Grow</h2>
-              <p className="text-gray-600">Insights, guides, and inspiration for your habit journey</p>
+          <div className="space-y-4 md:space-y-6">
+            <div className="text-center py-3 md:py-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Learn & Grow</h2>
+              <p className="text-sm md:text-base text-gray-600">Insights, guides, and inspiration for your habit journey</p>
             </div>
 
-            {/* Articles Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Article 1: Why a BIG Vision Needs Good Habits */}
+            {/* Articles - Mobile Optimized */}
+            <div className="space-y-4 md:space-y-6">
+              {/* Article 1 */}
               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Target className="w-6 h-6" />
-                    <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED ARTICLE</span>
+                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 md:p-6 text-white">
+                  <div className="flex items-center gap-2 mb-2 md:mb-3">
+                    <Target className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED</span>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Why a BIG Vision Needs Good Habits</h3>
-                  <p className="text-purple-100 text-sm">Discover how small daily actions build the foundation for extraordinary achievements</p>
+                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">Why a BIG Vision Needs Good Habits</h3>
+                  <p className="text-purple-100 text-xs md:text-sm">Discover how small daily actions build extraordinary achievements</p>
                 </div>
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                   <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-4">
+                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
                       <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with an extraordinary vision, but it's the boring, daily habits that actually make it happen.
                     </p>
                     
-                    <h4 className="font-semibold text-gray-800 mb-2">🎯 The Vision-Habit Connection</h4>
-                    <p className="text-gray-700 mb-4">
+                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🎯 The Vision-Habit Connection</h4>
+                    <p className="text-gray-700 mb-3 md:mb-4 text-sm md:text-base">
                       Your big vision is the <em>destination</em>. Your habits are the <em>vehicle</em>. Without reliable daily systems, even the most inspiring goals remain out of reach.
                     </p>
 
-                    <h4 className="font-semibold text-gray-800 mb-2">🔧 Why Small Habits Create Big Results</h4>
-                    <ul className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Compound Effect:</strong> 1% better daily = 37x better in a year</li>
-                      <li><strong>Identity Shift:</strong> You become the person who does the thing</li>
-                      <li><strong>Momentum Building:</strong> Success breeds more success</li>
-                      <li><strong>Stress Reduction:</strong> Systems eliminate decision fatigue</li>
-                    </ul>
-
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
-                      <p className="text-blue-800 font-medium">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-3 md:p-4 my-3 md:my-4">
+                      <p className="text-blue-800 font-medium text-sm md:text-base">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
                     </div>
-
-                    <p className="text-gray-700">
-                      <strong>The bottom line:</strong> Your big vision gives you direction and motivation. Your small habits give you the actual path to get there. Start building that path today, one habit at a time.
-                    </p>
                   </div>
                   
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
                       <span>📖 5 min read</span>
                       <span>🎯 Goal Setting</span>
                       <span>💪 Motivation</span>
@@ -1188,60 +1151,40 @@ Respond in JSON format:
                 </div>
               </div>
 
-              {/* Article 2: How to Use This App */}
+              {/* Article 2 */}
               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-6 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className="w-6 h-6" />
-                    <span className="text-sm font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO GUIDE</span>
+                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 md:p-6 text-white">
+                  <div className="flex items-center gap-2 mb-2 md:mb-3">
+                    <Star className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO</span>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">How to Use My Awesome Life Habits</h3>
-                  <p className="text-green-100 text-sm">Master every feature and become a habit-building pro</p>
+                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">How to Use This App</h3>
+                  <p className="text-green-100 text-xs md:text-sm">Master every feature and become a habit-building pro</p>
                 </div>
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                   <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-4">
+                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
                       Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
                     </p>
                     
-                    <h4 className="font-semibold text-gray-800 mb-2">🏁 Getting Started</h4>
-                    <ol className="text-gray-700 space-y-2 mb-4">
-                      <li><strong>Start Small:</strong> Begin with 1-2 habits you can do in under 5 minutes</li>
-                      <li><strong>Choose Your Time:</strong> Pick the same time each day for consistency</li>
-                      <li><strong>Set Your Environment:</strong> Make good habits obvious and easy</li>
-                    </ol>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">✅ Tracking Your Habits</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                      <p className="text-gray-700 mb-2"><strong>Four Ways to Log Completion:</strong></p>
-                      <ul className="text-gray-700 space-y-1">
+                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🏁 Getting Started</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
+                      <p className="text-gray-700 mb-2 text-sm md:text-base"><strong>Four Ways to Log Completion:</strong></p>
+                      <ul className="text-gray-700 space-y-1 text-sm md:text-base">
                         <li><strong>Complete Button:</strong> One-click for 100% completion</li>
-                        <li><strong>% Slider:</strong> Set partial completion (25%, 50%, 75%, 100%)</li>
-                        <li><strong>Voice Commands:</strong> "Exercise complete" or "Meditation 75 percent"</li>
-                        <li><strong>AI Chat:</strong> "I just finished a great workout!"</li>
+                        <li><strong>% Slider:</strong> Set partial completion</li>
+                        <li><strong>Voice Commands:</strong> "Exercise complete"</li>
+                        <li><strong>AI Chat:</strong> "I just finished a workout!"</li>
                       </ul>
                     </div>
 
-                    <h4 className="font-semibold text-gray-800 mb-2">📅 Catch Up on Missed Days</h4>
-                    <p className="text-gray-700 mb-4">
-                      Life happens! Use the <strong>"Past"</strong> button (calendar icon) to update up to 3 previous days. This helps maintain your streak momentum without being overly forgiving.
-                    </p>
-
-                    <h4 className="font-semibold text-gray-800 mb-2">🎤 Voice Command Center</h4>
-                    <ul className="text-gray-700 space-y-1 mb-4">
-                      <li><strong>Natural Speech:</strong> Say commands naturally and clearly</li>
-                      <li><strong>Multiple Ways:</strong> Try different phrases if not recognized</li>
-                      <li><strong>Percentage Support:</strong> "Half done", "75 percent", "mostly complete"</li>
-                      <li><strong>Audio Feedback:</strong> Hear confirmations when habits are logged</li>
-                    </ul>
-
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 my-4">
-                      <p className="text-green-800 font-medium">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
+                    <div className="bg-green-50 border-l-4 border-green-500 p-3 md:p-4 my-3 md:my-4">
+                      <p className="text-green-800 font-medium text-sm md:text-base">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
                     </div>
                   </div>
                   
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
                       <span>📖 7 min read</span>
                       <span>🎓 Tutorial</span>
                       <span>⚡ Quick Start</span>
@@ -1251,29 +1194,28 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Coming Soon Section */}
-            <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-6 text-white text-center">
-              <h3 className="text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
-              <p className="text-orange-100">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🧠 Habit Science</span>
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">💪 Success Stories</span>
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">🎯 Advanced Strategies</span>
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">📺 Video Guides</span>
+            {/* Coming Soon */}
+            <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-4 md:p-6 text-white text-center">
+              <h3 className="text-lg md:text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
+              <p className="text-orange-100 text-sm md:text-base">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
+              <div className="mt-3 md:mt-4 flex flex-wrap justify-center gap-2">
+                <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">🧠 Habit Science</span>
+                <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">💪 Success Stories</span>
+                <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">🎯 Advanced Strategies</span>
               </div>
             </div>
           </div>
         )}
 
         {currentView === 'profile' && (
-          <div className="space-y-6">
-            <div className="text-center py-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
+          <div className="space-y-4 md:space-y-6">
+            <div className="text-center py-3 md:py-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-500" />
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
+                <User className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
                 Account Information
               </h3>
               <div className="space-y-4">
@@ -1283,7 +1225,7 @@ Respond in JSON format:
                     type="text"
                     value={currentUser.name}
                     onChange={(e) => setCurrentUser(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   />
                 </div>
                 <div>
@@ -1292,7 +1234,7 @@ Respond in JSON format:
                     type="email"
                     value={currentUser.email}
                     onChange={(e) => setCurrentUser(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   />
                 </div>
                 <div>
@@ -1301,15 +1243,15 @@ Respond in JSON format:
                     type="tel"
                     value={currentUser.phone}
                     onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-green-500" />
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
                 AI Coaching Preferences
               </h3>
               <div className="space-y-4">
@@ -1318,7 +1260,7 @@ Respond in JSON format:
                   <input
                     type="time"
                     defaultValue="10:00"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   />
                 </div>
                 <div className="space-y-3">
@@ -1332,7 +1274,7 @@ Respond in JSON format:
                       }))}
                       className="rounded"
                     />
-                    <label className="text-sm text-gray-700">
+                    <label className="text-xs md:text-sm text-gray-700">
                       📧 Enable AI email coaching (after 2 days inactive)
                     </label>
                   </div>
@@ -1346,7 +1288,7 @@ Respond in JSON format:
                       }))}
                       className="rounded"
                     />
-                    <label className="text-sm text-gray-700">
+                    <label className="text-xs md:text-sm text-gray-700">
                       📞 Enable AI phone coaching (after 4 days inactive)
                     </label>
                   </div>
@@ -1354,84 +1296,13 @@ Respond in JSON format:
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-orange-500" />
-                Data & Privacy
-              </h3>
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-800 mb-2">🔒 Privacy Protected</p>
-                  <p className="text-xs text-green-700">Your habit data is stored securely in your browser and never leaves your device</p>
-                </div>
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 md:p-6 text-white">
+              <h3 className="text-base md:text-lg font-bold mb-2">✨ Premium AI Features Active</h3>
+              <p className="text-xs md:text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">Backup & Restore</h4>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        const data = {
-                          user: currentUser,
-                          habits: habits,
-                          exportDate: new Date().toISOString()
-                        };
-                        const dataStr = JSON.stringify(data, null, 2);
-                        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                        const url = URL.createObjectURL(dataBlob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `better-habits-backup-${new Date().toISOString().split('T')[0]}.json`;
-                        link.click();
-                        URL.revokeObjectURL(url);
-                        showMessage('📥 Data exported successfully!');
-                      }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      📥 Export Data
-                    </button>
-                    <label className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
-                      📤 Import Data
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={(event) => {
-                          const file = event.target.files[0];
-                          if (!file) return;
-
-                          const reader = new FileReader();
-                          reader.onload = (e) => {
-                            try {
-                              const data = JSON.parse(e.target.result);
-                              if (data.user && data.habits) {
-                                setCurrentUser(data.user);
-                                setHabits(data.habits);
-                                showMessage('📤 Data restored successfully!');
-                              } else {
-                                showMessage('❌ Invalid backup file format');
-                              }
-                            } catch (error) {
-                              showMessage('❌ Error reading backup file');
-                            }
-                          };
-                          reader.readAsText(file);
-                          event.target.value = ''; // Reset input
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">Export your data as a backup file or restore from a previous backup</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
-              <h3 className="text-lg font-bold mb-2">✨ Premium AI Features Active</h3>
-              <p className="text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">🧠 AI Features Active:</h4>
-                  <ul className="space-y-1 text-sm">
-                    <li>✅ Personality-based messaging</li>
+                  <h4 className="font-semibold mb-2 text-sm md:text-base">🧠 AI Features Active:</h4>
+                  <ul className="space-y-1 text-xs md:text-sm">
                     <li>✅ Voice command recognition</li>
                     <li>✅ AI conversation logging</li>
                     <li>✅ Smart habit suggestions</li>
@@ -1439,39 +1310,52 @@ Respond in JSON format:
                     <li>✅ Backlog update system</li>
                   </ul>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2">📊 Your Stats:</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>• {Math.round(currentUser.behaviorData.completionRate * 100)}% success rate</p>
-                    <p>• {currentUser.aiProfile.personalityType} personality optimized</p>
-                    <p>• {habits.length} active habits</p>
-                    <p>• Voice Command Center enabled</p>
-                    <p>• AI Coach conversations active</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Backlog Modal */}
+      {/* Mobile Bottom Navigation - Fixed */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="grid grid-cols-4 gap-1">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id)}
+              className={`flex flex-col items-center gap-1 py-2 px-1 transition-colors ${
+                currentView === item.id ? 'text-blue-500' : 'text-gray-600'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="text-xs font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Add padding bottom for mobile navigation */}
+      <div className="md:hidden h-16"></div>
+
+      {/* All the modals remain the same but with mobile-optimized sizes */}
+      
+      {/* Backlog Modal - Mobile Optimized */}
       {showBacklogModal && selectedHabitForBacklog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Update Past Days</h3>
               <button onClick={closeBacklogModal}>
                 <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
             
-            <div className="mb-4">
+            <div className="px-4 mb-4">
               <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
               <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
             </div>
 
-            <div className="space-y-3">
+            <div className="px-4 space-y-3">
               {getPastDates(3).map(date => {
                 const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
                 const isCompleted = isDateCompleted(currentHabit, date);
@@ -1505,10 +1389,10 @@ Respond in JSON format:
               })}
             </div>
 
-            <div className="flex gap-3 pt-4 mt-6 border-t">
+            <div className="p-4 pt-6 border-t mt-6">
               <button
                 onClick={closeBacklogModal}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
               >
                 Done
               </button>
@@ -1517,17 +1401,17 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Add Habit Modal */}
+      {/* Add Habit Modal - Mobile Optimized */}
       {showAddHabit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Add New Habit</h3>
               <button onClick={() => setShowAddHabit(false)}>
                 <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="px-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Habit Name</label>
                 <input
@@ -1563,42 +1447,42 @@ Respond in JSON format:
                   <option value="Social">Social</option>
                 </select>
               </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={addNewHabit}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
-                >
-                  Add Habit
-                </button>
-                <button
-                  onClick={() => setShowAddHabit(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
+            </div>
+            <div className="flex gap-3 p-4 pt-6">
+              <button
+                onClick={addNewHabit}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                Add Habit
+              </button>
+              <button
+                onClick={() => setShowAddHabit(false)}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Slider Modal */}
+      {/* Slider Modal - Mobile Optimized */}
       {showSliderModal && selectedHabitForSlider && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Set Completion Level</h3>
               <button onClick={closeSliderModal}>
                 <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
             
-            <div className="mb-6">
+            <div className="px-4 mb-6">
               <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForSlider.name}</h4>
               <p className="text-sm text-gray-600 mb-4">How much did you accomplish today?</p>
               
               <div className="text-center mb-6">
-                <div className="text-6xl font-bold text-blue-500 mb-2">
+                <div className="text-5xl md:text-6xl font-bold text-blue-500 mb-2">
                   {sliderValue}%
                 </div>
               </div>
@@ -1619,7 +1503,7 @@ Respond in JSON format:
                     <button
                       key={percentage}
                       onClick={() => setSliderValue(percentage)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                         sliderValue === percentage 
                           ? 'bg-blue-500 text-white' 
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
@@ -1632,7 +1516,7 @@ Respond in JSON format:
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 p-4 pt-0">
               <button
                 onClick={closeSliderModal}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
@@ -1650,23 +1534,23 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - Mobile Optimized */}
       {showDeleteConfirm && habitToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold text-red-600">Delete Habit</h3>
               <button onClick={closeDeleteConfirm}>
                 <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
             
-            <div className="mb-6">
+            <div className="px-4 mb-6">
               <p className="text-gray-700">Are you sure you want to delete "{habitToDelete.name}"?</p>
               <p className="text-sm text-gray-500 mt-2">This will remove all progress and cannot be undone.</p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 p-4 pt-0">
               <button
                 onClick={closeDeleteConfirm}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
@@ -1684,18 +1568,18 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Voice Help Modal */}
+      {/* Voice Help Modal - Mobile Optimized */}
       {showVoiceHelp && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Voice Commands Help</h3>
               <button onClick={() => setShowVoiceHelp(false)}>
                 <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="px-4 space-y-4">
               <div>
                 <h4 className="font-semibold text-gray-800 mb-2">✅ Complete Commands:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
@@ -1725,21 +1609,23 @@ Respond in JSON format:
               </div>
             </div>
 
-            <button
-              onClick={() => setShowVoiceHelp(false)}
-              className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors"
-            >
-              Got it!
-            </button>
+            <div className="p-4 pt-6">
+              <button
+                onClick={() => setShowVoiceHelp(false)}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                Got it!
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* AI Chat Modal */}
+      {/* AI Chat Modal - Mobile Optimized */}
       {showAIChat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl w-full max-w-2xl mx-4 h-[600px] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="bg-white rounded-xl w-full h-full md:max-w-2xl md:h-[600px] flex flex-col">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <Bot className="w-5 h-5 text-green-500" />
                 AI Habit Coach
@@ -1749,13 +1635,13 @@ Respond in JSON format:
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
               {aiChatHistory.length === 0 && (
-                <div className="text-center text-gray-500 mt-20">
-                  <Bot className="w-12 h-12 text-green-300 mx-auto mb-4" />
-                  <p className="font-medium">Chat with your AI habit coach!</p>
-                  <p className="text-sm mt-2">Try saying things like:</p>
-                  <div className="mt-4 space-y-2 text-sm">
+                <div className="text-center text-gray-500 mt-10 md:mt-20">
+                  <Bot className="w-10 h-10 md:w-12 md:h-12 text-green-300 mx-auto mb-4" />
+                  <p className="font-medium text-sm md:text-base">Chat with your AI habit coach!</p>
+                  <p className="text-xs md:text-sm mt-2">Try saying things like:</p>
+                  <div className="mt-4 space-y-2 text-xs md:text-sm">
                     <div className="bg-green-50 rounded-lg p-2">"I just finished an amazing workout!"</div>
                     <div className="bg-green-50 rounded-lg p-2">"Had a good meditation session"</div>
                     <div className="bg-green-50 rounded-lg p-2">"How can I stay motivated?"</div>
@@ -1764,43 +1650,43 @@ Respond in JSON format:
               )}
               
               {aiChatHistory.map((chat, index) => (
-                <div key={index} className={`flex gap-3 ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={index} className={`flex gap-2 md:gap-3 ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {chat.type !== 'user' && (
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       chat.type === 'error' ? 'bg-red-100' : 'bg-green-100'
                     }`}>
-                      <Bot className={`w-4 h-4 ${chat.type === 'error' ? 'text-red-500' : 'text-green-500'}`} />
+                      <Bot className={`w-3 h-3 md:w-4 md:h-4 ${chat.type === 'error' ? 'text-red-500' : 'text-green-500'}`} />
                     </div>
                   )}
-                  <div className={`max-w-[80%] p-3 rounded-lg ${
+                  <div className={`max-w-[85%] md:max-w-[80%] p-2 md:p-3 rounded-lg ${
                     chat.type === 'user' 
                       ? 'bg-blue-500 text-white' 
                       : chat.type === 'error'
                       ? 'bg-red-50 text-red-700 border border-red-200'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    <p className="text-sm">{chat.message}</p>
+                    <p className="text-xs md:text-sm">{chat.message}</p>
                     <p className="text-xs opacity-70 mt-1">
                       {chat.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                   {chat.type === 'user' && (
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-blue-500" />
+                    <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />
                     </div>
                   )}
                 </div>
               ))}
               
               {aiProcessing && (
-                <div className="flex gap-3 justify-start">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-green-500" />
+                <div className="flex gap-2 md:gap-3 justify-start">
+                  <div className="w-6 h-6 md:w-8 md:h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                   </div>
-                  <div className="bg-gray-100 p-3 rounded-lg">
+                  <div className="bg-gray-100 p-2 md:p-3 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-green-500 animate-spin" />
-                      <span className="text-sm text-gray-600">AI is thinking...</span>
+                      <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-green-500 animate-spin" />
+                      <span className="text-xs md:text-sm text-gray-600">AI is thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -1809,7 +1695,7 @@ Respond in JSON format:
               <div ref={chatEndRef} />
             </div>
             
-            <div className="p-6 border-t">
+            <div className="p-4 md:p-6 border-t">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -1817,13 +1703,13 @@ Respond in JSON format:
                   onChange={(e) => setAiChatInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendAIMessage()}
                   placeholder="Message your AI coach..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                   disabled={aiProcessing}
                 />
                 <button
                   onClick={sendAIMessage}
                   disabled={aiProcessing || !aiChatInput.trim()}
-                  className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-3 md:px-4 py-2 rounded-lg transition-colors"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -1833,9 +1719,9 @@ Respond in JSON format:
         </div>
       )}
 
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
-          <p className="text-sm">Transform your daily habits, transform your life ✨</p>
+      <footer className="bg-white border-t mt-8 md:mt-12 mb-16 md:mb-0">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6 text-center text-gray-600">
+          <p className="text-xs md:text-sm">Transform your daily habits, transform your life ✨</p>
         </div>
       </footer>
     </div>
