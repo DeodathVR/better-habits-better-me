@@ -367,11 +367,7 @@ Respond in JSON format:
       setAiProcessing(false);
     }
   };
-    
-    } finally {
-      setAiProcessing(false);
-    }
-  };
+   
 
   const sendAIMessage = async () => {
     if (!aiChatInput.trim()) return;
