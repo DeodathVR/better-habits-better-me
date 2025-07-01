@@ -408,32 +408,64 @@ Respond in JSON format:
   };
 
   const findHabitInSpeech = (text) => {
-    const habitKeywords = {};
-    habits.forEach(habit => {
-      const habitName = habit.name;
-      const nameWords = habitName.toLowerCase().split(' ');
+  const habitKeywords = {};
+  
+  habits.forEach(habit => {
+    const habitName = habit.name;
+    const nameWords = habitName.toLowerCase().split(' ');
+    
+    // Start with the habit name and its individual words
+    habitKeywords[habitName] = [...nameWords, habitName.toLowerCase()];
+    
+    // Add common variations and synonyms
+    nameWords.forEach(word => {
+      // Add partial matches (3+ characters)
+      if (word.length >= 3) {
+        habitKeywords[habitName].push(word);
+      }
       
-      habitKeywords[habitName] = [...nameWords, habitName.toLowerCase()];
+      // Add common verb forms
+      if (word.endsWith('ing')) {
+        habitKeywords[habitName].push(word.slice(0, -3)); // "reading" → "read"
+      }
+      if (word.endsWith('e')) {
+        habitKeywords[habitName].push(word + 'd'); // "save" → "saved"
+      }
       
-      if (habit.category === 'Mindfulness') {
-        habitKeywords[habitName].push('meditation', 'meditate', 'mindful');
-      } else if (habit.category === 'Fitness') {
-        habitKeywords[habitName].push('exercise', 'workout', 'fitness');
-      } else if (habit.category === 'Learning') {
-        habitKeywords[habitName].push('reading', 'read', 'book');
+      // Add plurals
+      if (!word.endsWith('s')) {
+        habitKeywords[habitName].push(word + 's');
       }
     });
     
-    for (const habit of habits) {
-      const keywords = habitKeywords[habit.name] || [];
-      for (const keyword of keywords) {
-        if (text.includes(keyword)) {
-          return habit;
-        }
+    // Add category-specific keywords (as backup)
+    if (habit.category === 'Mindfulness') {
+      habitKeywords[habitName].push('meditation', 'meditate', 'mindful');
+    } else if (habit.category === 'Fitness') {
+      habitKeywords[habitName].push('exercise', 'workout', 'fitness', 'gym');
+    } else if (habit.category === 'Learning') {
+      habitKeywords[habitName].push('reading', 'read', 'book', 'study');
+    } else if (habit.category === 'Health') {
+      habitKeywords[habitName].push('saving', 'savings', 'save', 'money', 'financial', 'budget');
+    } else if (habit.category === 'Productivity') {
+      habitKeywords[habitName].push('work', 'productive', 'focus', 'organize');
+    } else if (habit.category === 'Social') {
+      habitKeywords[habitName].push('social', 'friends', 'family', 'connect');
+    }
+  });
+  
+  // Find the best match
+  for (const habit of habits) {
+    const keywords = habitKeywords[habit.name] || [];
+    for (const keyword of keywords) {
+      if (text.includes(keyword.toLowerCase())) {
+        return habit;
       }
     }
-    return null;
-  };
+  }
+  
+  return null;
+};
 
   const extractPercentageFromSpeech = (text) => {
     const percentMatches = [/(\d+)\s*percent/, /(\d+)\s*%/];
