@@ -718,6 +718,8 @@ Respond in JSON format:
     { id: 'profile', label: 'Profile', icon: Settings }
   ];
 
+// Navigation items for mobile
+const navItems = [
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile-optimized notification */}
