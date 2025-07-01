@@ -701,14 +701,7 @@ Respond in JSON format:
   const getWeeklyProgress = () => {
     const totalHabits = habits.length;
     const completedToday = habits.filter(h => h.completedToday).length;
-    const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);
-    
-    return {
-      completionRate: totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0,
-      totalStreak,
-      activeHabits: totalHabits
-    };
-  };
+    const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);};
 
   // Navigation items for mobile
   const navItems = [
@@ -718,9 +711,15 @@ Respond in JSON format:
     { id: 'profile', label: 'Profile', icon: Settings }
   ];
 
-// Navigation items for mobile
-const navItems = [
+
   return (
+    
+    return {
+      completionRate: totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0,
+      totalStreak,
+      activeHabits: totalHabits
+    };
+  
     <div className="min-h-screen bg-gray-50">
       {/* Mobile-optimized notification */}
       {showNotification && (
