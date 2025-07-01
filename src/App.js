@@ -26,9 +26,11 @@ function App() {
         `💪 You've got this! One habit at a time!`,
         `🎯 Focus on progress, not perfection!`,
         `🔥 Your future self will thank you!`,
-        `✨ Consistency beats intensity every time!`
-      ]
-    };
+       };
+
+    const messageArray = messages[type] || messages.encouragement;
+    return messageArray[Math.floor(Math.random() * messageArray.length)];
+  };
 
   // AI Input Validation - Safety first! 🛡️
   const validateAIHabitInput = (habitData) => {
@@ -49,6 +51,8 @@ function App() {
       return false;
     }
     
+    return true;
+  };
     return true;
   };
 
@@ -365,14 +369,7 @@ Respond in JSON format:
       const errorMessage = `AI Error: ${error.message}`;
       setAiChatHistory(prev => [...prev, 
         { type: 'user', message: userMessage, timestamp: new Date() },
-        { type: 'error', message: errorMessage, timestamp: new Date() }
-      ]);
-      showMessage(errorMessage);
-    } finally {
-      setAiProcessing(false);
-    }
-  };
-
+       
   console.log('📊 Extracted percentage:', percentage);
   
   if (matchedHabit) {
