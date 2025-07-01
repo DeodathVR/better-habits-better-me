@@ -52,7 +52,7 @@ function App() {
     return true;
   };
     return true;
-  };
+  
 
     const messageArray = messages[type] || messages.encouragement;
     return messageArray[Math.floor(Math.random() * messageArray.length)];
