@@ -381,19 +381,7 @@ Respond in JSON format:
     showMessage(`Couldn't identify a habit in: "${transcript}"`);
   }
 };
-    const text = transcript.toLowerCase().trim();
-    const matchedHabit = findHabitInSpeech(text);
-    const percentage = extractPercentageFromSpeech(text);
     
-    console.log('All current habits:', habits.map(h => h.name));
-console.log('Looking for habit in text:', text);
-if (matchedHabit) {
-      executeHabitUpdate(matchedHabit, percentage, 'voice');
-    } else {
-      showMessage(`Couldn't identify a habit in: "${transcript}"`);
-    }
-  }
-
   const executeHabitUpdate = (habit, percentage, source) => {
     setHabits(prev => prev.map(h => {
       if (h.id === habit.id) {
