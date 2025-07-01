@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2, Menu, Home, BarChart3, BookOpen, Settings } from 'lucide-react';
+import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, VolumeX, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2, Menu, Home, BarChart3, BookOpen, Settings } from 'lucide-react';
 
 function App() {
   const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
@@ -158,6 +158,7 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [aiVoiceEnabled, setAiVoiceEnabled] = useState(true);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -291,7 +292,7 @@ Respond in JSON format:
           { type: 'ai', message: aiResult.response, timestamp: new Date() }
         ]);
         
-        if ('speechSynthesis' in window && aiResult.speech_response) {
+        if ('speechSynthesis' in window && aiResult.speech_response && aiVoiceEnabled) {
           const utterance = new SpeechSynthesisUtterance(aiResult.speech_response);
           speechSynthesis.speak(utterance);
         }
@@ -1630,9 +1631,26 @@ Respond in JSON format:
                 <Bot className="w-5 h-5 text-green-500" />
                 AI Habit Coach
               </h3>
-              <button onClick={() => setShowAIChat(false)}>
-                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    aiVoiceEnabled 
+                      ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                      : 'text-gray-400 bg-gray-50 hover:bg-gray-100'
+                  }`}
+                  title={aiVoiceEnabled ? 'Turn off AI voice' : 'Turn on AI voice'}
+                >
+                  {aiVoiceEnabled ? (
+                    <Volume2 className="w-4 h-4" />
+                  ) : (
+                    <VolumeX className="w-4 h-4" />
+                  )}
+                </button>
+                <button onClick={() => setShowAIChat(false)}>
+                  <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+                </button>
+              </div>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
@@ -1643,8 +1661,21 @@ Respond in JSON format:
                   <p className="text-xs md:text-sm mt-2">Try saying things like:</p>
                   <div className="mt-4 space-y-2 text-xs md:text-sm">
                     <div className="bg-green-50 rounded-lg p-2">"I just finished an amazing workout!"</div>
-                    <div className="bg-green-50 rounded-lg p-2">"Had a good meditation session"</div>
+                    <div className="bg-green-50 rounded-lg p-2">"Add a savings habit"</div>
                     <div className="bg-green-50 rounded-lg p-2">"How can I stay motivated?"</div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+                    {aiVoiceEnabled ? (
+                      <>
+                        <Volume2 className="w-3 h-3" />
+                        <span>AI voice responses enabled</span>
+                      </>
+                    ) : (
+                      <>
+                        <VolumeX className="w-3 h-3" />
+                        <span>AI voice responses disabled</span>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
