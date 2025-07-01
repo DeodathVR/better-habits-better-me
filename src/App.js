@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, VolumeX, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2, Menu, Home, BarChart3, BookOpen, Settings } from 'lucide-react';
 
 function App() {
-  const GEMINI_API_KEY = 'AIzaSyDFZ6mr63MOYGy--TDsw2RBQ6kpNeL-p6o';
+  const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
 
   // Add the missing getMotivationalMessage function
   const getMotivationalMessage = (type, context = {}) => {
