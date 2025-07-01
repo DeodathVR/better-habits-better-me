@@ -15,31 +15,17 @@ export default async function handler(req, res) {
   try {
     const { userPhone, userName, inactiveDays, habits, longestStreak } = req.body;
 
-    // Generate personalized coaching message
-    const getCoachingMessage = () => {
-      const messages = [
-        `Ahoy ${userName}! 🎤 Your habit coach has an encouraging voice message for you. Your ${longestStreak}-day streak shows real dedication!`,
-        `Hey ${userName}! 💪 Time to get back on track! Your habit coach left you a motivational voice message.`,
-        `${userName}, your habits are calling! 🎯 Listen to your personal coaching message and reignite that spark!`,
-        `Hi ${userName}! 🌟 Your habit coach believes in you. Check out this personalized voice message!`
-      ];
-      return messages[Math.floor(Math.random() * messages.length)];
-    };
-
     // Create voice message URL (we'll build this next!)
     const voiceMessageId = `voice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const voiceUrl = `https://www.myawesomelifehabits.com/voice/${voiceMessageId}`;
 
-    // Create SMS content
-    const smsBody = `${getCoachingMessage()}
+    // Create SHORT SMS content for international delivery
+    const smsBody = `Hi ${userName}! Your habit coach has a voice message for you 🎤
 
-🎤 Listen here: ${voiceUrl}
+Listen: ${voiceUrl}
 
-Your active habits:
-${habits.map(habit => `• ${habit.name} (${habit.streak} day streak)`).join('\n')}
-
-You've got this! 💪
-- Your Habit Coach`;
+Keep building those habits! 💪
+- Your Coach`;
 
     // Send SMS using Twilio
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
@@ -59,8 +45,9 @@ You've got this! 💪
       const result = await response.json();
       res.status(200).json({ 
         success: true, 
-        message: `Coaching SMS sent to ${userPhone}`,
-        twilioSid: result.sid 
+        message: `Short coaching SMS sent to ${userPhone}`,
+        twilioSid: result.sid,
+        messageLength: smsBody.length
       });
     } else {
       const errorText = await response.text();
