@@ -1022,7 +1022,6 @@ Respond in JSON format:
           </div>
         )}
 
-        {/* Dashboard, Learn, and Profile views continue exactly as in your original code */}
         {currentView === 'dashboard' && (
           <div className="space-y-4 md:space-y-6">
             <div className="text-center py-3 md:py-6">
@@ -1073,21 +1072,151 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Continue with all your other dashboard content... */}
+            {/* Habit Progress Overview - Mobile Optimized */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4">Habit Progress Overview</h3>
+              <div className="space-y-3 md:space-y-4">
+                {habits.map(habit => (
+                  <div key={habit.id} className="border border-gray-200 rounded-lg p-3 md:p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-gray-800 text-sm md:text-base truncate flex-1">{habit.name}</h4>
+                      <div className="flex items-center gap-1 md:gap-2 flex-shrink-0 ml-2">
+                        <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
+                        <span className="text-xs md:text-sm font-medium text-orange-600">{habit.streak} days</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-4">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-1">
+                          <span>Progress</span>
+                          <span>{habit.progress}/{habit.target}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 md:h-3">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 md:h-3 rounded-full transition-all duration-300"
+                            style={{width: `${Math.min((habit.progress / habit.target) * 100, 100)}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
+                        habit.completedToday ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {habit.completedToday ? 'Done' : 'Pending'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions - Mobile Optimized */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  onClick={() => setShowAddHabit(true)}
+                  className="flex items-center gap-3 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Plus className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  <span className="font-medium text-sm md:text-base">Add New Habit</span>
+                </button>
+                <button
+                  onClick={() => setShowAIChat(true)}
+                  className="flex items-center gap-3 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Bot className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                  <span className="font-medium text-sm md:text-base">Chat with AI Coach</span>
+                </button>
+                <button
+                  onClick={() => setCurrentView('profile')}
+                  className="flex items-center gap-3 p-3 md:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <User className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+                  <span className="font-medium text-sm md:text-base">View Profile</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Add all other views and modals here - keeping them exactly as they were */}
-      </main>
+        {currentView === 'learn' && (
+          <div className="space-y-4 md:space-y-6">
+            <div className="text-center py-3 md:py-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Learn & Grow</h2>
+              <p className="text-sm md:text-base text-gray-600">Insights, guides, and inspiration for your habit journey</p>
+            </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-8 md:mt-12 mb-16 md:mb-0">
-        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6 text-center text-gray-600">
-          <p className="text-xs md:text-sm">Transform your daily habits, transform your life ✨</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
+            {/* Articles - Mobile Optimized */}
+            <div className="space-y-4 md:space-y-6">
+              {/* Article 1 */}
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 md:p-6 text-white">
+                  <div className="flex items-center gap-2 mb-2 md:mb-3">
+                    <Target className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED</span>
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">Why a BIG Vision Needs Good Habits</h3>
+                  <p className="text-purple-100 text-xs md:text-sm">Discover how small daily actions build extraordinary achievements</p>
+                </div>
+                <div className="p-4 md:p-6">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
+                      <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with an extraordinary vision, but it's the boring, daily habits that actually make it happen.
+                    </p>
+                    
+                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🎯 The Vision-Habit Connection</h4>
+                    <p className="text-gray-700 mb-3 md:mb-4 text-sm md:text-base">
+                      Your big vision is the <em>destination</em>. Your habits are the <em>vehicle</em>. Without reliable daily systems, even the most inspiring goals remain out of reach.
+                    </p>
 
-export default App;
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-3 md:p-4 my-3 md:my-4">
+                      <p className="text-blue-800 font-medium text-sm md:text-base">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
+                      <span>📖 5 min read</span>
+                      <span>🎯 Goal Setting</span>
+                      <span>💪 Motivation</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Article 2 */}
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 md:p-6 text-white">
+                  <div className="flex items-center gap-2 mb-2 md:mb-3">
+                    <Star className="w-5 h-5 md:w-6 md:h-6" />
+                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO</span>
+                  </div>
+                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">How to Use This App</h3>
+                  <p className="text-green-100 text-xs md:text-sm">Master every feature and become a habit-building pro</p>
+                </div>
+                <div className="p-4 md:p-6">
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
+                      Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
+                    </p>
+                    
+                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🏁 Getting Started</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
+                      <p className="text-gray-700 mb-2 text-sm md:text-base"><strong>Four Ways to Log Completion:</strong></p>
+                      <ul className="text-gray-700 space-y-1 text-sm md:text-base">
+                        <li><strong>Complete Button:</strong> One-click for 100% completion</li>
+                        <li><strong>% Slider:</strong> Set partial completion</li>
+                        <li><strong>Voice Commands:</strong> "Exercise complete"</li>
+                        <li><strong>AI Chat:</strong> "I just finished a workout!"</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-green-50 border-l-4 border-green-500 p-3 md:p-4 my-3 md:my-4">
+                      <p className="text-green-800 font-medium text-sm md:text-base">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
+                      <span>📖 7 min read</span>
+                      <span>🎓 Tutorial
