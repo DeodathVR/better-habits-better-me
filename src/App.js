@@ -310,7 +310,7 @@ Respond in JSON format:
           const newHabitData = aiResult.new_habit;
           
           // Validate AI input (safety first!)
-          if (newHabitData && newHabitData.name && newHabitData.description) {
+          if (validateAIHabitInput(newHabitData)) {
             const newHabit = {
               id: Date.now(),
               name: newHabitData.name.substring(0, 30), // Limit length
@@ -1297,6 +1297,33 @@ Respond in JSON format:
               </div>
             </div>
 
+            {/* Test Coaching System - Development */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
+                🧪 Test Coaching System
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <button
+                  onClick={sendTestEmail}
+                  className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  <span className="font-medium text-sm md:text-base">Test Email Coaching</span>
+                </button>
+                <button
+                  onClick={sendTestSMS}
+                  className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <Phone className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                  <span className="font-medium text-sm md:text-base">Test SMS Coaching</span>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                📧 Email coaching triggers after 2 days inactive • 📱 SMS coaching triggers after 4 days inactive (Premium users)
+              </p>
+            </div>
+
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 md:p-6 text-white">
               <h3 className="text-base md:text-lg font-bold mb-2">✨ Premium AI Features Active</h3>
               <p className="text-xs md:text-sm opacity-90 mb-4">You're experiencing the full power of AI-driven habit building!</p>
@@ -1633,7 +1660,12 @@ Respond in JSON format:
               </h3>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
+                  onClick={() => {
+                    if (aiVoiceEnabled) {
+                      speechSynthesis.cancel(); // Stop any current speech immediately
+                    }
+                    setAiVoiceEnabled(!aiVoiceEnabled);
+                  }}
                   className={`p-2 rounded-lg transition-colors ${
                     aiVoiceEnabled 
                       ? 'text-green-600 bg-green-50 hover:bg-green-100' 
