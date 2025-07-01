@@ -35,10 +35,10 @@ Keep building those habits! 💪
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
-        To: userPhone,
-        MessagingServiceSid: messagingServiceSid,
-        Body: smsBody
-      })
+  To: userPhone,
+  From: '+13254405735',
+  Body: smsBody
+})
     });
 
     if (response.ok) {
