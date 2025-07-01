@@ -150,44 +150,7 @@ const loadFromLocalStorage = (key, defaultValue) => {
     }
   ]);
 });
-    {
-      id: 1,
-      name: "Morning Meditation",
-      description: "Start the day with mindfulness",
-      streak: 5,
-      missedDays: 3,
-      completedToday: false,
-      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-      category: "Mindfulness",
-      progress: 0,
-      target: 10
-    },
-    {
-      id: 2,
-      name: "Read 20 Minutes",
-      description: "Expand knowledge through daily reading",
-      streak: 3,
-      missedDays: 1,
-      completedToday: true,
-      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
-      category: "Learning",
-      progress: 5,
-      target: 10
-    },
-    {
-      id: 3,
-      name: "Exercise",
-      description: "Move your body for at least 30 minutes",
-      streak: 8,
-      missedDays: 0,
-      completedToday: false,
-      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-      category: "Fitness",
-      progress: 2,
-      target: 10
-    }
-  ]);
-
+    
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [voiceSupported, setVoiceSupported] = useState(false);
