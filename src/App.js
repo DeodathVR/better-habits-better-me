@@ -152,7 +152,7 @@ const loadFromLocalStorage = (key, defaultValue) => {
 });
     {
       id: 1,
-      name: "Morning Meditation",
+      name: "Morning Meditation",;
       description: "Start the day with mindfulness",
       streak: 5,
       missedDays: 3,
