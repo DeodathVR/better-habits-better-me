@@ -1327,7 +1327,7 @@ Respond in JSON format:
   } catch (error) {
     showMessage('❌ Email error: ' + error.message);
   }
-}}}
+}}
                   className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
