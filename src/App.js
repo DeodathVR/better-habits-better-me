@@ -41,18 +41,12 @@ function App() {
     if (habitData.name.length > 30) return false;
     if (!habitData.description || typeof habitData.description !== 'string') return false;
     if (habitData.description.length > 100) return false;
-    
+    };
        
     
     
     return true;
-  };
-    return true;
-  
-
-    const messageArray = messages[type] || messages.encouragement;
-    return messageArray[Math.floor(Math.random() * messageArray.length)];
-  };
+ 
 
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
@@ -334,7 +328,7 @@ Respond in JSON format:
   const newHabits = [...prev, newHabit];
   localStorage.setItem('userHabits', JSON.stringify(newHabits));
   return newHabits;
-});;
+});
             showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
             
             // Add a follow-up AI message confirming the creation
@@ -670,7 +664,7 @@ Respond in JSON format:
       activeHabits: totalHabits
     };
   };
-
+  
   // Navigation items for mobile
   const navItems = [
     { id: 'habits', label: 'Habits', icon: Home },
