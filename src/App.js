@@ -26,7 +26,7 @@ function App() {
         `💪 You've got this! One habit at a time!`,
         `🎯 Focus on progress, not perfection!`,
         `🔥 Your future self will thank you!`,
-       };
+       
 
     const messageArray = messages[type] || messages.encouragement;
     return messageArray[Math.floor(Math.random() * messageArray.length)];
