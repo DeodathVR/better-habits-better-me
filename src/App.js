@@ -25,8 +25,10 @@ function App() {
         `🌱 Every small step counts! Keep growing!`,
         `💪 You've got this! One habit at a time!`,
         `🎯 Focus on progress, not perfection!`,
-        `🔥 Your future self will thank you!`,
-       
+`🔥 Your future self will thank you!`,
+        `✨ Consistency beats intensity every time!`
+      ]
+    };
 
     const messageArray = messages[type] || messages.encouragement;
     return messageArray[Math.floor(Math.random() * messageArray.length)];
@@ -40,11 +42,7 @@ function App() {
     if (!habitData.description || typeof habitData.description !== 'string') return false;
     if (habitData.description.length > 100) return false;
     
-    const validCategories = ['Mindfulness', 'Fitness', 'Learning', 'Health', 'Productivity', 'Social'];
-    if (habitData.category && !validCategories.includes(habitData.category)) {
-      habitData.category = 'Health'; // Safe default
-    }
-    
+       
     // Check for duplicate names
     const existingNames = habits.map(h => h.name.toLowerCase());
     if (existingNames.includes(habitData.name.toLowerCase())) {
@@ -361,16 +359,22 @@ Respond in JSON format:
             }]);
           }
         }
-        
-        return aiResult;
-      }
-      
-    } catch (error) {
-      const errorMessage = `AI Error: ${error.message}`;
-      setAiChatHistory(prev => [...prev, 
-        { type: 'user', message: userMessage, timestamp: new Date() },
-       
-  console.log('📊 Extracted percentage:', percentage);
+     
+       { type: 'user', message: userMessage, timestamp: new Date() },
+        { type: 'error', message: errorMessage, timestamp: new Date() }
+      ]);
+      showMessage(errorMessage);
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
+  const sendAIMessage = async () => {
+    if (!aiChatInput.trim()) return;
+    const message = aiChatInput.trim();
+    setAiChatInput('');
+    await processWithAI(message);
+  };
   
   if (matchedHabit) {
     executeHabitUpdate(matchedHabit, percentage, 'voice');
