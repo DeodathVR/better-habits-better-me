@@ -385,7 +385,7 @@ Respond in JSON format:
   const processVoiceCommand = (transcript) => {
   const text = transcript.toLowerCase().trim();
   console.log('🎬 Processing voice command:', text);
-  const matchedHabit = findHabitInSpeech(text);
+  const matchedHabit = findHabitInSpeech(text, habits); // ← ADD habits parameter
   
   // Enhanced command detection
   const { percentage, action } = extractVoiceAction(text);
@@ -454,13 +454,14 @@ Respond in JSON format:
   }
 };
 
- const findHabitInSpeech = (text) => {
+ const findHabitInSpeech = (text, currentHabits) => {
+  const habitsToUse = currentHabits || habits; // Use passed habits or fallback
   // 🔍 DEBUG: Let's see what we're working with
   console.log('🎤 Voice Input:', text);
-  console.log('🎯 Available Habits:', habits.map(h => h.name));
+ console.log('🎯 Available Habits:', habitsToUse.map(h => h.name));
   
   const habitKeywords = {};
-  habits.forEach(habit => {
+  habitsToUse.forEach(habit => {
     const habitName = habit.name.toLowerCase();
     const nameWords = habitName.split(' ').filter(word => 
       word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
@@ -522,7 +523,7 @@ Respond in JSON format:
   let bestMatch = null;
   let bestScore = 0;
   
-  for (const habit of habits) {
+  for (const habit of habitsToUse) {
     const keywords = habitKeywords[habit.name] || [];
     let score = 0;
     
