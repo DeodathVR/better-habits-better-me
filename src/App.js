@@ -324,7 +324,11 @@ Respond in JSON format:
               target: 10
             };
             
-            setHabits(prev => [...prev, newHabit]);
+            setHabits(prev => {
+  const newHabits = [...prev, newHabit];
+  localStorage.setItem('userHabits', JSON.stringify(newHabits));
+  return newHabits;
+});
             showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
             
             // Add a follow-up AI message confirming the creation
