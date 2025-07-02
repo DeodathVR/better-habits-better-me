@@ -464,9 +464,6 @@ Respond in JSON format:
   console.log('🔍 habitsToUse:', habitsToUse?.map(h => h.name));
   console.log('🔍 Global habits:', habits?.map(h => h.name));
   
-  // 🔍 DEBUG: Let's see what we're working with
-  console.log('🎤 Voice Input:', text);
-  console.log('🎯 Available Habits:', habitsToUse.map(h => h.name));
   const habitsToUse = currentHabits || habits; // Use passed habits or fallback
   
   // 🔍 DEBUG: Let's see what we're working with
