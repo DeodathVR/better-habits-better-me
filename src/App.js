@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, MessageCircle, Award, Clock, User, Mail, Phone, Heart, Plus, X, Mic, MicOff, Volume2, VolumeX, Bot, Send, Sparkles, ChevronLeft, ChevronRight, Trash2, Menu, Home, BarChart3, BookOpen, Settings } from 'lucide-react';
 
 function App() {
-  const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
+  // Mock Gemini API key for demo - replace with actual key
+  const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || 'demo-key';
 
-  // ✅ FIXED: Properly structured getMotivationalMessage function
+  // Motivational message function
   const getMotivationalMessage = (type, context = {}) => {
     const messages = {
       habitCompleted: [
@@ -34,7 +35,7 @@ function App() {
     return messageArray[Math.floor(Math.random() * messageArray.length)];
   };
 
-  // ✅ FIXED: Moved validation function to proper location
+  // AI Habit validation
   const validateAIHabitInput = (habitData) => {
     if (!habitData || typeof habitData !== 'object') return false;
     if (!habitData.name || typeof habitData.name !== 'string' || habitData.name.trim().length === 0) return false;
@@ -50,26 +51,7 @@ function App() {
     return true;
   };
 
-  // 💾 LocalStorage Functions
-  const saveToLocalStorage = (key, data) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-      showMessage('⚠️ Could not save data locally');
-    }
-  };
-
-  const loadFromLocalStorage = (key, defaultValue) => {
-    try {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : defaultValue;
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-      return defaultValue;
-    }
-  };
-
+  // State management
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
     email: "alex@example.com",
@@ -93,59 +75,47 @@ function App() {
       longestStreak: 21,
       biggerGoals: ["become a focused leader", "build mental strength for career"],
       proudestMoment: "completing 21-day meditation streak"
-    },
-    emailHistory: [
-      {
-        id: 1,
-        subject: "Your meditation streak is waiting for you, Alex",
-        sent: new Date().toISOString(),
-        daysMissed: 2,
-        content: "Hi Alex,\n\nI noticed you haven't checked in for 2 days. Your 21-day streak shows real dedication!\n\nYour AI Coach"
-      }
-    ],
-    callHistory: []
+    }
   });
 
-  const [habits, setHabits] = useState(() => {
-    return loadFromLocalStorage('userHabits', [
-      {
-        id: 1,
-        name: "Morning Meditation",
-        description: "Start the day with mindfulness",
-        streak: 5,
-        missedDays: 3,
-        completedToday: false,
-        completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-        category: "Mindfulness",
-        progress: 0,
-        target: 10
-      },
-      {
-        id: 2,
-        name: "Read 20 Minutes",
-        description: "Expand knowledge through daily reading",
-        streak: 3,
-        missedDays: 1,
-        completedToday: true,
-        completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
-        category: "Learning",
-        progress: 5,
-        target: 10
-      },
-      {
-        id: 3,
-        name: "Exercise",
-        description: "Move your body for at least 30 minutes",
-        streak: 8,
-        missedDays: 0,
-        completedToday: false,
-        completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-        category: "Fitness",
-        progress: 2,
-        target: 10
-      }
-    ]);
-  });
+  const [habits, setHabits] = useState([
+    {
+      id: 1,
+      name: "Morning Meditation",
+      description: "Start the day with mindfulness",
+      streak: 5,
+      missedDays: 3,
+      completedToday: false,
+      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Mindfulness",
+      progress: 0,
+      target: 10
+    },
+    {
+      id: 2,
+      name: "Read 20 Minutes",
+      description: "Expand knowledge through daily reading",
+      streak: 3,
+      missedDays: 1,
+      completedToday: true,
+      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
+      category: "Learning",
+      progress: 5,
+      target: 10
+    },
+    {
+      id: 3,
+      name: "Exercise",
+      description: "Move your body for at least 30 minutes",
+      streak: 8,
+      missedDays: 0,
+      completedToday: false,
+      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+      category: "Fitness",
+      progress: 2,
+      target: 10
+    }
+  ]);
     
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
@@ -188,15 +158,7 @@ function App() {
     setTimeout(() => setShowNotification(false), 4000);
   };
 
-  // 💾 Auto-save hooks
-  useEffect(() => {
-    saveToLocalStorage('userHabits', habits);
-  }, [habits]);
-
-  useEffect(() => {
-    saveToLocalStorage('currentUser', currentUser);
-  }, [currentUser]);
-
+  // Voice recognition setup
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -253,127 +215,30 @@ function App() {
     }
   }, []);
 
+  // AI processing function
   const processWithAI = async (userMessage) => {
     setAiProcessing(true);
     
     try {
-      const prompt = `You are a habit tracking assistant. The user says: "${userMessage}"
+      // Mock AI response for demo purposes
+      const mockAIResponse = {
+        action: "conversation",
+        response: `I understand you said: "${userMessage}". This is a demo response since no actual API key is configured. To enable real AI features, please add your Gemini API key to the environment variables.`,
+        speech_response: `I heard you say ${userMessage}. This is a demo response.`
+      };
 
-Current habits:
-${habits.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak)`).join('\n')}
-
-RULES:
-- Only suggest creating NEW habits if user explicitly asks to add/create a habit
-- For logging existing habits, use "log_habit" action  
-- For new habit creation, use "create_habit" action
-- Be specific about what you're actually doing
-- Don't claim you've done something you haven't
-
-Respond in JSON format:
-{
-  "action": "log_habit" | "conversation" | "create_habit",
-  "habit_name": "exact habit name if logging existing" | null,
-  "percentage": number 0-100 if logging | null,
-  "new_habit": {
-    "name": "habit name (max 30 chars)",
-    "description": "habit description (max 100 chars)",
-    "category": "Mindfulness|Fitness|Learning|Health|Productivity|Social"
-  } | null,
-  "response": "your honest response explaining what you actually did",
-  "speech_response": "version without emojis for speech"
-}`;
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 500,
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const aiText = data.candidates[0].content.parts[0].text;
+      setAiChatHistory(prev => [...prev, 
+        { type: 'user', message: userMessage, timestamp: new Date() },
+        { type: 'ai', message: mockAIResponse.response, timestamp: new Date() }
+      ]);
       
-      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const aiResult = JSON.parse(jsonMatch[0]);
-        
-        setAiChatHistory(prev => [...prev, 
-          { type: 'user', message: userMessage, timestamp: new Date() },
-          { type: 'ai', message: aiResult.response, timestamp: new Date() }
-        ]);
-        
-        if ('speechSynthesis' in window && aiResult.speech_response && aiVoiceEnabled) {
-          const utterance = new SpeechSynthesisUtterance(aiResult.speech_response);
-          speechSynthesis.speak(utterance);
-        }
-        
-        // Handle habit logging
-        if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
-          const habit = habits.find(h => h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase()));
-          if (habit) {
-            executeHabitUpdate(habit, aiResult.percentage, 'ai');
-          }
-        }
-        
-        // Handle NEW habit creation
-        if (aiResult.action === 'create_habit' && aiResult.new_habit) {
-          const newHabitData = aiResult.new_habit;
-          
-          // Validate AI input (safety first!)
-          if (newHabitData && newHabitData.name && newHabitData.description) {
-            const newHabit = {
-              id: Date.now(),
-              name: newHabitData.name.substring(0, 30), // Limit length
-              description: newHabitData.description.substring(0, 100), // Limit length
-              streak: 0,
-              missedDays: 0,
-              completedToday: false,
-              completedDates: [],
-              category: newHabitData.category || 'Health',
-              progress: 0,
-              target: 10
-            };
-            
-            setHabits(prev => [...prev, newHabit]);
-            showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
-            
-            // Add a follow-up AI message confirming the creation
-            setTimeout(() => {
-              setAiChatHistory(prev => [...prev, {
-                type: 'ai',
-                message: `✅ Perfect! I've successfully added "${newHabit.name}" to your habits list. You can see it above and start tracking it right away!`,
-                timestamp: new Date()
-              }]);
-            }, 1000);
-            
-          } else {
-            showMessage(`❌ AI tried to create invalid habit. Please try again with different details.`);
-            setAiChatHistory(prev => [...prev, {
-              type: 'ai',
-              message: `Sorry, I couldn't create that habit due to invalid data. Please try describing the habit differently.`,
-              timestamp: new Date()
-            }]);
-          }
-        }
-        
-        return aiResult;
+      if ('speechSynthesis' in window && mockAIResponse.speech_response && aiVoiceEnabled) {
+        const utterance = new SpeechSynthesisUtterance(mockAIResponse.speech_response);
+        speechSynthesis.speak(utterance);
       }
       
+      return mockAIResponse;
+        
     } catch (error) {
       const errorMessage = `AI Error: ${error.message}`;
       setAiChatHistory(prev => [...prev, 
@@ -433,28 +298,24 @@ Respond in JSON format:
   };
 
   const findHabitInSpeech = (text) => {
-    const habitKeywords = {};
-    habits.forEach(habit => {
-      const habitName = habit.name;
-      const nameWords = habitName.toLowerCase().split(' ');
-      
-      habitKeywords[habitName] = [...nameWords, habitName.toLowerCase()];
-      
-      if (habit.category === 'Mindfulness') {
-        habitKeywords[habitName].push('meditation', 'meditate', 'mindful');
-      } else if (habit.category === 'Fitness') {
-        habitKeywords[habitName].push('exercise', 'workout', 'fitness');
-      } else if (habit.category === 'Learning') {
-        habitKeywords[habitName].push('reading', 'read', 'book');
-      }
-    });
-    
     for (const habit of habits) {
-      const keywords = habitKeywords[habit.name] || [];
-      for (const keyword of keywords) {
-        if (text.includes(keyword)) {
+      const habitName = habit.name.toLowerCase();
+      const nameWords = habitName.split(' ');
+      
+      // Check if any word from habit name appears in speech
+      for (const word of nameWords) {
+        if (text.includes(word)) {
           return habit;
         }
+      }
+      
+      // Check category-based keywords
+      if (habit.category === 'Mindfulness' && (text.includes('meditation') || text.includes('meditate'))) {
+        return habit;
+      } else if (habit.category === 'Fitness' && (text.includes('exercise') || text.includes('workout'))) {
+        return habit;
+      } else if (habit.category === 'Learning' && (text.includes('reading') || text.includes('read'))) {
+        return habit;
       }
     }
     return null;
@@ -537,7 +398,6 @@ Respond in JSON format:
     }));
   };
 
-  // ✅ FIXED: Single, complete addNewHabit function with localStorage
   const addNewHabit = () => {
     if (newHabit.name.trim() === '') return;
     
@@ -554,15 +414,10 @@ Respond in JSON format:
       target: 10
     };
     
-    setHabits(prev => {
-      const newHabits = [...prev, habit];
-      saveToLocalStorage('userHabits', newHabits);
-      return newHabits;
-    });
-    
+    setHabits(prev => [...prev, habit]);
     setNewHabit({ name: '', description: '', category: 'Mindfulness' });
     setShowAddHabit(false);
-    showMessage(`New habit "${habit.name}" added! 💾 Saved`);
+    showMessage(`New habit "${habit.name}" added!`);
   };
 
   const openSliderModal = (habit) => {
@@ -660,7 +515,6 @@ Respond in JSON format:
     }));
   };
 
-  // ✅ FIXED: Complete getWeeklyProgress function
   const getWeeklyProgress = () => {
     const totalHabits = habits.length;
     const completedToday = habits.filter(h => h.completedToday).length;
@@ -796,226 +650,223 @@ Respond in JSON format:
               </div>
             )}
 
-            {/* Mobile-first layout */}
-            <div className="space-y-4">
-              {/* Desktop Voice/AI Section */}
-              <div className="hidden md:block">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  {/* Voice Commands Panel */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Mic className="w-5 h-5 text-purple-500" />
-                      Voice Command Center
-                      <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">LIVE</span>
-                    </h3>
-                    
-                    {voiceSupported ? (
-                      <div className="space-y-4">
-                        <button
-                          onClick={isListening ? stopListening : startListening}
-                          className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                            isListening 
-                              ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                              : 'bg-blue-500 hover:bg-blue-600 text-white'
-                          }`}
-                        >
-                          {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                          {isListening ? 'Stop Listening' : 'Start Voice Command'}
-                        </button>
-                        
-                        {isListening && (
-                          <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Volume2 className="w-4 h-4 text-blue-500" />
-                              <span className="font-medium text-blue-800">Listening...</span>
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              {voiceTranscript || 'Say: "Exercise complete" or "Meditation 75 percent"'}
-                            </p>
-                          </div>
-                        )}
-                        
-                        <button
-                          onClick={() => setShowVoiceHelp(true)}
-                          className="w-full text-sm bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200"
-                        >
-                          📋 Voice Commands Help
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p className="text-yellow-800 text-sm">
-                          ⚠️ Voice recognition not supported in this browser. Try Chrome, Edge, or Safari.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* AI Coach Panel */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Bot className="w-5 h-5 text-green-500" />
-                      AI Coach
-                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">GEMINI</span>
-                    </h3>
-                    
+            {/* Desktop Voice/AI Section */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Voice Commands Panel */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Mic className="w-5 h-5 text-purple-500" />
+                    Voice Command Center
+                    <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">LIVE</span>
+                  </h3>
+                  
+                  {voiceSupported ? (
                     <div className="space-y-4">
                       <button
-                        onClick={() => setShowAIChat(true)}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105"
+                        onClick={isListening ? stopListening : startListening}
+                        className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                          isListening 
+                            ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        }`}
                       >
-                        <MessageCircle className="w-5 h-5" />
-                        Chat with AI Coach
+                        {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                        {isListening ? 'Stop Listening' : 'Start Voice Command'}
                       </button>
                       
-                      <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
-                        <h4 className="font-semibold text-sm mb-1">🧠 Smart & Natural</h4>
-                        <p className="text-xs text-gray-600">Understands context and gives helpful advice!</p>
-                      </div>
+                      {isListening && (
+                        <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Volume2 className="w-4 h-4 text-blue-500" />
+                            <span className="font-medium text-blue-800">Listening...</span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {voiceTranscript || 'Say: "Exercise complete" or "Meditation 75 percent"'}
+                          </p>
+                        </div>
+                      )}
                       
-                      <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
-                        <h4 className="font-semibold text-sm mb-1">💬 Try saying:</h4>
-                        <p className="text-xs text-gray-600">"I just finished a great workout!" or "How do I stay motivated?"</p>
-                      </div>
+                      <button
+                        onClick={() => setShowVoiceHelp(true)}
+                        className="w-full text-sm bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200"
+                      >
+                        📋 Voice Commands Help
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-yellow-800 text-sm">
+                        ⚠️ Voice recognition not supported in this browser. Try Chrome, Edge, or Safari.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Coach Panel */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-green-500" />
+                    AI Coach
+                    <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">DEMO</span>
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => setShowAIChat(true)}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all duration-200 hover:scale-105"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      Chat with AI Coach
+                    </button>
+                    
+                    <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                      <h4 className="font-semibold text-sm mb-1">🧠 Smart & Natural</h4>
+                      <p className="text-xs text-gray-600">Demo mode - add your Gemini API key for full features!</p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-3 rounded-lg border-l-4 border-green-500">
+                      <h4 className="font-semibold text-sm mb-1">💬 Try saying:</h4>
+                      <p className="text-xs text-gray-600">"I just finished a great workout!" or "How do I stay motivated?"</p>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Main Habits Section - Mobile First */}
-              <div className="space-y-4">
-                {/* Mobile header with add button */}
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-blue-500" />
-                    Today's Habits
-                  </h2>
-                  <button
-                    onClick={() => setShowAddHabit(true)}
-                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors"
-                  >
-                    <Plus className="w-3 h-3 md:w-4 md:h-4" />
-                    <span className="hidden sm:inline">Add New</span>
-                    <span className="sm:hidden">Add</span>
-                  </button>
-                </div>
+            {/* Main Habits Section - Mobile First */}
+            <div className="space-y-4">
+              {/* Mobile header with add button */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-500" />
+                  Today's Habits
+                </h2>
+                <button
+                  onClick={() => setShowAddHabit(true)}
+                  className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors"
+                >
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">Add New</span>
+                  <span className="sm:hidden">Add</span>
+                </button>
+              </div>
 
-                {/* Habits List - Mobile Optimized */}
-                <div className="space-y-3 md:space-y-4">
-                  {habits.map(habit => (
-                    <div key={habit.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
-                      {/* Habit Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-base md:text-lg font-bold text-gray-800 truncate">{habit.name}</h3>
-                            <button
-                              onClick={() => openDeleteConfirm(habit)}
-                              className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors flex-shrink-0"
-                            >
-                              <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                            </button>
-                          </div>
-                          <p className="text-xs md:text-sm text-gray-600 mb-2 line-clamp-2">{habit.description}</p>
-                          <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm flex-wrap">
-                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium text-xs">
-                              {habit.category}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
-                              <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <div className="mb-3 md:mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs md:text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
-                          <span className="text-xs md:text-sm font-medium text-gray-700">
-                            {Math.round((habit.progress / habit.target) * 100)}% complete
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                            style={{width: `${(habit.progress / habit.target) * 100}%`}}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons - Mobile Optimized */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => toggleHabit(habit.id)}
-                          className={`flex-1 py-2 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
-                            habit.completedToday
-                              ? 'bg-green-500 hover:bg-green-600 text-white'
-                              : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
-                          }`}
-                        >
-                          {habit.completedToday ? (
-                            <span className="flex items-center justify-center gap-1 md:gap-2">
-                              <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
-                              <span className="hidden sm:inline">
-                                {habit.voiceCompletion ? `Voice: ${habit.voiceCompletion}%` : 
-                                 habit.aiCompletion ? `AI: ${habit.aiCompletion}%` : 'Completed!'}
-                              </span>
-                              <span className="sm:hidden">✓</span>
-                            </span>
-                          ) : (
-                            <span className="flex items-center justify-center gap-1 md:gap-2">
-                              <Circle className="w-4 h-4 md:w-5 md:h-5" />
-                              <span>Complete</span>
-                            </span>
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={() => openSliderModal(habit)}
-                          className="px-3 md:px-4 py-2 md:py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
-                          title="Set partial completion"
-                        >
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-500 rounded-full"></div>
-                            <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-300 rounded-full"></div>
-                          </div>
-                          <span className="text-xs md:text-sm font-bold">%</span>
-                        </button>
-                        
-                        {habit.missedDays > 0 && habit.missedDays <= 3 && (
+              {/* Habits List - Mobile Optimized */}
+              <div className="space-y-3 md:space-y-4">
+                {habits.map(habit => (
+                  <div key={habit.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                    {/* Habit Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-base md:text-lg font-bold text-gray-800 truncate">{habit.name}</h3>
                           <button
-                            onClick={() => openBacklogModal(habit)}
-                            className="px-3 md:px-4 py-2 md:py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
-                            title="Update past 3 days"
+                            onClick={() => openDeleteConfirm(habit)}
+                            className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors flex-shrink-0"
                           >
-                            <Calendar className="w-3 h-3 md:w-4 md:h-4" />
-                            <span className="hidden md:inline text-sm">Past</span>
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                           </button>
-                        )}
+                        </div>
+                        <p className="text-xs md:text-sm text-gray-600 mb-2 line-clamp-2">{habit.description}</p>
+                        <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm flex-wrap">
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium text-xs">
+                            {habit.category}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
+                            <span className="font-semibold text-orange-600">{habit.streak} day streak</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                {/* Stats Cards - Mobile Optimized */}
-                <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
-                    <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
+                    {/* Progress Bar */}
+                    <div className="mb-3 md:mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs md:text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
+                        <span className="text-xs md:text-sm font-medium text-gray-700">
+                          {Math.round((habit.progress / habit.target) * 100)}% complete
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                          style={{width: `${(habit.progress / habit.target) * 100}%`}}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons - Mobile Optimized */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => toggleHabit(habit.id)}
+                        className={`flex-1 py-2 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
+                          habit.completedToday
+                            ? 'bg-green-500 hover:bg-green-600 text-white'
+                            : 'bg-gray-100 hover:bg-green-500 hover:text-white text-gray-700'
+                        }`}
+                      >
+                        {habit.completedToday ? (
+                          <span className="flex items-center justify-center gap-1 md:gap-2">
+                            <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                            <span className="hidden sm:inline">
+                              {habit.voiceCompletion ? `Voice: ${habit.voiceCompletion}%` : 
+                               habit.aiCompletion ? `AI: ${habit.aiCompletion}%` : 'Completed!'}
+                            </span>
+                            <span className="sm:hidden">✓</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-1 md:gap-2">
+                            <Circle className="w-4 h-4 md:w-5 md:h-5" />
+                            <span>Complete</span>
+                          </span>
+                        )}
+                      </button>
+                      
+                      <button
+                        onClick={() => openSliderModal(habit)}
+                        className="px-3 md:px-4 py-2 md:py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
+                        title="Set partial completion"
+                      >
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-500 rounded-full"></div>
+                          <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-300 rounded-full"></div>
+                        </div>
+                        <span className="text-xs md:text-sm font-bold">%</span>
+                      </button>
+                      
+                      {habit.missedDays > 0 && habit.missedDays <= 3 && (
+                        <button
+                          onClick={() => openBacklogModal(habit)}
+                          className="px-3 md:px-4 py-2 md:py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
+                          title="Update past 3 days"
+                        >
+                          <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                          <span className="hidden md:inline text-sm">Past</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
-                    <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
-                  </div>
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
-                    <Award className="w-5 h-5 md:w-8 md:h-8 text-purple-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{habits.length}</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Active Habits</p>
-                  </div>
+                ))}
+              </div>
+
+              {/* Stats Cards - Mobile Optimized */}
+              <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
+                <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                  <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
+                  <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
+                  <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                  <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
+                  <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
+                  <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                  <Award className="w-5 h-5 md:w-8 md:h-8 text-purple-500 mx-auto mb-1 md:mb-2" />
+                  <h3 className="font-bold text-lg md:text-2xl text-gray-800">{habits.length}</h3>
+                  <p className="text-xs md:text-sm text-gray-600">Active Habits</p>
                 </div>
               </div>
             </div>
@@ -1146,77 +997,216 @@ Respond in JSON format:
               <p className="text-sm md:text-base text-gray-600">Insights, guides, and inspiration for your habit journey</p>
             </div>
 
-            {/* Articles - Mobile Optimized */}
-            <div className="space-y-4 md:space-y-6">
-              {/* Article 1 */}
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 md:p-6 text-white">
-                  <div className="flex items-center gap-2 mb-2 md:mb-3">
-                    <Target className="w-5 h-5 md:w-6 md:h-6" />
-                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">FEATURED</span>
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">Why a BIG Vision Needs Good Habits</h3>
-                  <p className="text-purple-100 text-xs md:text-sm">Discover how small daily actions build extraordinary achievements</p>
+            {/* Learning Content */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-purple-500" />
+                Habit Building Guide
+              </h3>
+              <div className="prose prose-sm max-w-none">
+                <p className="text-gray-700 mb-4">
+                  Building lasting habits is a journey of small, consistent actions. Here are the key principles:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                  <li><strong>Start Small:</strong> Begin with habits so easy you can't say no</li>
+                  <li><strong>Be Consistent:</strong> Focus on showing up every day rather than perfect performance</li>
+                  <li><strong>Track Progress:</strong> What gets measured gets managed</li>
+                  <li><strong>Celebrate Wins:</strong> Acknowledge every success, no matter how small</li>
+                  <li><strong>Stack Habits:</strong> Attach new habits to existing routines</li>
+                </ul>
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+                  <p className="text-blue-800 font-medium">
+                    💡 Remember: You don't rise to the level of your goals. You fall to the level of your systems.
+                  </p>
                 </div>
-                <div className="p-4 md:p-6">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
-                      <strong>Dreams without systems are just wishes.</strong> Every extraordinary achievement starts with an extraordinary vision, but it's the boring, daily habits that actually make it happen.
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🎯 The Vision-Habit Connection</h4>
-                    <p className="text-gray-700 mb-3 md:mb-4 text-sm md:text-base">
-                      Your big vision is the <em>destination</em>. Your habits are the <em>vehicle</em>. Without reliable daily systems, even the most inspiring goals remain out of reach.
-                    </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-3 md:p-4 my-3 md:my-4">
-                      <p className="text-blue-800 font-medium text-sm md:text-base">💭 Remember: You don't rise to the level of your goals. You fall to the level of your systems.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
-                      <span>📖 5 min read</span>
-                      <span>🎯 Goal Setting</span>
-                      <span>💪 Motivation</span>
-                    </div>
-                  </div>
+        {currentView === 'profile' && (
+          <div className="space-y-4 md:space-y-6">
+            <div className="text-center py-3 md:py-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Profile</h2>
+              <p className="text-sm md:text-base text-gray-600">Your habit journey stats and settings</p>
+            </div>
+
+            {/* Profile Card */}
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                  {currentUser.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">{currentUser.name}</h3>
+                  <p className="text-gray-600">{currentUser.email}</p>
+                  {currentUser.isPremium && (
+                    <span className="inline-flex items-center gap-1 bg-gold-100 text-gold-700 px-2 py-1 rounded-full text-xs font-medium mt-1">
+                      <Star className="w-3 h-3" />
+                      Premium
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Article 2 */}
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 md:p-6 text-white">
-                  <div className="flex items-center gap-2 mb-2 md:mb-3">
-                    <Star className="w-5 h-5 md:w-6 md:h-6" />
-                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO</span>
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">How to Use This App</h3>
-                  <p className="text-green-100 text-xs md:text-sm">Master every feature and become a habit-building pro</p>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{habits.length}</p>
+                  <p className="text-sm text-gray-600">Active Habits</p>
                 </div>
-                <div className="p-4 md:p-6">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
-                      Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🏁 Getting Started</h4>
-                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
-                      <p className="text-gray-700 mb-2 text-sm md:text-base"><strong>Four Ways to Log Completion:</strong></p>
-                      <ul className="text-gray-700 space-y-1 text-sm md:text-base">
-                        <li><strong>Complete Button:</strong> One-click for 100% completion</li>
-                        <li><strong>% Slider:</strong> Set partial completion</li>
-                        <li><strong>Voice Commands:</strong> "Exercise complete"</li>
-                        <li><strong>AI Chat:</strong> "I just finished a workout!"</li>
-                      </ul>
-                    </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{habits.filter(h => h.completedToday).length}</p>
+                  <p className="text-sm text-gray-600">Completed Today</p>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-2xl font-bold text-orange-600">{Math.max(...habits.map(h => h.streak), 0)}</p>
+                  <p className="text-sm text-gray-600">Best Streak</p>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-600">{getWeeklyProgress().completionRate}%</p>
+                  <p className="text-sm text-gray-600">Success Rate</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
 
-                    <div className="bg-green-50 border-l-4 border-green-500 p-3 md:p-4 my-3 md:my-4">
-                      <p className="text-green-800 font-medium text-sm md:text-base">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
-                      <span>📖 7 min read</span>
-                      <span>🎓 Tutorial
+      {/* Modals and Overlays */}
+      
+      {/* Add Habit Modal */}
+      {showAddHabit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Add New Habit</h3>
+              <button
+                onClick={() => setShowAddHabit(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Habit Name</label>
+                <input
+                  type="text"
+                  value={newHabit.name}
+                  onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Morning Walk"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={newHabit.description}
+                  onChange={(e) => setNewHabit(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Brief description of your habit"
+                  rows="2"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={newHabit.category}
+                  onChange={(e) => setNewHabit(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Mindfulness">Mindfulness</option>
+                  <option value="Fitness">Fitness</option>
+                  <option value="Learning">Learning</option>
+                  <option value="Health">Health</option>
+                  <option value="Productivity">Productivity</option>
+                  <option value="Social">Social</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAddHabit(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addNewHabit}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Add Habit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slider Modal */}
+      {showSliderModal && selectedHabitForSlider && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Set Completion %</h3>
+              <button
+                onClick={closeSliderModal}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-600">How much of "{selectedHabitForSlider.name}" did you complete?</p>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Completion</span>
+                  <span className="font-bold">{sliderValue}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={sliderValue}
+                  onChange={(e) => setSliderValue(parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closeSliderModal}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSliderCompletion}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Log {sliderValue}%
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && habitToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3
