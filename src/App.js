@@ -384,6 +384,7 @@ Respond in JSON format:
   };
   const processVoiceCommand = (transcript) => {
   const text = transcript.toLowerCase().trim();
+  console.log('🎬 Processing voice command:', text);
   const matchedHabit = findHabitInSpeech(text);
   
   // Enhanced command detection
