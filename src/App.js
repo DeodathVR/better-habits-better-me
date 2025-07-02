@@ -1091,6 +1091,16 @@ Respond in JSON format:
 
                 <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
                   <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                    <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                    <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
                     <Award className="w-5 h-5 md:w-8 md:h-8 text-purple-500 mx-auto mb-1 md:mb-2" />
                     <h3 className="font-bold text-lg md:text-2xl text-gray-800">{habits.length}</h3>
                     <p className="text-xs md:text-sm text-gray-600">Active Habits</p>
@@ -1257,20 +1267,21 @@ Respond in JSON format:
                   </div>
                 </div>
               </div>
+
+              <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-4 md:p-6 text-white text-center">
+                <h3 className="text-lg md:text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
+                <p className="text-orange-100 text-sm md:text-base">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
+                <div className="mt-3 md:mt-4 flex flex-wrap justify-center gap-2">
+                  <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">🧠 Habit Science</span>
+                  <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">💪 Success Stories</span>
+                  <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">🎯 Advanced Strategies</span>
+                </div>
+              </div>
             </div>
           </div>
-        )}-6 text-center">
-                    <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
-                  </div>
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
-                    <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
-                  </div>
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p
-          {currentView === 'profile' && (
+        )}
+      </main>
+{currentView === 'profile' && (
           <div className="space-y-4 md:space-y-6">
             <div className="text-center py-3 md:py-6">
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
@@ -1321,7 +1332,6 @@ Respond in JSON format:
             </div>
           </div>
         )}
-      </main>
 
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
         <div className="grid grid-cols-4 gap-1">
@@ -1454,100 +1464,6 @@ Respond in JSON format:
                   ))}
                 </div>
               </div>
-            </div>
-
-            <div className="flex gap-3 p-4 pt-0">
-              <button
-                onClick={closeSliderModal}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmSliderCompletion}
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors"
-              >
-                Complete!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showBacklogModal && selectedHabitForBacklog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between mb-4 p-4 pb-0">
-              <h3 className="text-lg font-bold">Update Past Days</h3>
-              <button onClick={closeBacklogModal}>
-                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="px-4 mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
-              <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
-            </div>
-
-            <div className="px-4 space-y-3">
-              {getPastDates(3).map(date => {
-                const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
-                const isCompleted = isDateCompleted(currentHabit, date);
-                const dayName = date.toLocaleDateString('en', { weekday: 'long' });
-                const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-                
-                return (
-                  <div key={formatDate(date)} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                    isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'
-                  }`}>
-                    <div>
-                      <p className="font-medium text-gray-800">{dayName}</p>
-                      <p className="text-sm text-gray-600">{dateString}</p>
-                    </div>
-                    <button
-                      onClick={() => toggleBacklogDate(currentHabit.id, date)}
-                      className={`p-2 rounded-full transition-all duration-200 ${
-                        isCompleted
-                          ? 'bg-green-500 text-white hover:bg-green-600 scale-110'
-                          : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white hover:scale-105'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="p-4 pt-6 border-t mt-6">
-              <button
-                onClick={closeBacklogModal}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDeleteConfirm && habitToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between mb-4 p-4 pb-0">
-              <h3 className="text-lg font-bold text-red-600">Delete Habit</h3>
-              <button onClick={closeDeleteConfirm}>
-                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="px-4 mb-6">
-              <p className="text-gray-700">Are you sure you want to delete "{habitToDelete.name}"?</p>
-              <p className="text-sm text-gray-500 mt-2">This will remove all progress and cannot be undone.</p>
             </div>
 
             <div className="flex gap-3 p-4 pt-0">
@@ -1761,4 +1677,98 @@ Respond in JSON format:
   );
 }
 
-export default App;
+export default App;SliderModal}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSliderCompletion}
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                Complete!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBacklogModal && selectedHabitForBacklog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
+              <h3 className="text-lg font-bold">Update Past Days</h3>
+              <button onClick={closeBacklogModal}>
+                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            
+            <div className="px-4 mb-4">
+              <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
+              <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
+            </div>
+
+            <div className="px-4 space-y-3">
+              {getPastDates(3).map(date => {
+                const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
+                const isCompleted = isDateCompleted(currentHabit, date);
+                const dayName = date.toLocaleDateString('en', { weekday: 'long' });
+                const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+                
+                return (
+                  <div key={formatDate(date)} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                    isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'
+                  }`}>
+                    <div>
+                      <p className="font-medium text-gray-800">{dayName}</p>
+                      <p className="text-sm text-gray-600">{dateString}</p>
+                    </div>
+                    <button
+                      onClick={() => toggleBacklogDate(currentHabit.id, date)}
+                      className={`p-2 rounded-full transition-all duration-200 ${
+                        isCompleted
+                          ? 'bg-green-500 text-white hover:bg-green-600 scale-110'
+                          : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white hover:scale-105'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <Circle className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-4 pt-6 border-t mt-6">
+              <button
+                onClick={closeBacklogModal}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && habitToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
+              <h3 className="text-lg font-bold text-red-600">Delete Habit</h3>
+              <button onClick={closeDeleteConfirm}>
+                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            
+            <div className="px-4 mb-6">
+              <p className="text-gray-700">Are you sure you want to delete "{habitToDelete.name}"?</p>
+              <p className="text-sm text-gray-500 mt-2">This will remove all progress and cannot be undone.</p>
+            </div>
+
+            <div className="flex gap-3 p-4 pt-0">
+              <button
+                onClick={close
