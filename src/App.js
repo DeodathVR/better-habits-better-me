@@ -4,7 +4,6 @@ import { Calendar, CheckCircle2, Circle, Flame, Star, Target, TrendingUp, Messag
 function App() {
   const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
 
-  // Add the missing getMotivationalMessage function
   const getMotivationalMessage = (type, context = {}) => {
     const messages = {
       habitCompleted: [
@@ -30,7 +29,10 @@ function App() {
       ]
     };
 
-  // AI Input Validation - Safety first! 🛡️
+    const messageArray = messages[type] || messages.encouragement;
+    return messageArray[Math.floor(Math.random() * messageArray.length)];
+  };
+
   const validateAIHabitInput = (habitData) => {
     if (!habitData || typeof habitData !== 'object') return false;
     if (!habitData.name || typeof habitData.name !== 'string' || habitData.name.trim().length === 0) return false;
@@ -40,22 +42,30 @@ function App() {
     
     const validCategories = ['Mindfulness', 'Fitness', 'Learning', 'Health', 'Productivity', 'Social'];
     if (habitData.category && !validCategories.includes(habitData.category)) {
-      habitData.category = 'Health'; // Safe default
-    }
-    
-    // Check for duplicate names
-    const existingNames = habits.map(h => h.name.toLowerCase());
-    if (existingNames.includes(habitData.name.toLowerCase())) {
-      return false;
+      habitData.category = 'Health';
     }
     
     return true;
   };
 
-    const messageArray = messages[type] || messages.encouragement;
-    return messageArray[Math.floor(Math.random() * messageArray.length)];
+  const saveToLocalStorage = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+      showMessage('⚠️ Could not save data locally');
+    }
   };
 
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaultValue;
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      return defaultValue;
+    }
+  };
   const [currentUser, setCurrentUser] = useState({
     name: "Alex",
     email: "alex@example.com",
@@ -92,45 +102,47 @@ function App() {
     callHistory: []
   });
 
-  const [habits, setHabits] = useState([
-    {
-      id: 1,
-      name: "Morning Meditation",
-      description: "Start the day with mindfulness",
-      streak: 5,
-      missedDays: 3,
-      completedToday: false,
-      completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-      category: "Mindfulness",
-      progress: 0,
-      target: 10
-    },
-    {
-      id: 2,
-      name: "Read 20 Minutes",
-      description: "Expand knowledge through daily reading",
-      streak: 3,
-      missedDays: 1,
-      completedToday: true,
-      completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
-      category: "Learning",
-      progress: 5,
-      target: 10
-    },
-    {
-      id: 3,
-      name: "Exercise",
-      description: "Move your body for at least 30 minutes",
-      streak: 8,
-      missedDays: 0,
-      completedToday: false,
-      completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
-      category: "Fitness",
-      progress: 2,
-      target: 10
-    }
-  ]);
-
+  const [habits, setHabits] = useState(() => {
+    return loadFromLocalStorage('userHabits', [
+      {
+        id: 1,
+        name: "Morning Meditation",
+        description: "Start the day with mindfulness",
+        streak: 5,
+        missedDays: 3,
+        completedToday: false,
+        completedDates: ['2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+        category: "Mindfulness",
+        progress: 0,
+        target: 10
+      },
+      {
+        id: 2,
+        name: "Read 20 Minutes",
+        description: "Expand knowledge through daily reading",
+        streak: 3,
+        missedDays: 1,
+        completedToday: true,
+        completedDates: ['2025-06-11', '2025-06-12', '2025-06-13', '2025-06-14'],
+        category: "Learning",
+        progress: 5,
+        target: 10
+      },
+      {
+        id: 3,
+        name: "Exercise",
+        description: "Move your body for at least 30 minutes",
+        streak: 8,
+        missedDays: 0,
+        completedToday: false,
+        completedDates: ['2025-06-06', '2025-06-07', '2025-06-08', '2025-06-09', '2025-06-10', '2025-06-11', '2025-06-12', '2025-06-13'],
+        category: "Fitness",
+        progress: 2,
+        target: 10
+      }
+    ]);
+  });
+    
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [voiceSupported, setVoiceSupported] = useState(false);
@@ -173,6 +185,13 @@ function App() {
   };
 
   useEffect(() => {
+    saveToLocalStorage('userHabits', habits);
+  }, [habits]);
+
+  useEffect(() => {
+    saveToLocalStorage('currentUser', currentUser);
+  }, [currentUser]);
+  useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (SpeechRecognition) {
@@ -187,7 +206,7 @@ function App() {
         setIsListening(true);
         setVoiceTranscript('');
       };
-      
+
       recognitionInstance.onresult = (event) => {
         let finalTranscript = '';
         let interimTranscript = '';
@@ -208,7 +227,7 @@ function App() {
           processVoiceCommand(finalTranscript);
         }
       };
-      
+
       recognitionInstance.onerror = (event) => {
         setIsListening(false);
         if (event.error === 'not-allowed') {
@@ -217,11 +236,11 @@ function App() {
           showMessage(`Speech recognition error: ${event.error}`);
         }
       };
-      
+
       recognitionInstance.onend = () => {
         setIsListening(false);
       };
-      
+
       setRecognition(recognitionInstance);
     } else {
       setVoiceSupported(false);
@@ -297,7 +316,6 @@ Respond in JSON format:
           speechSynthesis.speak(utterance);
         }
         
-        // Handle habit logging
         if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
           const habit = habits.find(h => h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase()));
           if (habit) {
@@ -305,16 +323,14 @@ Respond in JSON format:
           }
         }
         
-        // Handle NEW habit creation - Making AI actually functional! 🎉
         if (aiResult.action === 'create_habit' && aiResult.new_habit) {
           const newHabitData = aiResult.new_habit;
           
-          // Validate AI input (safety first!)
           if (newHabitData && newHabitData.name && newHabitData.description) {
             const newHabit = {
               id: Date.now(),
-              name: newHabitData.name.substring(0, 30), // Limit length
-              description: newHabitData.description.substring(0, 100), // Limit length
+              name: newHabitData.name.substring(0, 30),
+              description: newHabitData.description.substring(0, 100),
               streak: 0,
               missedDays: 0,
               completedToday: false,
@@ -324,14 +340,9 @@ Respond in JSON format:
               target: 10
             };
             
-            setHabits(prev => {
-  const newHabits = [...prev, newHabit];
-  localStorage.setItem('userHabits', JSON.stringify(newHabits));
-  return newHabits;
-});
+            setHabits(prev => [...prev, newHabit]);
             showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
             
-            // Add a follow-up AI message confirming the creation
             setTimeout(() => {
               setAiChatHistory(prev => [...prev, {
                 type: 'ai',
@@ -371,7 +382,6 @@ Respond in JSON format:
     setAiChatInput('');
     await processWithAI(message);
   };
-
   const processVoiceCommand = (transcript) => {
     const text = transcript.toLowerCase().trim();
     const matchedHabit = findHabitInSpeech(text);
@@ -532,10 +542,15 @@ Respond in JSON format:
       target: 10
     };
     
-    setHabits(prev => [...prev, habit]);
+    setHabits(prev => {
+      const newHabits = [...prev, habit];
+      saveToLocalStorage('userHabits', newHabits);
+      return newHabits;
+    });
+    
     setNewHabit({ name: '', description: '', category: 'Mindfulness' });
     setShowAddHabit(false);
-    showMessage(`New habit "${habit.name}" added!`);
+    showMessage(`New habit "${habit.name}" added! 💾 Saved`);
   };
 
   const openSliderModal = (habit) => {
@@ -581,7 +596,6 @@ Respond in JSON format:
     setShowBacklogModal(false);
     setSelectedHabitForBacklog(null);
   };
-
   const getPastDates = (days = 3) => {
     const dates = [];
     const today = new Date();
@@ -645,7 +659,6 @@ Respond in JSON format:
     };
   };
 
-  // Navigation items for mobile
   const navItems = [
     { id: 'habits', label: 'Habits', icon: Home },
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -655,24 +668,20 @@ Respond in JSON format:
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile-optimized notification */}
       {showNotification && (
         <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg z-50">
           <p className="text-sm font-medium text-center md:text-left">{notificationMessage}</p>
         </div>
       )}
       
-      {/* Mobile-first Navigation */}
       <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="px-4">
           <div className="flex justify-between items-center h-14">
-            {/* Mobile Logo - Shorter */}
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-blue-500" />
               <span className="font-bold text-lg text-gray-800 md:text-xl">My Habits</span>
             </div>
             
-            {/* Desktop Navigation */}
             <div className="hidden md:flex gap-1">
               {navItems.map(item => (
                 <button
@@ -687,7 +696,6 @@ Respond in JSON format:
               ))}
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               className="md:hidden p-2"
               onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -697,7 +705,6 @@ Respond in JSON format:
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
         {showMobileMenu && (
           <div className="md:hidden bg-white border-t border-gray-200">
             <div className="px-4 py-2 space-y-1">
@@ -721,17 +728,14 @@ Respond in JSON format:
         )}
       </nav>
 
-      {/* Mobile-optimized main content */}
       <main className="px-3 py-4 md:px-6 md:py-8 max-w-7xl mx-auto">
         {currentView === 'habits' && (
           <div className="space-y-4 md:space-y-6">
-            {/* Mobile Header - Compact */}
             <div className="text-center py-3 md:py-6">
               <h1 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-4">Life Habits Tracker</h1>
               <p className="text-sm md:text-lg text-gray-600">Transform your daily habits, transform your life.</p>
             </div>
 
-            {/* Mobile-first Quick Actions Bar */}
             <div className="flex gap-2 md:hidden">
               <button
                 onClick={() => setShowAIChat(true)}
@@ -755,7 +759,6 @@ Respond in JSON format:
               )}
             </div>
 
-            {/* Voice listening indicator for mobile */}
             {isListening && (
               <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500 md:hidden">
                 <div className="flex items-center gap-2 mb-1">
@@ -768,12 +771,9 @@ Respond in JSON format:
               </div>
             )}
 
-            {/* Mobile-first layout */}
             <div className="space-y-4">
-              {/* Desktop Voice/AI Section */}
               <div className="hidden md:block">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                  {/* Voice Commands Panel */}
                   <div className="bg-white rounded-xl shadow-lg p-6">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                       <Mic className="w-5 h-5 text-purple-500" />
@@ -823,7 +823,6 @@ Respond in JSON format:
                     )}
                   </div>
 
-                  {/* AI Coach Panel */}
                   <div className="bg-white rounded-xl shadow-lg p-6">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                       <Bot className="w-5 h-5 text-green-500" />
@@ -854,9 +853,7 @@ Respond in JSON format:
                 </div>
               </div>
 
-              {/* Main Habits Section - Mobile First */}
               <div className="space-y-4">
-                {/* Mobile header with add button */}
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-blue-500" />
@@ -872,11 +869,9 @@ Respond in JSON format:
                   </button>
                 </div>
 
-                {/* Habits List - Mobile Optimized */}
                 <div className="space-y-3 md:space-y-4">
                   {habits.map(habit => (
                     <div key={habit.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
-                      {/* Habit Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -901,7 +896,6 @@ Respond in JSON format:
                         </div>
                       </div>
 
-                      {/* Progress Bar */}
                       <div className="mb-3 md:mb-4">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-xs md:text-sm text-gray-600">Progress: {habit.progress}/{habit.target}</span>
@@ -917,7 +911,6 @@ Respond in JSON format:
                         </div>
                       </div>
 
-                      {/* Action Buttons - Mobile Optimized */}
                       <div className="flex gap-2">
                         <button
                           onClick={() => toggleHabit(habit.id)}
@@ -947,7 +940,6 @@ Respond in JSON format:
                         <button
                           onClick={() => openSliderModal(habit)}
                           className="px-3 md:px-4 py-2 md:py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
-                          title="Set partial completion"
                         >
                           <div className="flex items-center gap-1">
                             <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-500 rounded-full"></div>
@@ -960,7 +952,6 @@ Respond in JSON format:
                           <button
                             onClick={() => openBacklogModal(habit)}
                             className="px-3 md:px-4 py-2 md:py-3 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg font-medium transition-colors flex items-center gap-1 md:gap-2"
-                            title="Update past 3 days"
                           >
                             <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                             <span className="hidden md:inline text-sm">Past</span>
@@ -971,7 +962,6 @@ Respond in JSON format:
                   ))}
                 </div>
 
-                {/* Stats Cards - Mobile Optimized */}
                 <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
                   <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
                     <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
@@ -993,15 +983,13 @@ Respond in JSON format:
             </div>
           </div>
         )}
-
-        {currentView === 'dashboard' && (
+{currentView === 'dashboard' && (
           <div className="space-y-4 md:space-y-6">
             <div className="text-center py-3 md:py-6">
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Dashboard</h2>
               <p className="text-sm md:text-base text-gray-600">Your habit journey at a glance</p>
             </div>
 
-            {/* Dashboard Overview Cards - Mobile First */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 md:p-6 text-white">
                 <div className="text-center md:flex md:items-center md:justify-between">
@@ -1044,7 +1032,6 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Habit Progress Overview - Mobile Optimized */}
             <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold mb-4">Habit Progress Overview</h3>
               <div className="space-y-3 md:space-y-4">
@@ -1081,7 +1068,6 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Quick Actions - Mobile Optimized */}
             <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 gap-3">
@@ -1118,9 +1104,7 @@ Respond in JSON format:
               <p className="text-sm md:text-base text-gray-600">Insights, guides, and inspiration for your habit journey</p>
             </div>
 
-            {/* Articles - Mobile Optimized */}
             <div className="space-y-4 md:space-y-6">
-              {/* Article 1 */}
               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 md:p-6 text-white">
                   <div className="flex items-center gap-2 mb-2 md:mb-3">
@@ -1156,7 +1140,6 @@ Respond in JSON format:
                 </div>
               </div>
 
-              {/* Article 2 */}
               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 md:p-6 text-white">
                   <div className="flex items-center gap-2 mb-2 md:mb-3">
@@ -1199,7 +1182,6 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Coming Soon */}
             <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-4 md:p-6 text-white text-center">
               <h3 className="text-lg md:text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
               <p className="text-orange-100 text-sm md:text-base">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
@@ -1253,8 +1235,7 @@ Respond in JSON format:
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+<div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
                 AI Coaching Preferences
@@ -1301,7 +1282,6 @@ Respond in JSON format:
               </div>
             </div>
 
-            {/* Test Coaching System - Development */}
             <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
                 <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
@@ -1310,28 +1290,28 @@ Respond in JSON format:
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <button
                   onClick={async () => {
-  try {
-    showMessage('📧 Sending test email...');
-    const response = await fetch('/api/send-coaching-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userEmail: currentUser.email,
-        userName: currentUser.name,
-        inactiveDays: 0,
-        habits: habits,
-        longestStreak: Math.max(...habits.map(h => h.streak))
-      })
-    });
-    if (response.ok) {
-      showMessage('✅ Real test email sent!');
-    } else {
-      showMessage('❌ Email failed to send');
-    }
-  } catch (error) {
-    showMessage('❌ Email error: ' + error.message);
-  }
-}}
+                    try {
+                      showMessage('📧 Sending test email...');
+                      const response = await fetch('/api/send-coaching-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          userEmail: currentUser.email,
+                          userName: currentUser.name,
+                          inactiveDays: 0,
+                          habits: habits,
+                          longestStreak: Math.max(...habits.map(h => h.streak))
+                        })
+                      });
+                      if (response.ok) {
+                        showMessage('✅ Real test email sent!');
+                      } else {
+                        showMessage('❌ Email failed to send');
+                      }
+                    } catch (error) {
+                      showMessage('❌ Email error: ' + error.message);
+                    }
+                  }}
                   className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
@@ -1339,28 +1319,28 @@ Respond in JSON format:
                 </button>
                 <button
                   onClick={async () => {
-  try {
-    showMessage('📱 Sending test SMS...');
-    const response = await fetch('/api/send-coaching-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userPhone: currentUser.phone,
-        userName: currentUser.name,
-        inactiveDays: 0,
-        habits: habits,
-        longestStreak: Math.max(...habits.map(h => h.streak))
-      })
-    });
-    if (response.ok) {
-      showMessage('✅ Real test SMS sent!');
-    } else {
-      showMessage('❌ SMS failed to send');
-    }
-  } catch (error) {
-    showMessage('❌ SMS error: ' + error.message);
-  }
-}}
+                    try {
+                      showMessage('📱 Sending test SMS...');
+                      const response = await fetch('/api/send-coaching-sms', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          userPhone: currentUser.phone,
+                          userName: currentUser.name,
+                          inactiveDays: 0,
+                          habits: habits,
+                          longestStreak: Math.max(...habits.map(h => h.streak))
+                        })
+                      });
+                      if (response.ok) {
+                        showMessage('✅ Real test SMS sent!');
+                      } else {
+                        showMessage('❌ SMS failed to send');
+                      }
+                    } catch (error) {
+                      showMessage('❌ SMS error: ' + error.message);
+                    }
+                  }}
                   className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <Phone className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
@@ -1369,6 +1349,73 @@ Respond in JSON format:
               </div>
               <p className="text-xs text-gray-500 mt-3">
                 📧 Email coaching triggers after 2 days inactive • 📱 SMS coaching triggers after 4 days inactive (Premium users)
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
+                <Settings className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+                💾 Data Management
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <button
+                  onClick={() => {
+                    const dataToExport = {
+                      habits: habits,
+                      user: currentUser,
+                      exportDate: new Date().toISOString(),
+                      version: "1.0"
+                    };
+                    const dataStr = JSON.stringify(dataToExport, null, 2);
+                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `habits-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    showMessage('📁 Data exported successfully!');
+                  }}
+                  className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                  <span className="font-medium text-sm md:text-base">Export Data</span>
+                </button>
+                <label className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer">
+                  <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                  <span className="font-medium text-sm md:text-base">Import Data</span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          try {
+                            const importedData = JSON.parse(event.target.result);
+                            if (importedData.habits && Array.isArray(importedData.habits)) {
+                              setHabits(importedData.habits);
+                              saveToLocalStorage('userHabits', importedData.habits);
+                            }
+                            if (importedData.user) {
+                              setCurrentUser(importedData.user);
+                              saveToLocalStorage('currentUser', importedData.user);
+                            }
+                            showMessage('📂 Data imported successfully!');
+                          } catch (error) {
+                            showMessage('❌ Import failed: Invalid file format');
+                          }
+                        };
+                        reader.readAsText(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                💾 Export your data as backup • 📂 Import from previous backup files
               </p>
             </div>
 
@@ -1392,7 +1439,6 @@ Respond in JSON format:
         )}
       </main>
 
-      {/* Mobile Bottom Navigation - Fixed */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
         <div className="grid grid-cols-4 gap-1">
           {navItems.map(item => (
@@ -1410,15 +1456,10 @@ Respond in JSON format:
         </div>
       </div>
 
-      {/* Add padding bottom for mobile navigation */}
       <div className="md:hidden h-16"></div>
-
-      {/* All the modals remain the same but with mobile-optimized sizes */}
-      
-      {/* Backlog Modal - Mobile Optimized */}
-      {showBacklogModal && selectedHabitForBacklog && (
+{showBacklogModal && selectedHabitForBacklog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Update Past Days</h3>
               <button onClick={closeBacklogModal}>
@@ -1477,10 +1518,9 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Add Habit Modal - Mobile Optimized */}
       {showAddHabit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Add New Habit</h3>
               <button onClick={() => setShowAddHabit(false)}>
@@ -1542,10 +1582,9 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Slider Modal - Mobile Optimized */}
       {showSliderModal && selectedHabitForSlider && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Set Completion Level</h3>
               <button onClick={closeSliderModal}>
@@ -1610,10 +1649,9 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Delete Confirmation Modal - Mobile Optimized */}
       {showDeleteConfirm && habitToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold text-red-600">Delete Habit</h3>
               <button onClick={closeDeleteConfirm}>
@@ -1644,10 +1682,9 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* Voice Help Modal - Mobile Optimized */}
       {showVoiceHelp && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between mb-4 p-4 pb-0">
               <h3 className="text-lg font-bold">Voice Commands Help</h3>
               <button onClick={() => setShowVoiceHelp(false)}>
@@ -1697,10 +1734,9 @@ Respond in JSON format:
         </div>
       )}
 
-      {/* AI Chat Modal - Mobile Optimized */}
       {showAIChat && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 md:p-4">
-          <div className="bg-white rounded-xl w-full h-full md:max-w-2xl md:h-[600px] flex flex-col">
+          <div className="bg-white rounded-xl shadow-xl w-full h-full md:max-w-2xl md:h-[600px] flex flex-col">
             <div className="flex items-center justify-between p-4 md:p-6 border-b">
               <h3 className="text-lg font-bold flex items-center gap-2">
                 <Bot className="w-5 h-5 text-green-500" />
@@ -1710,7 +1746,7 @@ Respond in JSON format:
                 <button
                   onClick={() => {
                     if (aiVoiceEnabled) {
-                      speechSynthesis.cancel(); // Stop any current speech immediately
+                      speechSynthesis.cancel();
                     }
                     setAiVoiceEnabled(!aiVoiceEnabled);
                   }}
