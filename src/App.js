@@ -422,32 +422,91 @@ Respond in JSON format:
   };
 
   const findHabitInSpeech = (text) => {
-    const habitKeywords = {};
-    habits.forEach(habit => {
-      const habitName = habit.name;
-      const nameWords = habitName.toLowerCase().split(' ');
-      
-      habitKeywords[habitName] = [...nameWords, habitName.toLowerCase()];
-      
-      if (habit.category === 'Mindfulness') {
-        habitKeywords[habitName].push('meditation', 'meditate', 'mindful');
-      } else if (habit.category === 'Fitness') {
-        habitKeywords[habitName].push('exercise', 'workout', 'fitness');
-      } else if (habit.category === 'Learning') {
-        habitKeywords[habitName].push('reading', 'read', 'book');
+  const habitKeywords = {};
+  habits.forEach(habit => {
+    const habitName = habit.name.toLowerCase();
+    const nameWords = habitName.split(' ');
+    
+    // Start with all individual words and full name
+    habitKeywords[habit.name] = [...nameWords, habitName];
+    
+    // Add category-based keywords
+    const categoryKeywords = {
+      'Mindfulness': ['meditation', 'meditate', 'mindful', 'zen', 'breathe', 'calm'],
+      'Fitness': ['exercise', 'workout', 'fitness', 'gym', 'run', 'walk', 'train'],
+      'Learning': ['reading', 'read', 'book', 'study', 'learn', 'education'],
+      'Health': ['health', 'medicine', 'vitamins', 'water', 'sleep', 'rest'],
+      'Productivity': ['work', 'productive', 'focus', 'organize', 'plan'],
+      'Social': ['social', 'friends', 'family', 'call', 'connect', 'relationship']
+    };
+    
+    // Add category keywords
+    if (categoryKeywords[habit.category]) {
+      habitKeywords[habit.name].push(...categoryKeywords[habit.category]);
+    }
+    
+    // Add smart variations for custom habits
+    // If habit name has common words, add variations
+    nameWords.forEach(word => {
+      if (word.length > 3) { // Only for meaningful words
+        // Add partial matches for longer words
+        if (word.length > 5) {
+          habitKeywords[habit.name].push(word.substring(0, 4)); // First 4 chars
+        }
+        
+        // Add common variations
+        const variations = {
+          'yoga': ['stretching', 'pose', 'asana'],
+          'water': ['drink', 'hydrate', 'fluid'],
+          'journal': ['write', 'diary', 'log'],
+          'walking': ['walk', 'stroll', 'steps'],
+          'cooking': ['cook', 'meal', 'food'],
+          'cleaning': ['clean', 'tidy', 'organize'],
+          'coding': ['code', 'programming', 'develop'],
+          'guitar': ['music', 'practice', 'instrument'],
+          'running': ['run', 'jog', 'cardio']
+        };
+        
+        if (variations[word]) {
+          habitKeywords[habit.name].push(...variations[word]);
+        }
       }
     });
+  });
+  
+  // Enhanced matching with scoring
+  let bestMatch = null;
+  let bestScore = 0;
+  
+  for (const habit of habits) {
+    const keywords = habitKeywords[habit.name] || [];
+    let score = 0;
     
-    for (const habit of habits) {
-      const keywords = habitKeywords[habit.name] || [];
-      for (const keyword of keywords) {
-        if (text.includes(keyword)) {
-          return habit;
+    for (const keyword of keywords) {
+      if (text.includes(keyword)) {
+        // Exact habit name match gets highest score
+        if (keyword === habit.name.toLowerCase()) {
+          score += 10;
+        }
+        // Individual words from habit name get high score
+        else if (habit.name.toLowerCase().split(' ').includes(keyword)) {
+          score += 5;
+        }
+        // Category keywords get medium score
+        else {
+          score += 1;
         }
       }
     }
-    return null;
-  };
+    
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = habit;
+    }
+  }
+  
+  return bestScore > 0 ? bestMatch : null;
+};
 
   const extractPercentageFromSpeech = (text) => {
     const percentMatches = [/(\d+)\s*percent/, /(\d+)\s*%/];
