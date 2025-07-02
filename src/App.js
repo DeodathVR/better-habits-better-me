@@ -383,21 +383,22 @@ Respond in JSON format:
     await processWithAI(message);
   };
   const processVoiceCommand = (transcript) => {
-    const text = transcript.toLowerCase().trim();
-    const matchedHabit = findHabitInSpeech(text);
-    const percentage = extractPercentageFromSpeech(text);
-    
-    if (matchedHabit) {
-      executeHabitUpdate(matchedHabit, percentage, 'voice');
-    } else {
-      showMessage(`Couldn't identify a habit in: "${transcript}"`);
-    }
-  };
+  const text = transcript.toLowerCase().trim();
+  const matchedHabit = findHabitInSpeech(text);
+  
+  // Enhanced command detection
+  const { percentage, action } = extractVoiceAction(text);
+  
+  if (matchedHabit) {
+    executeHabitUpdate(matchedHabit, percentage, 'voice', action);
+  } else {
+    showMessage(`Couldn't identify a habit in: "${transcript}"`);
+  }
+};
 
-  const executeHabitUpdate = (habit, percentage, source) => {
+  const executeHabitUpdate = (habit, percentage, source, action = 'update') => {
   setHabits(prev => prev.map(h => {
     if (h.id === habit.id) {
-      // Check if habit is already completed today
       const wasCompleted = h.completedToday;
       const willBeCompleted = percentage >= 50;
       
@@ -405,17 +406,14 @@ Respond in JSON format:
       let newProgress = h.progress;
       
       if (!wasCompleted && willBeCompleted) {
-        // Adding completion
         newStreak = h.streak + 1;
         newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
       } else if (wasCompleted && !willBeCompleted) {
-        // Removing completion
         newStreak = Math.max(h.streak - 1, 0);
         newProgress = Math.max(h.progress - 1, 0);
       } else if (wasCompleted && willBeCompleted) {
-        // Already completed, just updating percentage
-        newStreak = h.streak; // Keep same streak
-        newProgress = h.progress; // Keep same progress
+        newStreak = h.streak;
+        newProgress = h.progress;
       }
       
       return {
@@ -430,13 +428,27 @@ Respond in JSON format:
     return h;
   }));
   
-  const action = habit.completedToday ? 'updated' : (percentage >= 50 ? 'completed' : 'reset');
-  const successMessage = `${source.toUpperCase()} ${action}: ${habit.name} at ${percentage}%!`;
+  // Better feedback messages based on action
+  const actionMessages = {
+    'remove': `${source.toUpperCase()} removed: ${habit.name}`,
+    'complete': `${source.toUpperCase()} completed: ${habit.name}!`,
+    'partial': `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%`,
+    'update': `${source.toUpperCase()} updated: ${habit.name} to ${percentage}%`
+  };
+  
+  const successMessage = actionMessages[action] || `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%`;
   showMessage(successMessage);
   
   if (source === 'voice' && 'speechSynthesis' in window) {
-    const actionWord = percentage >= 50 ? 'completed' : 'reset';
-    const utterance = new SpeechSynthesisUtterance(`${habit.name} ${actionWord} at ${percentage} percent`);
+    const speechMessages = {
+      'remove': `${habit.name} removed`,
+      'complete': `${habit.name} completed`,
+      'partial': `${habit.name} ${percentage} percent done`,
+      'update': `${habit.name} updated to ${percentage} percent`
+    };
+    
+    const speechText = speechMessages[action] || `${habit.name} logged at ${percentage} percent`;
+    const utterance = new SpeechSynthesisUtterance(speechText);
     speechSynthesis.speak(utterance);
   }
 };
@@ -528,29 +540,96 @@ Respond in JSON format:
   return bestScore > 0 ? bestMatch : null;
 };
 
-  const extractPercentageFromSpeech = (text) => {
-    const percentMatches = [/(\d+)\s*percent/, /(\d+)\s*%/];
-    
-    for (const pattern of percentMatches) {
-      const match = text.match(pattern);
-      if (match) {
-        return Math.min(parseInt(match[1]), 100);
-      }
-    }
-    
-    const completionWords = {
-      'complete': 100, 'completed': 100, 'done': 100, 'finished': 100,
-      'mostly': 75, 'almost': 75, 'half': 50, 'little': 25
-    };
-    
-    for (const [word, percent] of Object.entries(completionWords)) {
-      if (text.includes(word)) {
-        return percent;
-      }
-    }
-    
-    return 100;
+ const extractVoiceAction = (text) => {
+  // Removal/deletion commands
+  const removalWords = [
+    'remove', 'delete', 'take off', 'undo', 'cancel', 'clear', 'reset', 
+    'uncheck', 'unmark', 'reverse', 'take away', 'get rid of'
+  ];
+  
+  // Completion commands  
+  const completionWords = {
+    'complete': 100, 'completed': 100, 'done': 100, 'finished': 100,
+    'accomplish': 100, 'achieved': 100, 'succeed': 100, 'nailed': 100,
+    'crushed': 100, 'smashed': 100, 'knocked out': 100, 'wrapped up': 100,
+    'check off': 100, 'mark done': 100, 'mark complete': 100
   };
+  
+  // Partial completion commands
+  const partialWords = {
+    'mostly': 75, 'almost': 75, 'nearly': 75, 'pretty much': 75,
+    'half': 50, 'halfway': 50, 'partially': 50, 'some': 50,
+    'little': 25, 'bit': 25, 'started': 25, 'barely': 25,
+    'quarter': 25, 'touch': 10
+  };
+  
+  // Update/modify commands
+  const updateWords = [
+    'update', 'change', 'modify', 'adjust', 'set', 'make it', 'put at'
+  ];
+  
+  // Check for removal commands first
+  for (const word of removalWords) {
+    if (text.includes(word)) {
+      return { percentage: 0, action: 'remove' };
+    }
+  }
+  
+  // Check for explicit percentages
+  const percentMatches = [
+    /(\d+)\s*percent/,
+    /(\d+)\s*%/,
+    /(\d+)\s*per\s*cent/
+  ];
+  
+  for (const pattern of percentMatches) {
+    const match = text.match(pattern);
+    if (match) {
+      const percentage = Math.min(parseInt(match[1]), 100);
+      const action = percentage === 0 ? 'remove' : 'update';
+      return { percentage, action };
+    }
+  }
+  
+  // Check for completion words
+  for (const [word, percent] of Object.entries(completionWords)) {
+    if (text.includes(word)) {
+      return { percentage: percent, action: 'complete' };
+    }
+  }
+  
+  // Check for partial completion words
+  for (const [word, percent] of Object.entries(partialWords)) {
+    if (text.includes(word)) {
+      return { percentage: percent, action: 'partial' };
+    }
+  }
+  
+  // Check for update words with context
+  for (const word of updateWords) {
+    if (text.includes(word)) {
+      // Try to extract number after update word
+      const updateMatch = text.match(new RegExp(word + '.*?(\\d+)'));
+      if (updateMatch) {
+        const percentage = Math.min(parseInt(updateMatch[1]), 100);
+        return { percentage, action: 'update' };
+      }
+    }
+  }
+  
+  // Natural language patterns
+  if (text.includes('for today')) {
+    if (text.includes('100') || text.includes('complete')) {
+      return { percentage: 100, action: 'complete' };
+    }
+    if (text.includes('0') || text.includes('nothing')) {
+      return { percentage: 0, action: 'remove' };
+    }
+  }
+  
+  // Default to completion if no specific action found
+  return { percentage: 100, action: 'complete' };
+};
 
   const startListening = () => {
     if (recognition && !isListening) {
