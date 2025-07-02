@@ -471,11 +471,7 @@ Respond in JSON format:
     const nameWords = habitName.split(' ').filter(word => 
       word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
     );
-    const habitName = habit.name.toLowerCase();
-    const nameWords = habitName.split(' ').filter(word => 
-      word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
-    );
-    
+      
     // Start with all individual words and full name
     habitKeywords[habit.name] = [...nameWords, habitName];
     
