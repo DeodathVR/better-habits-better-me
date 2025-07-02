@@ -455,16 +455,8 @@ Respond in JSON format:
 };
 
  const findHabitInSpeech = (text, currentHabits) => {
+  const findHabitInSpeech = (text, currentHabits) => {
   const habitsToUse = currentHabits || habits;
-   const findHabitInSpeech = (text, currentHabits) => {
-  const habitsToUse = currentHabits || habits;
-  
-  // ADD THESE DEBUG LINES:
-  console.log('🔍 currentHabits parameter:', currentHabits?.map(h => h.name));
-  console.log('🔍 habitsToUse:', habitsToUse?.map(h => h.name));
-  console.log('🔍 Global habits:', habits?.map(h => h.name));
-  
-  const habitsToUse = currentHabits || habits; // Use passed habits or fallback
   
   // 🔍 DEBUG: Let's see what we're working with
   console.log('🔍 currentHabits parameter:', currentHabits?.map(h => h.name));
@@ -475,6 +467,10 @@ Respond in JSON format:
   
   const habitKeywords = {};
   habitsToUse.forEach(habit => {
+    const habitName = habit.name.toLowerCase();
+    const nameWords = habitName.split(' ').filter(word => 
+      word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
+    );
     const habitName = habit.name.toLowerCase();
     const nameWords = habitName.split(' ').filter(word => 
       word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
