@@ -453,11 +453,17 @@ Respond in JSON format:
   }
 };
 
-  const findHabitInSpeech = (text) => {
+ const findHabitInSpeech = (text) => {
+  // 🔍 DEBUG: Let's see what we're working with
+  console.log('🎤 Voice Input:', text);
+  console.log('🎯 Available Habits:', habits.map(h => h.name));
+  
   const habitKeywords = {};
   habits.forEach(habit => {
     const habitName = habit.name.toLowerCase();
-    const nameWords = habitName.split(' ');
+    const nameWords = habitName.split(' ').filter(word => 
+      word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
+    );
     
     // Start with all individual words and full name
     habitKeywords[habit.name] = [...nameWords, habitName];
@@ -478,15 +484,14 @@ Respond in JSON format:
     }
     
     // Add smart variations for custom habits
-    // If habit name has common words, add variations
     nameWords.forEach(word => {
-      if (word.length > 3) { // Only for meaningful words
+      if (word.length > 3) {
         // Add partial matches for longer words
         if (word.length > 5) {
-          habitKeywords[habit.name].push(word.substring(0, 4)); // First 4 chars
+          habitKeywords[habit.name].push(word.substring(0, 4));
         }
         
-        // Add common variations
+        // Add common variations including gardening terms
         const variations = {
           'yoga': ['stretching', 'pose', 'asana'],
           'water': ['drink', 'hydrate', 'fluid'],
@@ -496,7 +501,10 @@ Respond in JSON format:
           'cleaning': ['clean', 'tidy', 'organize'],
           'coding': ['code', 'programming', 'develop'],
           'guitar': ['music', 'practice', 'instrument'],
-          'running': ['run', 'jog', 'cardio']
+          'running': ['run', 'jog', 'cardio'],
+          'garden': ['gardening', 'plant', 'flowers', 'yard', 'outdoor'],
+          'flowers': ['garden', 'gardening', 'plant', 'bloom', 'nature'],
+          'reading': ['read', 'book', 'study']
         };
         
         if (variations[word]) {
@@ -504,6 +512,9 @@ Respond in JSON format:
         }
       }
     });
+    
+    // 🔍 DEBUG: Show keywords for each habit
+    console.log(`🔑 Keywords for "${habit.name}":`, habitKeywords[habit.name]);
   });
   
   // Enhanced matching with scoring
@@ -528,6 +539,9 @@ Respond in JSON format:
         else {
           score += 1;
         }
+        
+        // 🔍 DEBUG: Show matches
+        console.log(`✅ Match found: "${keyword}" in "${habit.name}" (score +${score})`);
       }
     }
     
@@ -536,6 +550,9 @@ Respond in JSON format:
       bestMatch = habit;
     }
   }
+  
+  // 🔍 DEBUG: Show final result
+  console.log(`🎯 Best Match:`, bestMatch?.name || 'None', `(score: ${bestScore})`);
   
   return bestScore > 0 ? bestMatch : null;
 };
