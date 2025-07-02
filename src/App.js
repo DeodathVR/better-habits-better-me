@@ -171,7 +171,6 @@ function App() {
   const [habitToDelete, setHabitToDelete] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [aiVoiceEnabled, setAiVoiceEnabled] = useState(true);
-
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -191,6 +190,7 @@ function App() {
   useEffect(() => {
     saveToLocalStorage('currentUser', currentUser);
   }, [currentUser]);
+
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -246,7 +246,6 @@ function App() {
       setVoiceSupported(false);
     }
   }, []);
-
   const processWithAI = async (userMessage) => {
     setAiProcessing(true);
     
@@ -382,278 +381,225 @@ Respond in JSON format:
     setAiChatInput('');
     await processWithAI(message);
   };
-  const processVoiceCommand = (transcript) => {
-  const text = transcript.toLowerCase().trim();
-  console.log('🎬 Processing voice command:', text);
-  const matchedHabit = findHabitInSpeech(text, habits); // ← ADD habits parameter
-  
-  // Enhanced command detection
-  const { percentage, action } = extractVoiceAction(text);
-  
-  if (matchedHabit) {
-    executeHabitUpdate(matchedHabit, percentage, 'voice', action);
-  } else {
-    showMessage(`Couldn't identify a habit in: "${transcript}"`);
-  }
-};
-
-  const executeHabitUpdate = (habit, percentage, source, action = 'update') => {
-  setHabits(prev => prev.map(h => {
-    if (h.id === habit.id) {
-      const wasCompleted = h.completedToday;
-      const willBeCompleted = percentage >= 50;
-      
-      let newStreak = h.streak;
-      let newProgress = h.progress;
-      
-      if (!wasCompleted && willBeCompleted) {
-        newStreak = h.streak + 1;
-        newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
-      } else if (wasCompleted && !willBeCompleted) {
-        newStreak = Math.max(h.streak - 1, 0);
-        newProgress = Math.max(h.progress - 1, 0);
-      } else if (wasCompleted && willBeCompleted) {
-        newStreak = h.streak;
-        newProgress = h.progress;
-      }
-      
-      return {
-        ...h,
-        completedToday: willBeCompleted,
-        voiceCompletion: source === 'voice' ? percentage : undefined,
-        aiCompletion: source === 'ai' ? percentage : undefined,
-        streak: newStreak,
-        progress: newProgress
-      };
-    }
-    return h;
-  }));
-  
-  // Better feedback messages based on action
-  const actionMessages = {
-    'remove': `${source.toUpperCase()} removed: ${habit.name}`,
-    'complete': `${source.toUpperCase()} completed: ${habit.name}!`,
-    'partial': `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%`,
-    'update': `${source.toUpperCase()} updated: ${habit.name} to ${percentage}%`
-  };
-  
-  const successMessage = actionMessages[action] || `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%`;
-  showMessage(successMessage);
-  
-  if (source === 'voice' && 'speechSynthesis' in window) {
-    const speechMessages = {
-      'remove': `${habit.name} removed`,
-      'complete': `${habit.name} completed`,
-      'partial': `${habit.name} ${percentage} percent done`,
-      'update': `${habit.name} updated to ${percentage} percent`
-    };
-    
-    const speechText = speechMessages[action] || `${habit.name} logged at ${percentage} percent`;
-    const utterance = new SpeechSynthesisUtterance(speechText);
-    speechSynthesis.speak(utterance);
-  }
-};
-
- const findHabitInSpeech = (text, currentHabits) => {
+  // 🔧 FIXED: Moved functions here to be available before processVoiceCommand
   const findHabitInSpeech = (text, currentHabits) => {
-  const habitsToUse = currentHabits || habits;
-  
-  // 🔍 DEBUG: Let's see what we're working with
-  console.log('🔍 currentHabits parameter:', currentHabits?.map(h => h.name));
-  console.log('🔍 habitsToUse:', habitsToUse?.map(h => h.name));
-  console.log('🔍 Global habits:', habits?.map(h => h.name));
-  console.log('🎤 Voice Input:', text);
-  console.log('🎯 Available Habits:', habitsToUse.map(h => h.name));
-  
-  const habitKeywords = {};
-  habitsToUse.forEach(habit => {
-    const habitName = habit.name.toLowerCase();
-    const nameWords = habitName.split(' ').filter(word => 
-      word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
-    );
+    const habitsToUse = currentHabits || habits;
+    
+    console.log('🎤 Voice Input:', text);
+    console.log('🎯 Available Habits:', habitsToUse.map(h => h.name));
+    
+    const habitKeywords = {};
+    habitsToUse.forEach(habit => {
+      const habitName = habit.name.toLowerCase();
+      const nameWords = habitName.split(' ').filter(word => 
+        word.length > 2 && !['mins', 'minutes', 'min', 'the', 'and', 'for', 'with'].includes(word)
+      );
+        
+      // Start with all individual words and full name
+      habitKeywords[habit.name] = [...nameWords, habitName];
       
-    // Start with all individual words and full name
-    habitKeywords[habit.name] = [...nameWords, habitName];
-    
-    // Add category-based keywords
-    const categoryKeywords = {
-      'Mindfulness': ['meditation', 'meditate', 'mindful', 'zen', 'breathe', 'calm'],
-      'Fitness': ['exercise', 'workout', 'fitness', 'gym', 'run', 'walk', 'train'],
-      'Learning': ['reading', 'read', 'book', 'study', 'learn', 'education'],
-      'Health': ['health', 'medicine', 'vitamins', 'water', 'sleep', 'rest'],
-      'Productivity': ['work', 'productive', 'focus', 'organize', 'plan'],
-      'Social': ['social', 'friends', 'family', 'call', 'connect', 'relationship']
-    };
-    
-    // Add category keywords
-    if (categoryKeywords[habit.category]) {
-      habitKeywords[habit.name].push(...categoryKeywords[habit.category]);
-    }
-    
-    // Add smart variations for custom habits
-    nameWords.forEach(word => {
-      if (word.length > 3) {
-        // Add partial matches for longer words
-        if (word.length > 5) {
-          habitKeywords[habit.name].push(word.substring(0, 4));
-        }
-        
-        // Add common variations including gardening terms
-        const variations = {
-          'yoga': ['stretching', 'pose', 'asana'],
-          'water': ['drink', 'hydrate', 'fluid'],
-          'journal': ['write', 'diary', 'log'],
-          'walking': ['walk', 'stroll', 'steps'],
-          'cooking': ['cook', 'meal', 'food'],
-          'cleaning': ['clean', 'tidy', 'organize'],
-          'coding': ['code', 'programming', 'develop'],
-          'guitar': ['music', 'practice', 'instrument'],
-          'running': ['run', 'jog', 'cardio'],
-          'garden': ['gardening', 'plant', 'flowers', 'yard', 'outdoor'],
-          'flowers': ['garden', 'gardening', 'plant', 'bloom', 'nature'],
-          'reading': ['read', 'book', 'study']
-        };
-        
-        if (variations[word]) {
-          habitKeywords[habit.name].push(...variations[word]);
-        }
+      // Add category-based keywords
+      const categoryKeywords = {
+        'Mindfulness': ['meditation', 'meditate', 'mindful', 'zen', 'breathe', 'calm'],
+        'Fitness': ['exercise', 'workout', 'fitness', 'gym', 'run', 'walk', 'train'],
+        'Learning': ['reading', 'read', 'book', 'study', 'learn', 'education'],
+        'Health': ['health', 'medicine', 'vitamins', 'water', 'sleep', 'rest'],
+        'Productivity': ['work', 'productive', 'focus', 'organize', 'plan'],
+        'Social': ['social', 'friends', 'family', 'call', 'connect', 'relationship']
+      };
+      
+      // Add category keywords
+      if (categoryKeywords[habit.category]) {
+        habitKeywords[habit.name].push(...categoryKeywords[habit.category]);
       }
+      
+      // Add smart variations for custom habits
+      nameWords.forEach(word => {
+        if (word.length > 3) {
+          const variations = {
+            'yoga': ['stretching', 'pose', 'asana'],
+            'water': ['drink', 'hydrate', 'fluid'],
+            'journal': ['write', 'diary', 'log'],
+            'walking': ['walk', 'stroll', 'steps'],
+            'cooking': ['cook', 'meal', 'food'],
+            'cleaning': ['clean', 'tidy', 'organize'],
+            'coding': ['code', 'programming', 'develop'],
+            'guitar': ['music', 'practice', 'instrument'],
+            'running': ['run', 'jog', 'cardio'],
+            'garden': ['gardening', 'plant', 'flowers', 'yard', 'outdoor'],
+            'flowers': ['garden', 'gardening', 'plant', 'bloom', 'nature'],
+            'reading': ['read', 'book', 'study']
+          };
+          
+          if (variations[word]) {
+            habitKeywords[habit.name].push(...variations[word]);
+          }
+        }
+      });
     });
     
-    // 🔍 DEBUG: Show keywords for each habit
-    console.log(`🔑 Keywords for "${habit.name}":`, habitKeywords[habit.name]);
-  });
-  
-  // Enhanced matching with scoring
-  let bestMatch = null;
-  let bestScore = 0;
-  
-  for (const habit of habitsToUse) {
-    const keywords = habitKeywords[habit.name] || [];
-    let score = 0;
+    // Enhanced matching with scoring
+    let bestMatch = null;
+    let bestScore = 0;
     
-    for (const keyword of keywords) {
-      if (text.includes(keyword)) {
-        // Exact habit name match gets highest score
-        if (keyword === habit.name.toLowerCase()) {
-          score += 10;
+    for (const habit of habitsToUse) {
+      const keywords = habitKeywords[habit.name] || [];
+      let score = 0;
+      
+      for (const keyword of keywords) {
+        if (text.includes(keyword)) {
+          // Exact habit name match gets highest score
+          if (keyword === habit.name.toLowerCase()) {
+            score += 10;
+          }
+          // Individual words from habit name get high score
+          else if (habit.name.toLowerCase().split(' ').includes(keyword)) {
+            score += 5;
+          }
+          // Category keywords get medium score
+          else {
+            score += 1;
+          }
         }
-        // Individual words from habit name get high score
-        else if (habit.name.toLowerCase().split(' ').includes(keyword)) {
-          score += 5;
-        }
-        // Category keywords get medium score
-        else {
-          score += 1;
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = habit;
+      }
+    }
+    
+    return bestScore > 0 ? bestMatch : null;
+  };
+
+  const extractVoiceAction = (text) => {
+    // Removal/deletion commands
+    const removalWords = [
+      'remove', 'delete', 'take off', 'undo', 'cancel', 'clear', 'reset', 
+      'uncheck', 'unmark', 'reverse', 'take away', 'get rid of'
+    ];
+    
+    // Completion commands  
+    const completionWords = {
+      'complete': 100, 'completed': 100, 'done': 100, 'finished': 100,
+      'accomplish': 100, 'achieved': 100, 'succeed': 100, 'nailed': 100,
+      'crushed': 100, 'smashed': 100, 'knocked out': 100, 'wrapped up': 100,
+      'check off': 100, 'mark done': 100, 'mark complete': 100
+    };
+    
+    // Partial completion commands
+    const partialWords = {
+      'mostly': 75, 'almost': 75, 'nearly': 75, 'pretty much': 75,
+      'half': 50, 'halfway': 50, 'partially': 50, 'some': 50,
+      'little': 25, 'bit': 25, 'started': 25, 'barely': 25,
+      'quarter': 25, 'touch': 10
+    };
+    
+    // Check for removal commands first
+    for (const word of removalWords) {
+      if (text.includes(word)) {
+        return { percentage: 0, action: 'remove' };
+      }
+    }
+    
+    // Check for explicit percentages
+    const percentMatches = [/(\d+)\s*percent/, /(\d+)\s*%/, /(\d+)\s*per\s*cent/];
+    
+    for (const pattern of percentMatches) {
+      const match = text.match(pattern);
+      if (match) {
+        const percentage = Math.min(parseInt(match[1]), 100);
+        const action = percentage === 0 ? 'remove' : 'update';
+        return { percentage, action };
+      }
+    }
+    
+    // Check for completion words
+    for (const [word, percent] of Object.entries(completionWords)) {
+      if (text.includes(word)) {
+        return { percentage: percent, action: 'complete' };
+      }
+    }
+    
+    // Check for partial completion words
+    for (const [word, percent] of Object.entries(partialWords)) {
+      if (text.includes(word)) {
+        return { percentage: percent, action: 'partial' };
+      }
+    }
+    
+    // Default to completion if no specific action found
+    return { percentage: 100, action: 'complete' };
+  };
+
+  const processVoiceCommand = (transcript) => {
+    const text = transcript.toLowerCase().trim();
+    console.log('🎬 Processing voice command:', text);
+    const matchedHabit = findHabitInSpeech(text, habits);
+    
+    const { percentage, action } = extractVoiceAction(text);
+    
+    if (matchedHabit) {
+      executeHabitUpdate(matchedHabit, percentage, 'voice', action);
+    } else {
+      showMessage(`Couldn't identify a habit in: "${transcript}"`);
+    }
+  };
+  const executeHabitUpdate = (habit, percentage, source, action = 'update') => {
+    setHabits(prev => prev.map(h => {
+      if (h.id === habit.id) {
+        const wasCompleted = h.completedToday;
+        const willBeCompleted = percentage >= 50;
+        
+        let newStreak = h.streak;
+        let newProgress = h.progress;
+        
+        if (!wasCompleted && willBeCompleted) {
+          newStreak = h.streak + 1;
+          newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
+        } else if (wasCompleted && !willBeCompleted) {
+          newStreak = Math.max(h.streak - 1, 0);
+          newProgress = Math.max(h.progress - 1, 0);
+        } else if (wasCompleted && willBeCompleted) {
+          newStreak = h.streak;
+          newProgress = h.progress;
         }
         
-        // 🔍 DEBUG: Show matches
-        console.log(`✅ Match found: "${keyword}" in "${habit.name}" (score +${score})`);
+        return {
+          ...h,
+          completedToday: willBeCompleted,
+          voiceCompletion: source === 'voice' ? percentage : undefined,
+          aiCompletion: source === 'ai' ? percentage : undefined,
+          streak: newStreak,
+          progress: newProgress
+        };
       }
-    }
+      return h;
+    }));
     
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = habit;
+    const actionMessages = {
+      'remove': `${source.toUpperCase()} removed: ${habit.name}`,
+      'complete': `${source.toUpperCase()} completed: ${habit.name}!`,
+      'partial': `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%`,
+      'update': `${source.toUpperCase()} updated: ${habit.name} to ${percentage}%`
+    };
+    
+    const successMessage = actionMessages[action] || `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%`;
+    showMessage(successMessage);
+    
+    if (source === 'voice' && 'speechSynthesis' in window) {
+      const speechMessages = {
+        'remove': `${habit.name} removed`,
+        'complete': `${habit.name} completed`,
+        'partial': `${habit.name} ${percentage} percent done`,
+        'update': `${habit.name} updated to ${percentage} percent`
+      };
+      
+      const speechText = speechMessages[action] || `${habit.name} logged at ${percentage} percent`;
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      speechSynthesis.speak(utterance);
     }
-  }
-  
-  // 🔍 DEBUG: Show final result
-  console.log(`🎯 Best Match:`, bestMatch?.name || 'None', `(score: ${bestScore})`);
-  
-  return bestScore > 0 ? bestMatch : null;
-};
-
- const extractVoiceAction = (text) => {
-  // Removal/deletion commands
-  const removalWords = [
-    'remove', 'delete', 'take off', 'undo', 'cancel', 'clear', 'reset', 
-    'uncheck', 'unmark', 'reverse', 'take away', 'get rid of'
-  ];
-  
-  // Completion commands  
-  const completionWords = {
-    'complete': 100, 'completed': 100, 'done': 100, 'finished': 100,
-    'accomplish': 100, 'achieved': 100, 'succeed': 100, 'nailed': 100,
-    'crushed': 100, 'smashed': 100, 'knocked out': 100, 'wrapped up': 100,
-    'check off': 100, 'mark done': 100, 'mark complete': 100
   };
-  
-  // Partial completion commands
-  const partialWords = {
-    'mostly': 75, 'almost': 75, 'nearly': 75, 'pretty much': 75,
-    'half': 50, 'halfway': 50, 'partially': 50, 'some': 50,
-    'little': 25, 'bit': 25, 'started': 25, 'barely': 25,
-    'quarter': 25, 'touch': 10
-  };
-  
-  // Update/modify commands
-  const updateWords = [
-    'update', 'change', 'modify', 'adjust', 'set', 'make it', 'put at'
-  ];
-  
-  // Check for removal commands first
-  for (const word of removalWords) {
-    if (text.includes(word)) {
-      return { percentage: 0, action: 'remove' };
-    }
-  }
-  
-  // Check for explicit percentages
-  const percentMatches = [
-    /(\d+)\s*percent/,
-    /(\d+)\s*%/,
-    /(\d+)\s*per\s*cent/
-  ];
-  
-  for (const pattern of percentMatches) {
-    const match = text.match(pattern);
-    if (match) {
-      const percentage = Math.min(parseInt(match[1]), 100);
-      const action = percentage === 0 ? 'remove' : 'update';
-      return { percentage, action };
-    }
-  }
-  
-  // Check for completion words
-  for (const [word, percent] of Object.entries(completionWords)) {
-    if (text.includes(word)) {
-      return { percentage: percent, action: 'complete' };
-    }
-  }
-  
-  // Check for partial completion words
-  for (const [word, percent] of Object.entries(partialWords)) {
-    if (text.includes(word)) {
-      return { percentage: percent, action: 'partial' };
-    }
-  }
-  
-  // Check for update words with context
-  for (const word of updateWords) {
-    if (text.includes(word)) {
-      // Try to extract number after update word
-      const updateMatch = text.match(new RegExp(word + '.*?(\\d+)'));
-      if (updateMatch) {
-        const percentage = Math.min(parseInt(updateMatch[1]), 100);
-        return { percentage, action: 'update' };
-      }
-    }
-  }
-  
-  // Natural language patterns
-  if (text.includes('for today')) {
-    if (text.includes('100') || text.includes('complete')) {
-      return { percentage: 100, action: 'complete' };
-    }
-    if (text.includes('0') || text.includes('nothing')) {
-      return { percentage: 0, action: 'remove' };
-    }
-  }
-  
-  // Default to completion if no specific action found
-  return { percentage: 100, action: 'complete' };
-};
 
   const startListening = () => {
     if (recognition && !isListening) {
@@ -734,7 +680,6 @@ Respond in JSON format:
     setShowAddHabit(false);
     showMessage(`New habit "${habit.name}" added! 💾 Saved`);
   };
-
   const openSliderModal = (habit) => {
     setSelectedHabitForSlider(habit);
     setSliderValue(100);
@@ -778,6 +723,7 @@ Respond in JSON format:
     setShowBacklogModal(false);
     setSelectedHabitForBacklog(null);
   };
+
   const getPastDates = (days = 3) => {
     const dates = [];
     const today = new Date();
@@ -847,7 +793,6 @@ Respond in JSON format:
     { id: 'learn', label: 'Learn', icon: BookOpen },
     { id: 'profile', label: 'Profile', icon: Settings }
   ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       {showNotification && (
@@ -1146,16 +1091,6 @@ Respond in JSON format:
 
                 <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6">
                   <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
-                    <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
-                  </div>
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
-                    <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
-                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
-                    <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
-                  </div>
-                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
                     <Award className="w-5 h-5 md:w-8 md:h-8 text-purple-500 mx-auto mb-1 md:mb-2" />
                     <h3 className="font-bold text-lg md:text-2xl text-gray-800">{habits.length}</h3>
                     <p className="text-xs md:text-sm text-gray-600">Active Habits</p>
@@ -1165,7 +1100,8 @@ Respond in JSON format:
             </div>
           </div>
         )}
-{currentView === 'dashboard' && (
+
+        {currentView === 'dashboard' && (
           <div className="space-y-4 md:space-y-6">
             <div className="text-center py-3 md:py-6">
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Dashboard</h2>
@@ -1321,62 +1257,20 @@ Respond in JSON format:
                   </div>
                 </div>
               </div>
-
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-green-500 to-teal-600 p-4 md:p-6 text-white">
-                  <div className="flex items-center gap-2 mb-2 md:mb-3">
-                    <Star className="w-5 h-5 md:w-6 md:h-6" />
-                    <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">HOW-TO</span>
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold mb-1 md:mb-2">How to Use This App</h3>
-                  <p className="text-green-100 text-xs md:text-sm">Master every feature and become a habit-building pro</p>
-                </div>
-                <div className="p-4 md:p-6">
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-3 md:mb-4 text-sm md:text-base">
-                      Welcome to the most advanced habit tracker you'll ever use! Here's how to unlock every feature and build life-changing habits.
-                    </p>
-                    
-                    <h4 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">🏁 Getting Started</h4>
-                    <div className="bg-gray-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4">
-                      <p className="text-gray-700 mb-2 text-sm md:text-base"><strong>Four Ways to Log Completion:</strong></p>
-                      <ul className="text-gray-700 space-y-1 text-sm md:text-base">
-                        <li><strong>Complete Button:</strong> One-click for 100% completion</li>
-                        <li><strong>% Slider:</strong> Set partial completion</li>
-                        <li><strong>Voice Commands:</strong> "Exercise complete"</li>
-                        <li><strong>AI Chat:</strong> "I just finished a workout!"</li>
-                      </ul>
-                    </div>
-
-                    <div className="bg-green-50 border-l-4 border-green-500 p-3 md:p-4 my-3 md:my-4">
-                      <p className="text-green-800 font-medium text-sm md:text-base">🎉 Success Tip: Consistency beats perfection. A 50% day is infinitely better than a 0% day!</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-500 flex-wrap">
-                      <span>📖 7 min read</span>
-                      <span>🎓 Tutorial</span>
-                      <span>⚡ Quick Start</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-4 md:p-6 text-white text-center">
-              <h3 className="text-lg md:text-xl font-bold mb-2">📚 More Content Coming Soon!</h3>
-              <p className="text-orange-100 text-sm md:text-base">We're constantly adding new articles, guides, and videos to help you on your habit journey.</p>
-              <div className="mt-3 md:mt-4 flex flex-wrap justify-center gap-2">
-                <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">🧠 Habit Science</span>
-                <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">💪 Success Stories</span>
-                <span className="bg-white bg-opacity-20 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm">🎯 Advanced Strategies</span>
-              </div>
             </div>
           </div>
-        )}
-
-        {currentView === 'profile' && (
+        )}-6 text-center">
+                    <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-green-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().completionRate}%</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Today's Progress</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p-6 text-center">
+                    <Flame className="w-5 h-5 md:w-8 md:h-8 text-orange-500 mx-auto mb-1 md:mb-2" />
+                    <h3 className="font-bold text-lg md:text-2xl text-gray-800">{getWeeklyProgress().totalStreak}</h3>
+                    <p className="text-xs md:text-sm text-gray-600">Total Streaks</p>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-sm p-3 md:p
+          {currentView === 'profile' && (
           <div className="space-y-4 md:space-y-6">
             <div className="text-center py-3 md:py-6">
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Profile & Settings</h2>
@@ -1406,199 +1300,7 @@ Respond in JSON format:
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={currentUser.phone}
-                    onChange={(e) => setCurrentUser(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-                  />
-                </div>
               </div>
-            </div>
-<div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-                AI Coaching Preferences
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Optimal Call Time</label>
-                  <input
-                    type="time"
-                    defaultValue="10:00"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={currentUser.preferences.emailCoaching}
-                      onChange={(e) => setCurrentUser(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, emailCoaching: e.target.checked }
-                      }))}
-                      className="rounded"
-                    />
-                    <label className="text-xs md:text-sm text-gray-700">
-                      📧 Enable AI email coaching (after 2 days inactive)
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={currentUser.preferences.phoneCoaching}
-                      onChange={(e) => setCurrentUser(prev => ({
-                        ...prev,
-                        preferences: { ...prev.preferences, phoneCoaching: e.target.checked }
-                      }))}
-                      className="rounded"
-                    />
-                    <label className="text-xs md:text-sm text-gray-700">
-                      📞 Enable AI phone coaching (after 4 days inactive)
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
-                🧪 Test Coaching System
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                <button
-                  onClick={async () => {
-                    try {
-                      showMessage('📧 Sending test email...');
-                      const response = await fetch('/api/send-coaching-email', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          userEmail: currentUser.email,
-                          userName: currentUser.name,
-                          inactiveDays: 0,
-                          habits: habits,
-                          longestStreak: Math.max(...habits.map(h => h.streak))
-                        })
-                      });
-                      if (response.ok) {
-                        showMessage('✅ Real test email sent!');
-                      } else {
-                        showMessage('❌ Email failed to send');
-                      }
-                    } catch (error) {
-                      showMessage('❌ Email error: ' + error.message);
-                    }
-                  }}
-                  className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
-                  <span className="font-medium text-sm md:text-base">Test Email Coaching</span>
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      showMessage('📱 Sending test SMS...');
-                      const response = await fetch('/api/send-coaching-sms', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          userPhone: currentUser.phone,
-                          userName: currentUser.name,
-                          inactiveDays: 0,
-                          habits: habits,
-                          longestStreak: Math.max(...habits.map(h => h.streak))
-                        })
-                      });
-                      if (response.ok) {
-                        showMessage('✅ Real test SMS sent!');
-                      } else {
-                        showMessage('❌ SMS failed to send');
-                      }
-                    } catch (error) {
-                      showMessage('❌ SMS error: ' + error.message);
-                    }
-                  }}
-                  className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <Phone className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-                  <span className="font-medium text-sm md:text-base">Test SMS Coaching</span>
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-3">
-                📧 Email coaching triggers after 2 days inactive • 📱 SMS coaching triggers after 4 days inactive (Premium users)
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2">
-                <Settings className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
-                💾 Data Management
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                <button
-                  onClick={() => {
-                    const dataToExport = {
-                      habits: habits,
-                      user: currentUser,
-                      exportDate: new Date().toISOString(),
-                      version: "1.0"
-                    };
-                    const dataStr = JSON.stringify(dataToExport, null, 2);
-                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                    const url = URL.createObjectURL(dataBlob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `habits-backup-${new Date().toISOString().split('T')[0]}.json`;
-                    link.click();
-                    URL.revokeObjectURL(url);
-                    showMessage('📁 Data exported successfully!');
-                  }}
-                  className="flex items-center gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
-                  <span className="font-medium text-sm md:text-base">Export Data</span>
-                </button>
-                <label className="flex items-center gap-3 p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer">
-                  <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-                  <span className="font-medium text-sm md:text-base">Import Data</span>
-                  <input
-                    type="file"
-                    accept=".json"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          try {
-                            const importedData = JSON.parse(event.target.result);
-                            if (importedData.habits && Array.isArray(importedData.habits)) {
-                              setHabits(importedData.habits);
-                              saveToLocalStorage('userHabits', importedData.habits);
-                            }
-                            if (importedData.user) {
-                              setCurrentUser(importedData.user);
-                              saveToLocalStorage('currentUser', importedData.user);
-                            }
-                            showMessage('📂 Data imported successfully!');
-                          } catch (error) {
-                            showMessage('❌ Import failed: Invalid file format');
-                          }
-                        };
-                        reader.readAsText(file);
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-gray-500 mt-3">
-                💾 Export your data as backup • 📂 Import from previous backup files
-              </p>
             </div>
 
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 md:p-6 text-white">
@@ -1639,67 +1341,8 @@ Respond in JSON format:
       </div>
 
       <div className="md:hidden h-16"></div>
-{showBacklogModal && selectedHabitForBacklog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between mb-4 p-4 pb-0">
-              <h3 className="text-lg font-bold">Update Past Days</h3>
-              <button onClick={closeBacklogModal}>
-                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
-              </button>
-            </div>
-            
-            <div className="px-4 mb-4">
-              <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
-              <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
-            </div>
 
-            <div className="px-4 space-y-3">
-              {getPastDates(3).map(date => {
-                const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
-                const isCompleted = isDateCompleted(currentHabit, date);
-                const dayName = date.toLocaleDateString('en', { weekday: 'long' });
-                const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-                
-                return (
-                  <div key={formatDate(date)} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                    isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'
-                  }`}>
-                    <div>
-                      <p className="font-medium text-gray-800">{dayName}</p>
-                      <p className="text-sm text-gray-600">{dateString}</p>
-                    </div>
-                    <button
-                      onClick={() => toggleBacklogDate(currentHabit.id, date)}
-                      className={`p-2 rounded-full transition-all duration-200 ${
-                        isCompleted
-                          ? 'bg-green-500 text-white hover:bg-green-600 scale-110'
-                          : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white hover:scale-105'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="p-4 pt-6 border-t mt-6">
-              <button
-                onClick={closeBacklogModal}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Modals */}
       {showAddHabit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
@@ -1825,6 +1468,67 @@ Respond in JSON format:
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium transition-colors"
               >
                 Complete!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBacklogModal && selectedHabitForBacklog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between mb-4 p-4 pb-0">
+              <h3 className="text-lg font-bold">Update Past Days</h3>
+              <button onClick={closeBacklogModal}>
+                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+            
+            <div className="px-4 mb-4">
+              <h4 className="font-semibold text-gray-800 mb-2">{selectedHabitForBacklog.name}</h4>
+              <p className="text-sm text-gray-600 mb-4">Mark completion for up to 3 past days</p>
+            </div>
+
+            <div className="px-4 space-y-3">
+              {getPastDates(3).map(date => {
+                const currentHabit = habits.find(h => h.id === selectedHabitForBacklog.id) || selectedHabitForBacklog;
+                const isCompleted = isDateCompleted(currentHabit, date);
+                const dayName = date.toLocaleDateString('en', { weekday: 'long' });
+                const dateString = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+                
+                return (
+                  <div key={formatDate(date)} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                    isCompleted ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'
+                  }`}>
+                    <div>
+                      <p className="font-medium text-gray-800">{dayName}</p>
+                      <p className="text-sm text-gray-600">{dateString}</p>
+                    </div>
+                    <button
+                      onClick={() => toggleBacklogDate(currentHabit.id, date)}
+                      className={`p-2 rounded-full transition-all duration-200 ${
+                        isCompleted
+                          ? 'bg-green-500 text-white hover:bg-green-600 scale-110'
+                          : 'bg-gray-100 text-gray-400 hover:bg-green-500 hover:text-white hover:scale-105'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <Circle className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-4 pt-6 border-t mt-6">
+              <button
+                onClick={closeBacklogModal}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                Done
               </button>
             </div>
           </div>
@@ -1960,7 +1664,7 @@ Respond in JSON format:
                   <div className="mt-4 space-y-2 text-xs md:text-sm">
                     <div className="bg-green-50 rounded-lg p-2">"I just finished an amazing workout!"</div>
                     <div className="bg-green-50 rounded-lg p-2">"Add a savings habit"</div>
-                    <div className="bg-green-50 rounded-lg p-2">"How can I stay motivated?"</div>
+                    <div className="bg-green-50 rounded-lg p-2">"How do I stay motivated?"</div>
                   </div>
                   <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
                     {aiVoiceEnabled ? (
@@ -2056,5 +1760,5 @@ Respond in JSON format:
     </div>
   );
 }
-}
+
 export default App;
