@@ -395,31 +395,51 @@ Respond in JSON format:
   };
 
   const executeHabitUpdate = (habit, percentage, source) => {
-    setHabits(prev => prev.map(h => {
-      if (h.id === habit.id) {
-        const newStreak = percentage >= 50 ? h.streak + 1 : h.streak;
-        const newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
-        
-        return {
-          ...h,
-          completedToday: percentage >= 50,
-          voiceCompletion: source === 'voice' ? percentage : undefined,
-          aiCompletion: source === 'ai' ? percentage : undefined,
-          streak: newStreak,
-          progress: newProgress
-        };
+  setHabits(prev => prev.map(h => {
+    if (h.id === habit.id) {
+      // Check if habit is already completed today
+      const wasCompleted = h.completedToday;
+      const willBeCompleted = percentage >= 50;
+      
+      let newStreak = h.streak;
+      let newProgress = h.progress;
+      
+      if (!wasCompleted && willBeCompleted) {
+        // Adding completion
+        newStreak = h.streak + 1;
+        newProgress = Math.min(h.progress + Math.ceil(percentage/100), h.target);
+      } else if (wasCompleted && !willBeCompleted) {
+        // Removing completion
+        newStreak = Math.max(h.streak - 1, 0);
+        newProgress = Math.max(h.progress - 1, 0);
+      } else if (wasCompleted && willBeCompleted) {
+        // Already completed, just updating percentage
+        newStreak = h.streak; // Keep same streak
+        newProgress = h.progress; // Keep same progress
       }
-      return h;
-    }));
-    
-    const successMessage = `${source.toUpperCase()} logged: ${habit.name} at ${percentage}%!`;
-    showMessage(successMessage);
-    
-    if (source === 'voice' && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(`${habit.name} logged at ${percentage} percent`);
-      speechSynthesis.speak(utterance);
+      
+      return {
+        ...h,
+        completedToday: willBeCompleted,
+        voiceCompletion: source === 'voice' ? percentage : undefined,
+        aiCompletion: source === 'ai' ? percentage : undefined,
+        streak: newStreak,
+        progress: newProgress
+      };
     }
-  };
+    return h;
+  }));
+  
+  const action = habit.completedToday ? 'updated' : (percentage >= 50 ? 'completed' : 'reset');
+  const successMessage = `${source.toUpperCase()} ${action}: ${habit.name} at ${percentage}%!`;
+  showMessage(successMessage);
+  
+  if (source === 'voice' && 'speechSynthesis' in window) {
+    const actionWord = percentage >= 50 ? 'completed' : 'reset';
+    const utterance = new SpeechSynthesisUtterance(`${habit.name} ${actionWord} at ${percentage} percent`);
+    speechSynthesis.speak(utterance);
+  }
+};
 
   const findHabitInSpeech = (text) => {
   const habitKeywords = {};
