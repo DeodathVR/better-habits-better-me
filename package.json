@@ -1,7 +1,18 @@
 {
-  "name": "better-habits-better-me",
+  "name": "building-my-awesome-life-daily",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://buildingmyawesomelifedaily.com",
+  "description": "A comprehensive habit tracking app with voice commands and AI coaching to help you build your awesome life daily",
+  "author": "Deodath Ramkumar",
+  "keywords": [
+    "habit-tracker",
+    "productivity",
+    "voice-commands",
+    "ai-coaching",
+    "daily-habits",
+    "life-improvement"
+  ],
   "dependencies": {
     "@sendgrid/mail": "^7.7.0",
     "@testing-library/dom": "^10.4.0",
