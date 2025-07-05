@@ -9,6 +9,7 @@ import LearnView from './components/views/LearnView';
 import ProfileView from './components/views/ProfileView';
 import Notification from './components/common/Notification';
 import Navigation from './components/common/Navigation';
+import VoiceCommands from './components/voice/VoiceCommands';
 import './App.css';
 
 function App() {
