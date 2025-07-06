@@ -69,10 +69,8 @@ const VoiceCommands = ({ habits, habitsRef, setHabits, showMessage, isMobile }) 
 
   // Force habitsRef to update when habits prop changes
   useEffect(() => {
-    if (habitsRef && habitsRef.current !== undefined) {
-      habitsRef.current = habits;
-    }
-  }, [habits, habitsRef]);
+  habitsRef.current = habits;
+}, [habits]);
 
   const processVoiceCommand = (transcript) => {
     const text = transcript.toLowerCase().trim();
