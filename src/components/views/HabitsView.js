@@ -53,7 +53,8 @@ const HabitsView = ({ habits, setHabits, habitsRef, showMessage, GEMINI_API_KEY 
           <span className="text-sm">AI Coach</span>
         </button>
         
-        <VoiceCommands 
+        <VoiceCommands
+          key={habits.length}
           habits={habits}
           habitsRef={habitsRef}
           setHabits={setHabits}
@@ -65,7 +66,8 @@ const HabitsView = ({ habits, setHabits, habitsRef, showMessage, GEMINI_API_KEY 
       {/* Desktop Voice & AI Command Centers */}
       <div className="hidden md:block">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <VoiceCommands 
+          <VoiceCommands
+            key={habits.length}
             habits={habits}
             habitsRef={habitsRef}
             setHabits={setHabits}
