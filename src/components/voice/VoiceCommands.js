@@ -26,18 +26,6 @@ const VoiceCommands = ({ habits, habitsRef, setHabits, showMessage, isMobile }) 
         setIsListening(true);
         setVoiceTranscript('');
       };
-        } else {
-    setVoiceSupported(false);
-  }
-}, [showMessage]);
-
-// ADD THIS NEW useEffect RIGHT HERE:
-useEffect(() => {
-  // Force habitsRef to update when habits prop changes
-  if (habitsRef && habitsRef.current !== undefined) {
-    habitsRef.current = habits;
-  }
-}, [habits, habitsRef]);
 
       recognitionInstance.onresult = (event) => {
         let finalTranscript = '';
@@ -78,6 +66,13 @@ useEffect(() => {
       setVoiceSupported(false);
     }
   }, [showMessage]);
+
+  // Force habitsRef to update when habits prop changes
+  useEffect(() => {
+    if (habitsRef && habitsRef.current !== undefined) {
+      habitsRef.current = habits;
+    }
+  }, [habits, habitsRef]);
 
   const processVoiceCommand = (transcript) => {
     const text = transcript.toLowerCase().trim();
