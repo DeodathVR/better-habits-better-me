@@ -74,17 +74,21 @@ const VoiceCommands = ({ habits, habitsRef, setHabits, showMessage, isMobile }) 
 
   const processVoiceCommand = (transcript) => {
     const text = transcript.toLowerCase().trim();
-    // Use habitsRef.current to always get the latest habits
-    const matchedHabit = findHabitInSpeech(text, habitsRef.current);
-    
-    const { percentage, action } = extractVoiceAction(text);
-    
-    if (matchedHabit) {
-      executeHabitUpdate(matchedHabit, percentage, 'voice', action);
-    } else {
-      showMessage(`Couldn't identify a habit in: "${transcript}"`);
-    }
-  };
+  console.log('🔍 DEBUG - habits prop length:', habits.length);
+  console.log('🔍 DEBUG - habitsRef.current length:', habitsRef.current?.length);
+  console.log('🔍 DEBUG - habits prop names:', habits.map(h => h.name));
+  console.log('🔍 DEBUG - habitsRef names:', habitsRef.current?.map(h => h.name));
+  
+  const matchedHabit = findHabitInSpeech(text, habitsRef.current);
+  
+  const { percentage, action } = extractVoiceAction(text);
+  
+  if (matchedHabit) {
+    executeHabitUpdate(matchedHabit, percentage, 'voice', action);
+  } else {
+    showMessage(`Couldn't identify a habit in: "${transcript}"`);
+  }
+};
 
   const executeHabitUpdate = (habit, percentage, source, action = 'update') => {
     setHabits(prev => {
