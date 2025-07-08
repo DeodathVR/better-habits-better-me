@@ -179,6 +179,7 @@ function App() {
             habitsRef={habitsRef}
             showMessage={showMessage}
             GEMINI_API_KEY={GEMINI_API_KEY}
+            currentUser={currentUser}  // ADD THIS LINE
           />
         )}
 
