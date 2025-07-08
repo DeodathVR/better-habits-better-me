@@ -150,7 +150,7 @@ const HabitsView = ({ habits, setHabits, habitsRef, showMessage, GEMINI_API_KEY 
           setHabits={setHabits}
           showMessage={showMessage}
           GEMINI_API_KEY={GEMINI_API_KEY}
-          currentUser={currentUser}  // ADD THIS LINE
+          currentUser  // ADD THIS
         />
       )}
 
