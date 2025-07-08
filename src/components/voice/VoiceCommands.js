@@ -5,6 +5,8 @@ import { findHabitInSpeech, extractVoiceAction } from './voiceHelpers';
 import VoiceHelpModal from './VoiceHelpModal';
 
 const VoiceCommands = ({ habits, habitsRef, setHabits, showMessage, isMobile }) => {
+  console.log('🔍 VOICE COMPONENT - habits received:', habits.length, habits.map(h => h.name));
+  
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [voiceSupported, setVoiceSupported] = useState(false);
