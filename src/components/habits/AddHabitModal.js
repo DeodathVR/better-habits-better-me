@@ -33,6 +33,12 @@ const AddHabitModal = ({ showAddHabit, setShowAddHabit, habits, setHabits, showM
     setHabits(prev => {
       const newHabits = [...prev, habit];
       saveToLocalStorage('userHabits', newHabits);
+      setTimeout(() => {
+      const freshHabits = JSON.parse(localStorage.getItem('userHabits') || '[]');
+      setHabits(freshHabits);
+      console.log('🔄 Refreshed habits from localStorage:', freshHabits.length, freshHabits.map(h => h.name));
+    }, 100);
+      
       return newHabits;
     });
     
