@@ -252,12 +252,17 @@ class VisionEnhancedAI {
   }
 
   // ENHANCED: Generate vision-aware AI response
-  async generateVisionAwareResponse(userMessage, enhancedContext) {
-    const { visionState, journeyPhase, patterns, contentStrategy, habits } = enhancedContext;
-    
-    // Build the enhanced prompt
-    const enhancedPrompt = this.buildEnhancedPrompt(userMessage, enhancedContext);
-    
+async generateVisionAwareResponse(userMessage, enhancedContext) {
+  const { visionState, journeyPhase, patterns, contentStrategy, habits } = enhancedContext;
+  
+  // Build the enhanced prompt
+  const enhancedPrompt = this.buildEnhancedPrompt(userMessage, enhancedContext);
+  
+  // Add retry logic for 503 errors
+  const maxRetries = 3;
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${this.apiKey}`, {
         method: 'POST',
@@ -270,6 +275,19 @@ class VisionEnhancedAI {
           }
         })
       });
+
+      // If 503, wait and retry
+      if (response.status === 503) {
+        console.log(`API overloaded, attempt ${attempt}/${maxRetries}. Retrying in ${attempt * 2}s...`);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+          continue;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
       const aiText = data.candidates[0].content.parts[0].text;
@@ -284,7 +302,8 @@ class VisionEnhancedAI {
           journeyPhase: journeyPhase.phase,
           visionClarity: visionState.clarity,
           contentStrategy: contentStrategy.primary,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          attempt: attempt
         };
         
         return parsedResponse;
@@ -293,15 +312,23 @@ class VisionEnhancedAI {
       throw new Error('Invalid AI response format');
       
     } catch (error) {
-      console.error('Enhanced AI processing error:', error);
-      return this.getFallbackResponse(userMessage, enhancedContext);
+      lastError = error;
+      console.error(`Enhanced AI attempt ${attempt} failed:`, error);
+      
+      if (attempt < maxRetries && (error.message.includes('503') || error.message.includes('overloaded'))) {
+        await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+        continue;
+      }
+      
+      // If not a retry-able error, break
+      break;
     }
   }
-
-  buildEnhancedPrompt(userMessage, context) {
-    const { visionState, journeyPhase, patterns, habits, currentUser } = context;
-    
-    return `You are an advanced habit coaching assistant with deep vision-awareness capabilities.
+  
+  // If all retries failed, return fallback
+  console.log('All AI attempts failed, using fallback response');
+  return this.getFallbackResponse(userMessage, enhancedContext);
+}
 
 CONTEXT ANALYSIS:
 User Journey Phase: ${journeyPhase.phase} - ${journeyPhase.description}
