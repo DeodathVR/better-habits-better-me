@@ -131,7 +131,33 @@ Respond in JSON format:
           }]);
         }
       }
-      
+     // Add this new section in handleEnhancedActions, after the create_habit section:
+
+// NEW: Handle habit deletion
+if (action === 'delete_habit' && habit_name) {
+  const habitToDelete = habitsRef.current.find(h => 
+    h.name.toLowerCase().includes(habit_name.toLowerCase())
+  );
+  
+  if (habitToDelete) {
+    setHabits(prev => prev.filter(h => h.id !== habitToDelete.id));
+    showMessage(`🗑️ AI deleted: "${habitToDelete.name}"`);
+    
+    setTimeout(() => {
+      setAiChatHistory(prev => [...prev, {
+        type: 'ai',
+        message: `✅ I've successfully deleted "${habitToDelete.name}" from your habits list.`,
+        timestamp: new Date()
+      }]);
+    }, 1000);
+  } else {
+    setAiChatHistory(prev => [...prev, {
+      type: 'error',
+      message: `I couldn't find a habit called "${habit_name}" to delete. Could you check the name?`,
+      timestamp: new Date()
+    }]);
+  }
+} 
       return aiResult;
     }
     
