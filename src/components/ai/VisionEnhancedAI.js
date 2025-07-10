@@ -329,6 +329,12 @@ async generateVisionAwareResponse(userMessage, enhancedContext) {
   console.log('All AI attempts failed, using fallback response');
   return this.getFallbackResponse(userMessage, enhancedContext);
 }
+}
+
+buildEnhancedPrompt(userMessage, context) {
+  const { visionState, journeyPhase, patterns, habits, currentUser } = context;
+  
+  return `You are an advanced habit coaching assistant with deep vision-awareness capabilities.
 
 CONTEXT ANALYSIS:
 User Journey Phase: ${journeyPhase.phase} - ${journeyPhase.description}
