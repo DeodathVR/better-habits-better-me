@@ -1,4 +1,9 @@
 // components/ai/aiHelpers.js
+import VisionEnhancedAI from './VisionEnhancedAI';
+
+// Initialize the enhanced AI system
+let enhancedAI = null;
+
 export const processWithAI = async (
   userMessage,
   habitsRef,
@@ -7,172 +12,235 @@ export const processWithAI = async (
   setAiProcessing,
   showMessage,
   aiVoiceEnabled,
-  GEMINI_API_KEY
+  GEMINI_API_KEY,
+  currentUser = {}
 ) => {
   setAiProcessing(true);
   
   try {
-    const prompt = `You are a habit tracking assistant. The user says: "${userMessage}"
-
-Current habits:
-${habitsRef.current.map(h => `- ${h.name}: ${h.description} (${h.streak} day streak)`).join('\n')}
-
-RULES:
-- Only suggest creating NEW habits if user explicitly asks to add/create a habit
-- For logging existing habits, use "log_habit" action  
-- For new habit creation, use "create_habit" action
-- Be specific about what you're actually doing
-- Don't claim you've done something you haven't
-- Be encouraging and supportive
-
-Respond in JSON format:
-{
-  "action": "log_habit" | "conversation" | "create_habit",
-  "habit_name": "exact habit name if logging existing" | null,
-  "percentage": number 0-100 if logging | null,
-  "new_habit": {
-    "name": "habit name (max 30 chars)",
-    "description": "habit description (max 100 chars)",
-    "category": "Mindfulness|Fitness|Learning|Health|Productivity|Social"
-  } | null,
-  "response": "your honest response explaining what you actually did",
-  "speech_response": "version without emojis for speech"
-}`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
-        }
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Initialize enhanced AI if not already done
+    if (!enhancedAI) {
+      enhancedAI = new VisionEnhancedAI(GEMINI_API_KEY);
     }
-
-    const data = await response.json();
-    const aiText = data.candidates[0].content.parts[0].text;
     
-    // Extract JSON from response
-    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const aiResult = JSON.parse(jsonMatch[0]);
-      
-      // Add to chat history
-      setAiChatHistory(prev => [...prev, 
-        { type: 'user', message: userMessage, timestamp: new Date() },
-        { type: 'ai', message: aiResult.response, timestamp: new Date() }
-      ]);
-      
-      // Speak response if enabled
-      if ('speechSynthesis' in window && aiResult.speech_response && aiVoiceEnabled) {
-        const utterance = new SpeechSynthesisUtterance(aiResult.speech_response);
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0;
-        speechSynthesis.speak(utterance);
-      }
-      
-      // Handle habit logging
-      if (aiResult.action === 'log_habit' && aiResult.habit_name && aiResult.percentage !== null) {
-        const habit = habitsRef.current.find(h => 
-          h.name.toLowerCase().includes(aiResult.habit_name.toLowerCase())
-        );
-        if (habit) {
-          executeHabitUpdate(habit, aiResult.percentage, 'ai', setHabits, showMessage);
-        }
-      }
-      
-      // Handle new habit creation
-      if (aiResult.action === 'create_habit' && aiResult.new_habit) {
-        const newHabitData = aiResult.new_habit;
-        
-        if (validateAIHabitInput(newHabitData)) {
-          const newHabit = {
-            id: Date.now(),
-            name: newHabitData.name.substring(0, 30),
-            description: newHabitData.description.substring(0, 100),
-            streak: 0,
-            completedToday: false,
-            completedDates: [],
-            createdDate: new Date().toISOString().split('T')[0],
-            lastCheckedDate: new Date().toISOString().split('T')[0],
-            category: newHabitData.category || 'Health',
-            progress: 0,
-            target: 10
-          };
-          
-          setHabits(prev => [...prev, newHabit]);
-          showMessage(`🤖 AI created: "${newHabit.name}"! Now it's real! ✨`);
-          
-          setTimeout(() => {
-            setAiChatHistory(prev => [...prev, {
-              type: 'ai',
-              message: `✅ Perfect! I've successfully added "${newHabit.name}" to your habits list. You can see it above and start tracking it right away!`,
-              timestamp: new Date()
-            }]);
-          }, 1000);
-        } else {
-          showMessage(`❌ AI tried to create invalid habit. Please try again with different details.`);
-          setAiChatHistory(prev => [...prev, {
-            type: 'ai',
-            message: `Sorry, I couldn't create that habit due to invalid data. Please try describing the habit differently.`,
-            timestamp: new Date()
-          }]);
-        }
-      }
-     // Add this new section in handleEnhancedActions, after the create_habit section:
-
-// NEW: Handle habit deletion
-if (action === 'delete_habit' && habit_name) {
-  const habitToDelete = habitsRef.current.find(h => 
-    h.name.toLowerCase().includes(habit_name.toLowerCase())
-  );
-  
-  if (habitToDelete) {
-    setHabits(prev => prev.filter(h => h.id !== habitToDelete.id));
-    showMessage(`🗑️ AI deleted: "${habitToDelete.name}"`);
+    // Build context for enhanced AI
+    const context = {
+      habits: habitsRef.current || [],
+      currentUser: currentUser,
+      chatHistory: [] // You can pass existing chat history here if needed
+    };
     
-    setTimeout(() => {
-      setAiChatHistory(prev => [...prev, {
-        type: 'ai',
-        message: `✅ I've successfully deleted "${habitToDelete.name}" from your habits list.`,
-        timestamp: new Date()
-      }]);
-    }, 1000);
-  } else {
+    // Use enhanced AI processing
+    const aiResult = await enhancedAI.processWithAI(userMessage, context);
+    
+    // Add user message to chat history
+    setAiChatHistory(prev => [...prev, 
+      { type: 'user', message: userMessage, timestamp: new Date() }
+    ]);
+    
+    // Add main AI response to chat history
     setAiChatHistory(prev => [...prev, {
-      type: 'error',
-      message: `I couldn't find a habit called "${habit_name}" to delete. Could you check the name?`,
-      timestamp: new Date()
+      type: 'ai',
+      message: aiResult.response,
+      timestamp: new Date(),
+      contentType: aiResult.content_type || 'conversation',
+      metadata: aiResult.metadata
     }]);
-  }
-} 
-      return aiResult;
+    
+    // Speak response if enabled
+    if ('speechSynthesis' in window && aiResult.speech_response && aiVoiceEnabled) {
+      const utterance = new SpeechSynthesisUtterance(aiResult.speech_response);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      speechSynthesis.speak(utterance);
     }
+    
+    // Handle enhanced actions
+    await handleEnhancedActions(
+      aiResult, 
+      habitsRef, 
+      setHabits, 
+      setAiChatHistory, 
+      showMessage
+    );
+    
+    return aiResult;
     
   } catch (error) {
-    const errorMessage = `AI Error: ${error.message}`;
+    console.error('Enhanced AI processing error:', error);
+    
+    // Fallback to basic response
+    const fallbackResponse = getFallbackResponse(userMessage, habitsRef.current);
+    
     setAiChatHistory(prev => [...prev, 
       { type: 'user', message: userMessage, timestamp: new Date() },
-      { type: 'error', message: errorMessage, timestamp: new Date() }
+      { type: 'ai', message: fallbackResponse.response, timestamp: new Date() }
     ]);
-    showMessage(errorMessage);
+    
+    if (fallbackResponse.identity_highlight) {
+      setTimeout(() => {
+        setAiChatHistory(prev => [...prev, {
+          type: 'identity',
+          message: `✨ ${fallbackResponse.identity_highlight}`,
+          timestamp: new Date()
+        }]);
+      }, 1000);
+    }
+    
   } finally {
     setAiProcessing(false);
   }
 };
 
+// Handle all the enhanced AI actions
+const handleEnhancedActions = async (
+  aiResult, 
+  habitsRef, 
+  setHabits, 
+  setAiChatHistory, 
+  showMessage
+) => {
+  const { action, habit_name, percentage, new_habit, identity_highlight, next_level_suggestion, vision_insight } = aiResult;
+  
+  // Handle habit logging (existing functionality)
+  if (action === 'log_habit' && habit_name && percentage !== null) {
+    const habit = habitsRef.current.find(h => 
+      h.name.toLowerCase().includes(habit_name.toLowerCase())
+    );
+    if (habit) {
+      executeHabitUpdate(habit, percentage, 'ai', setHabits, showMessage);
+    }
+  }
+  
+  // Handle new habit creation (existing functionality)
+  if (action === 'create_habit' && new_habit) {
+    if (validateAIHabitInput(new_habit)) {
+      const newHabit = {
+        id: Date.now(),
+        name: new_habit.name.substring(0, 30),
+        description: new_habit.description.substring(0, 100),
+        streak: 0,
+        completedToday: false,
+        completedDates: [],
+        createdDate: new Date().toISOString().split('T')[0],
+        lastCheckedDate: new Date().toISOString().split('T')[0],
+        category: new_habit.category || 'Health',
+        progress: 0,
+        target: 10
+      };
+      
+      setHabits(prev => [...prev, newHabit]);
+      showMessage(`🤖 AI created: "${newHabit.name}"! ✨`);
+      
+      setTimeout(() => {
+        setAiChatHistory(prev => [...prev, {
+          type: 'ai',
+          message: `✅ Perfect! I've added "${newHabit.name}" to your habits list. Start tracking it right away!`,
+          timestamp: new Date()
+        }]);
+      }, 1000);
+    }
+  }
+  
+  // NEW: Handle habit deletion
+  if (action === 'delete_habit' && habit_name) {
+    const habitToDelete = habitsRef.current.find(h => 
+      h.name.toLowerCase().includes(habit_name.toLowerCase())
+    );
+    
+    if (habitToDelete) {
+      setHabits(prev => prev.filter(h => h.id !== habitToDelete.id));
+      showMessage(`🗑️ AI deleted: "${habitToDelete.name}"`);
+      
+      setTimeout(() => {
+        setAiChatHistory(prev => [...prev, {
+          type: 'ai',
+          message: `✅ I've successfully deleted "${habitToDelete.name}" from your habits list.`,
+          timestamp: new Date()
+        }]);
+      }, 1000);
+    } else {
+      setAiChatHistory(prev => [...prev, {
+        type: 'error',
+        message: `I couldn't find a habit called "${habit_name}" to delete. Could you check the name?`,
+        timestamp: new Date()
+      }]);
+    }
+  }
+  
+  // NEW: Handle vision discovery
+  if (action === 'vision_discovery' && vision_insight) {
+    showMessage(`💡 Vision insight: ${vision_insight}`);
+    
+    setTimeout(() => {
+      setAiChatHistory(prev => [...prev, {
+        type: 'vision',
+        message: `🔮 Vision Discovery: ${vision_insight}`,
+        timestamp: new Date()
+      }]);
+    }, 1500);
+  }
+  
+  // NEW: Handle identity highlighting
+  if (identity_highlight) {
+    setTimeout(() => {
+      setAiChatHistory(prev => [...prev, {
+        type: 'identity',
+        message: `✨ Identity Evidence: ${identity_highlight}`,
+        timestamp: new Date()
+      }]);
+    }, 1000);
+  }
+  
+  // NEW: Handle next level suggestions
+  if (next_level_suggestion) {
+    setTimeout(() => {
+      setAiChatHistory(prev => [...prev, {
+        type: 'challenge',
+        message: `🚀 Next Level Challenge: ${next_level_suggestion}`,
+        timestamp: new Date()
+      }]);
+    }, 2000);
+  }
+  
+  // NEW: Handle confidence boosts
+  if (aiResult.confidence_boost) {
+    setTimeout(() => {
+      setAiChatHistory(prev => [...prev, {
+        type: 'confidence',
+        message: `💪 Confidence Boost: ${aiResult.confidence_boost}`,
+        timestamp: new Date()
+      }]);
+    }, 2500);
+  }
+};
+
+// Fallback response for when enhanced AI fails
+const getFallbackResponse = (userMessage, habits) => {
+  const completedToday = habits.filter(h => h.completedToday).length;
+  const totalHabits = habits.length;
+  
+  if (completedToday === totalHabits && totalHabits > 0) {
+    return {
+      response: "Wow! You've completed all your habits today. That's the mark of someone who follows through on commitments!",
+      identity_highlight: "You're becoming someone who consistently shows up for themselves."
+    };
+  }
+  
+  if (completedToday > 0) {
+    return {
+      response: `Great work on completing ${completedToday} habits today! Every action is proof you're changing.`,
+      identity_highlight: "You're developing the identity of someone who takes action."
+    };
+  }
+  
+  return {
+    response: "Every day is a new opportunity to show up for yourself. What small step can you take right now?",
+    identity_highlight: "You have the power to choose who you become, one habit at a time."
+  };
+};
+
+// Existing validation function (unchanged)
 const validateAIHabitInput = (habitData) => {
   if (!habitData || typeof habitData !== 'object') return false;
   if (!habitData.name || typeof habitData.name !== 'string' || habitData.name.trim().length === 0) return false;
@@ -188,6 +256,7 @@ const validateAIHabitInput = (habitData) => {
   return true;
 };
 
+// Existing habit update function (unchanged)
 const executeHabitUpdate = (habit, percentage, source, setHabits, showMessage) => {
   setHabits(prev => {
     const updated = prev.map(h => {
