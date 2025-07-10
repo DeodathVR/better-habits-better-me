@@ -2,8 +2,6 @@
 class VisionEnhancedAI {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.visionDiscovery = new VisionDiscoveryEngine();
-    this.contentPersonalizer = new ContentPersonalizer();
   }
 
   // ENHANCED VERSION of your existing processWithAI function
