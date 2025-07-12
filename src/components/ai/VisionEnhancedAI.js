@@ -4,22 +4,47 @@ class VisionEnhancedAI {
     this.apiKey = apiKey;
   }
 
-  // ENHANCED VERSION of your existing processWithAI function
-  async processWithAI(userMessage, context = {}) {
-    // Step 1: Detect if this conversation contains vision clues
-    const visionClues = await this.detectVisionClues(userMessage, context);
+ // ENHANCED VERSION with Gemini → Claude failover
+async processWithAI(userMessage, context = {}) {
+  // Step 1: Detect if this conversation contains vision clues
+  const visionClues = await this.detectVisionClues(userMessage, context);
+  
+  // Step 2: Build enhanced context with vision awareness
+  const enhancedContext = this.buildEnhancedContext(userMessage, context, visionClues);
+  
+  // Step 3: Try Gemini first, then Claude as backup
+  let aiResponse;
+  try {
+    // Try Gemini with quick timeout (5 seconds)
+    console.log('🚀 Trying Gemini API...');
+    aiResponse = await Promise.race([
+      this.generateVisionAwareResponse(userMessage, enhancedContext),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Gemini timeout')), 5000)
+      )
+    ]);
+    console.log('✅ Gemini responded successfully');
+    aiResponse.metadata.provider = 'gemini';
     
-    // Step 2: Build enhanced context with vision awareness
-    const enhancedContext = this.buildEnhancedContext(userMessage, context, visionClues);
-    
-    // Step 3: Generate vision-aware response
-    const aiResponse = await this.generateVisionAwareResponse(userMessage, enhancedContext);
-    
-    // Step 4: Handle any actions (habit logging, vision updates, etc.)
-    await this.handleActions(aiResponse, enhancedContext);
-    
-    return aiResponse;
+  } catch (error) {
+    console.log('❌ Gemini failed, trying Claude...', error.message);
+    try {
+      aiResponse = await this.tryClaude(userMessage, enhancedContext);
+      console.log('✅ Claude responded successfully');
+      aiResponse.metadata.provider = 'claude';
+      
+    } catch (claudeError) {
+      console.log('❌ Both APIs failed, using fallback');
+      aiResponse = this.getFallbackResponse(userMessage, enhancedContext);
+      aiResponse.metadata.provider = 'fallback';
+    }
   }
+  
+  // Step 4: Handle any actions (habit logging, vision updates, etc.)
+  await this.handleActions(aiResponse, enhancedContext);
+  
+  return aiResponse;
+}
 
   // NEW: Detect vision clues in natural conversation
   async detectVisionClues(message, context) {
