@@ -329,7 +329,50 @@ async generateVisionAwareResponse(userMessage, enhancedContext) {
   console.log('All AI attempts failed, using fallback response');
   return this.getFallbackResponse(userMessage, enhancedContext);
 }
+// NEW: Claude API method
+async tryClaude(userMessage, enhancedContext) {
+  const enhancedPrompt = this.buildEnhancedPrompt(userMessage, enhancedContext);
+  
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.REACT_APP_CLAUDE_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-3-haiku-20240307', // Fast, cost-effective model
+      max_tokens: 800,
+      messages: [{
+        role: 'user',
+        content: enhancedPrompt
+      }]
+    })
+  });
 
+  if (!response.ok) {
+    throw new Error(`Claude API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const aiText = data.content[0].text;
+  
+  // Parse JSON response (same as Gemini)
+  const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    const parsedResponse = JSON.parse(jsonMatch[0]);
+    parsedResponse.metadata = {
+      provider: 'claude',
+      model: 'haiku',
+      timestamp: new Date().toISOString()
+    };
+    return parsedResponse;
+  }
+  
+  throw new Error('Invalid Claude response format');
+}
+
+  
 buildEnhancedPrompt(userMessage, context) {
   const { visionState, journeyPhase, patterns, habits, currentUser } = context;
   
