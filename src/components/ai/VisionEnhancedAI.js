@@ -432,7 +432,7 @@ ${this.getPhaseSpecificInstructions(journeyPhase.phase)}
 
 RESPONSE FORMAT:
 {
-  "action": "log_habit|conversation|create_habit|vision_discovery|vision_update",
+  "action": "log_habit|conversation|create_habit|delete_habit|vision_discovery|vision_update",
   "habit_name": "exact habit name if logging" | null,
   "percentage": number 0-100 if logging | null,
   "new_habit": {...} | null,
