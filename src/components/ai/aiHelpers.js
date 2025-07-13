@@ -107,7 +107,6 @@ const handleEnhancedActions = async (
   
   // ADD THIS DEBUG LINE TOO:
   console.log('🔍 Extracted action:', action, 'habit_name:', habit_name);
-  const { action, habit_name, percentage, new_habit, identity_highlight, next_level_suggestion, vision_insight } = aiResult;
   
   // Handle habit logging (existing functionality)
   if (action === 'log_habit' && habit_name && percentage !== null) {
