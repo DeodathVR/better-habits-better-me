@@ -100,6 +100,13 @@ const handleEnhancedActions = async (
   setAiChatHistory, 
   showMessage
 ) => {
+  // ADD THIS DEBUG LINE:
+  console.log('🔍 handleEnhancedActions called with:', aiResult);
+  
+  const { action, habit_name, percentage, new_habit, identity_highlight, next_level_suggestion, vision_insight } = aiResult;
+  
+  // ADD THIS DEBUG LINE TOO:
+  console.log('🔍 Extracted action:', action, 'habit_name:', habit_name);
   const { action, habit_name, percentage, new_habit, identity_highlight, next_level_suggestion, vision_insight } = aiResult;
   
   // Handle habit logging (existing functionality)
