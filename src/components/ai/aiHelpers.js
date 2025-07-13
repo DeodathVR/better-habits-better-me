@@ -150,10 +150,11 @@ const handleEnhancedActions = async (
   }
   
   // NEW: Handle habit deletion
-  if (action === 'delete_habit' && habit_name) {
-    const habitToDelete = habitsRef.current.find(h => 
-      h.name.toLowerCase().includes(habit_name.toLowerCase())
-    );
+if (action === 'delete_habit' && habit_name) {
+  console.log('🗑️ Delete handler triggered for:', habit_name);
+  const habitToDelete = habitsRef.current.find(h => 
+    h.name.toLowerCase().includes(habit_name.toLowerCase())
+  );
     
     if (habitToDelete) {
       setHabits(prev => prev.filter(h => h.id !== habitToDelete.id));
