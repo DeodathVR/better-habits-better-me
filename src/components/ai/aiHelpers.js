@@ -15,6 +15,7 @@ export const processWithAI = async (
   GEMINI_API_KEY,
   currentUser = {}
 ) => {
+  console.log('🚀 processWithAI START:', userMessage); // ADD THIS LINE
   setAiProcessing(true);
   
   try {
@@ -22,6 +23,8 @@ export const processWithAI = async (
     if (!enhancedAI) {
       enhancedAI = new VisionEnhancedAI(GEMINI_API_KEY);
     }
+
+    console.log('🧠 VisionEnhancedAI initialized'); // ADD THIS LINE
     
     // Build context for enhanced AI
     const context = {
@@ -29,9 +32,13 @@ export const processWithAI = async (
       currentUser: currentUser,
       chatHistory: [] // You can pass existing chat history here if needed
     };
+
+    console.log('📊 Context built, calling VisionEnhancedAI...'); // ADD THIS LINE
     
     // Use enhanced AI processing
     const aiResult = await enhancedAI.processWithAI(userMessage, context);
+
+    console.log('✅ VisionEnhancedAI responded:', aiResult); // ADD THIS LINE
     
     // Add user message to chat history
     setAiChatHistory(prev => [...prev, 
