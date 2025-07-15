@@ -453,7 +453,8 @@ CRITICAL GUIDELINES:
 - Use their specific language and communication style
 - Acknowledge patterns you've noticed
 - Be authentic and avoid generic motivation speak
-- For habit deletion: use "delete_habit" action when user says "delete", "remove", "get rid of" or similar
+- DELETION: When user says "delete", "remove", "get rid of" + habit name, use "delete_habit" action with exact habit name from the list
+- DELETION: Match habit names by finding the closest match from the current habits list
 
 ${this.getAdditionalPromptContext(context)}`;
   }
