@@ -10,7 +10,8 @@ const AIChat = ({
   habitsRef,
   setHabits, 
   showMessage,
-  GEMINI_API_KEY 
+  GEMINI_API_KEY, 
+  currentUser  // ADD THIS LINE
 }) => {
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiChatHistory, setAiChatHistory] = useState([]);
@@ -37,7 +38,8 @@ const AIChat = ({
       setAiProcessing,
       showMessage,
       aiVoiceEnabled,
-      GEMINI_API_KEY
+      GEMINI_API_KEY,
+      currentUser  // ADD THIS LINE
     );
   };
 
