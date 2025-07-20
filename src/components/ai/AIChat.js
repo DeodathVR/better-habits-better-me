@@ -26,6 +26,7 @@ const AIChat = ({
   }, [aiChatHistory, aiProcessing]);
 
   const sendAIMessage = async () => {
+    console.log('🎯 AIChat sendAIMessage called!'); // ADD THIS LINE
     if (!aiChatInput.trim()) return;
     const message = aiChatInput.trim();
     setAiChatInput('');
