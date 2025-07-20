@@ -15,6 +15,8 @@ export const processWithAI = async (
   GEMINI_API_KEY,
   currentUser = {}
 ) => {
+  console.log('🚀 MAIN APP processWithAI START:', userMessage); // ADD THIS LINE
+  console.log('📋 MAIN APP Parameters:', { userMessage, currentUser }); // ADD THIS LINE
   console.log('🚀 processWithAI START:', userMessage); // ADD THIS LINE
   setAiProcessing(true);
   
